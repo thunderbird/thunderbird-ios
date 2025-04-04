@@ -1,4 +1,4 @@
-# Run default test plan in iPhone 16 Simulator against iOS 18.4
+# Run default test plan in iPhone 16 Simulator
 
 name: Test
 
@@ -17,5 +17,5 @@ jobs:
         uses: actions/checkout@v4
 #     - name: Resolve Swift packages
 #       run: swift package resolve
-      - name: Test iPhone 16 Simulator (iOS 18.4)
-        run: xcodebuild test -workspace Thunderbird.xcworkspace -scheme ThunderbirdTests -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.4'
+      - name: Test iPhone 16 Simulator
+        run: xcodebuild test -workspace Thunderbird.xcworkspace -scheme ThunderbirdTests -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 16'
