@@ -15,8 +15,8 @@ jobs:
       steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-      - name: Resolve Swift packages
-        run: swift package resolve
+#     - name: Resolve Swift packages
+#       run: swift package resolve
       - name: Test iPhone 16 Simulator (iOS 18.4)
         run: xcodebuild test \
               -workspace Thunderbird.xcworkspace \
