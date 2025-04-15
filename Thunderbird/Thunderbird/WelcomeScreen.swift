@@ -10,9 +10,9 @@ struct WelcomeScreen: View {
             Image.logo
                 .resizable()
                 .aspectRatio(contentMode: .fit)
-                .accessibilityLabel(.headline)
+                .accessibilityLabel(.appName)
                 .frame(height: 172.0)
-            Text(.subheadline)
+            Text(.onboardingWelcomeText)
                 .multilineTextAlignment(.center)
                 .opacity(0.75)
                 .padding()
@@ -21,13 +21,13 @@ struct WelcomeScreen: View {
             Button(action: {
                 openURL(.donate)
             }) {
-                Text(.donate)
+                Text(.onboardingWelcomeStartButton)
                     .padding(5.5)
             }
             .buttonStyle(.borderedProminent)
             .padding()
             Spacer()
-            Text(.caption)
+            Text(.onboardingWelcomeDevelopedBy)
                 .multilineTextAlignment(.center)
                 .font(.caption)
                 .opacity(0.75)
@@ -64,10 +64,10 @@ private extension Image {
 }
 
 private extension LocalizedStringKey {
-    static let headline: Self = "Thunderbird"
-    static let subheadline: Self = "An open source, privacy focused\nand ad-free email app for iOS."
-    static let caption: Self = "Developed by a dedicated team at MZLA Technologies and a global community of volunteers. Part of the Mozilla family."
-    static let donate: Self = "Get started"
+    static let appName: Self = "app_name"
+    static let onboardingWelcomeText: Self = "onboarding_welcome_text"
+    static let onboardingWelcomeDevelopedBy: Self = "onboarding_welcome_developed_by"
+    static let onboardingWelcomeStartButton: Self = "onboarding_welcome_start_button"
 }
 
 private extension URL {
