@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		152E827A2DC43AF700FB787B /* Account in Frameworks */ = {isa = PBXBuildFile; productRef = 152E82792DC43AF700FB787B /* Account */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		1521D8252D9C4D6300C4DFDF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -39,6 +43,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				152E827A2DC43AF700FB787B /* Account in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -90,6 +95,7 @@
 			);
 			name = Thunderbird;
 			packageProductDependencies = (
+				152E82792DC43AF700FB787B /* Account */,
 			);
 			productName = Thunderbird;
 			productReference = 1521D8162D9C4D6200C4DFDF /* Thunderbird.app */;
@@ -148,6 +154,9 @@
 			);
 			mainGroup = 1521D80D2D9C4D6200C4DFDF;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				152E82782DC43AF700FB787B /* XCLocalSwiftPackageReference "../Mail" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 1521D8172D9C4D6200C4DFDF /* Products */;
 			projectDirPath = "";
@@ -324,6 +333,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Thunderbird/Thunderbird.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = BUMSKVQ3D9;
@@ -351,7 +361,7 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				XROS_DEPLOYMENT_TARGET = 2.4;
 			};
@@ -363,6 +373,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Thunderbird/Thunderbird.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = BUMSKVQ3D9;
@@ -390,7 +401,7 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				XROS_DEPLOYMENT_TARGET = 2.4;
 			};
@@ -412,7 +423,7 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Thunderbird.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Thunderbird";
 				XROS_DEPLOYMENT_TARGET = 2.4;
@@ -435,7 +446,7 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Thunderbird.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Thunderbird";
 				XROS_DEPLOYMENT_TARGET = 2.4;
@@ -473,6 +484,20 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		152E82782DC43AF700FB787B /* XCLocalSwiftPackageReference "../Mail" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Mail;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		152E82792DC43AF700FB787B /* Account */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Account;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 1521D80E2D9C4D6200C4DFDF /* Project object */;
 }

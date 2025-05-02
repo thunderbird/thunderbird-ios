@@ -8,8 +8,11 @@
       location = "group:Thunderbird/Thunderbird.xcodeproj">
    </FileRef>
    <FileRef
-         location = "group:Thunderbird.xctestplan">
-      </FileRef>
+      location = "group:Thunderbird.xctestplan">
+   </FileRef>
+   <FileRef
+      location = "group:Mail">
+   </FileRef>
    <FileRef
       location = "group:docs">
    </FileRef>

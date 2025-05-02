@@ -13,11 +13,17 @@
   },
   "testTargets" : [
     {
-      "parallelizable" : true,
       "target" : {
         "containerPath" : "container:Thunderbird.xcodeproj",
         "identifier" : "1521D8232D9C4D6300C4DFDF",
         "name" : "ThunderbirdTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:..\/Mail",
+        "identifier" : "AccountTests",
+        "name" : "AccountTests"
       }
     }
   ],

@@ -1,4 +1,5 @@
 import SwiftUI
+import Account
 
 struct WelcomeScreen: View {
     @Environment(\.openURL) private var openURL
