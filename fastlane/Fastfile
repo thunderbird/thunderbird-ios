@@ -1,0 +1,192 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#     https://docs.fastlane.tools/plugins/available-plugins
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Build and upload to TestFlight"
+  lane :beta do
+    # Ensure no uncommited changes
+    ensure_git_status_clean
+
+    # Run tests
+    run_tests(
+      scheme: "Thunderbird",
+      workspace: "Thunderbird.xcworkspace",
+      destination: "platform=iOS Simulator,name=#{ENV['TEST_DEVICE']}",
+      code_coverage: true
+    )
+
+    # Set version if provided via workflow input
+    if ENV["VERSION_INPUT"] && !ENV["VERSION_INPUT"].empty?
+      puts "Setting version to: #{ENV['VERSION_INPUT']}"
+      increment_version_number(
+        version_number: ENV["VERSION_INPUT"],
+        xcodeproj: "Thunderbird/Thunderbird.xcodeproj"
+      )
+    end
+
+    # Set development team before building
+    if ENV["APPLE_TEAM_ID"] && !ENV["APPLE_TEAM_ID"].empty?
+      update_project_team(
+        path: "Thunderbird/Thunderbird.xcodeproj",
+        teamid: ENV["APPLE_TEAM_ID"]
+      )
+    end
+
+    # Set provisioning profile
+    profile_path = Dir.glob(File.expand_path("~/Library/MobileDevice/Provisioning Profiles/*.mobileprovision")).first
+    if profile_path
+      update_project_provisioning(
+        xcodeproj: "Thunderbird/Thunderbird.xcodeproj",
+        profile: profile_path,
+        target_filter: "Thunderbird"
+      )
+    end
+
+    # Set build number using timestamp (YYYYMMDDHHmm format)
+    build_number = Time.now.utc.strftime("%Y%m%d%H%M")
+    increment_build_number(
+      build_number: build_number,
+      xcodeproj: "Thunderbird/Thunderbird.xcodeproj"
+    )
+
+    # Build the app
+    build_app(
+      scheme: "Thunderbird",
+      workspace: "Thunderbird.xcworkspace",
+      sdk: "iphoneos",
+      destination: "generic/platform=iOS",
+      export_method: "app-store",
+      export_options: {
+        method: "app-store",
+        teamID: ENV["APPLE_TEAM_ID"],
+        provisioningProfiles: {
+          "net.thunderbird.ios" => ENV["PROVISIONING_PROFILE_NAME"]
+        },
+        signingStyle: "manual",
+        uploadBitcode: false,
+        uploadSymbols: true,
+        compileBitcode: false
+      }
+    )
+
+    # Upload to TestFlight
+    key_path = ENV["APP_STORE_CONNECT_API_KEY_PATH"]
+    api_key = app_store_connect_api_key(
+      key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
+      issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
+      key_filepath: key_path
+    )
+    upload_to_testflight(
+      api_key: api_key,
+      skip_waiting_for_build_processing: true,
+      skip_submission: true,
+      distribute_external: ENV["NOTIFY_TESTERS"] == "true",
+      notify_external_testers: ENV["NOTIFY_TESTERS"] == "true",
+      changelog: "Automated build from GitHub Actions"
+    )
+
+    puts "Successfully uploaded to TestFlight!"
+  end
+
+  desc "Build for App Store release"
+  lane :release do
+    # Ensure no uncommited changes
+    ensure_git_status_clean
+
+    # Run tests
+    run_tests(
+      scheme: "Thunderbird",
+      workspace: "Thunderbird.xcworkspace",
+      destination: "platform=iOS Simulator,name=#{ENV['TEST_DEVICE']}",
+      code_coverage: true
+    )
+
+    # Set version if provided via workflow input
+    if ENV["VERSION_INPUT"] && !ENV["VERSION_INPUT"].empty?
+      puts "Setting version to: #{ENV['VERSION_INPUT']}"
+      increment_version_number(
+        version_number: ENV["VERSION_INPUT"],
+        xcodeproj: "Thunderbird/Thunderbird.xcodeproj"
+      )
+    end
+
+    # Set development team before building
+    if ENV["APPLE_TEAM_ID"] && !ENV["APPLE_TEAM_ID"].empty?
+      update_project_team(
+        path: "Thunderbird/Thunderbird.xcodeproj",
+        teamid: ENV["APPLE_TEAM_ID"]
+      )
+    end
+
+    # Set provisioning profile
+    profile_path = Dir.glob(File.expand_path("~/Library/MobileDevice/Provisioning Profiles/*.mobileprovision")).first
+    if profile_path
+      update_project_provisioning(
+        xcodeproj: "Thunderbird/Thunderbird.xcodeproj",
+        profile: profile_path,
+        target_filter: "Thunderbird"
+      )
+    end
+
+    # Set build number using timestamp (YYYYMMDDHHmm format)
+    build_number = Time.now.utc.strftime("%Y%m%d%H%M")
+    increment_build_number(
+      build_number: build_number,
+      xcodeproj: "Thunderbird/Thunderbird.xcodeproj"
+    )
+
+    # Build the app
+    build_app(
+      scheme: "Thunderbird",
+      workspace: "Thunderbird.xcworkspace",
+      export_method: "app-store",
+      export_options: {
+        method: "app-store",
+        teamID: ENV["APPLE_TEAM_ID"],
+        provisioningProfiles: {
+          "net.thunderbird.ios" => ENV["PROVISIONING_PROFILE_NAME"]
+        },
+        signingStyle: "manual",
+        uploadBitcode: false,
+        uploadSymbols: true,
+        compileBitcode: false
+      }
+    )
+
+    # Upload to App Store Connect for review
+    key_path = ENV["APP_STORE_CONNECT_API_KEY_PATH"]
+    api_key = app_store_connect_api_key(
+      key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
+      issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
+      key_filepath: key_path
+    )
+    upload_to_app_store(
+      api_key: api_key,
+      reject_if_possible: true,
+      skip_metadata: false,
+      skip_screenshots: false,
+      submit_for_review: false
+    )
+
+    puts "Successfully uploaded to App Store Connect!"
+  end
+
+  # Error handling
+  error do |lane, exception|
+    # slack(
+    #   message: "Error occurred in lane #{lane}: #{exception}",
+    #   success: false
+    # )
+  end
+end

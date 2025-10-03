@@ -5,6 +5,11 @@ Package.resolved
 .swiftpm
 .build/
 
+# Ruby/Bundler
+fastlane/.bundle/
+fastlane/vendor/
+fastlane/Gemfile.lock
+
 # mdBook
 book/
 

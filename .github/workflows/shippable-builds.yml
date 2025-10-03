@@ -1,0 +1,199 @@
+name: Shippable Builds
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 'Version to build (optional)'
+        required: false
+        default: "1.0"
+        type: string
+      notify_testers:
+        description: 'Notify external testers'
+        required: false
+        default: false
+        type: boolean
+      test_device:
+        description: 'iOS Simulator device for tests (optional)'
+        required: false
+        default: "iPhone 17"
+        type: string
+    secrets:
+      APPLE_CERTIFICATE_P12:
+        required: true
+      APPLE_CERTIFICATE_PASSWORD:
+        required: true
+      APP_STORE_PROVISIONING_PROFILE:
+        required: true
+      APP_STORE_CONNECT_API_KEY:
+        required: true
+      APP_STORE_CONNECT_API_KEY_ID:
+        required: true
+      APP_STORE_CONNECT_ISSUER_ID:
+        required: true
+      APPLE_TEAM_ID:
+        required: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build_and_deploy_ios:
+    runs-on: macos-26
+    environment: thunderbird_release
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8  # v5.0.0
+
+      - name: Xcode Select Version
+        uses: mobiledevops/xcode-select-version-action@a58204ef24b6e61857940e51c0e11b0368065b94 # v1.0.0
+        with:
+          xcode-select-version: '26.0'
+
+      - name: Setup Ruby and Fastlane
+        uses: ruby/setup-ruby@ab177d40ee5483edb974554986f56b33477e21d0 # v1.265.0
+        with:
+          ruby-version: '3.0'
+          bundler-cache: true
+          working-directory: fastlane
+
+      - name: Setup Apple certificate
+        env:
+          APPLE_CERTIFICATE_P12: ${{ secrets.APPLE_CERTIFICATE_P12 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          if [ -z "$APPLE_CERTIFICATE_P12" ] || [ -z "$APPLE_CERTIFICATE_PASSWORD" ]; then
+            echo "Certificate secrets are not set"
+            exit 1
+          fi
+
+          # Decode and install certificate
+          CLEAN_CERT=$(echo "$APPLE_CERTIFICATE_P12" | tr -d '\n\r\t ' | tr -d '[:space:]')
+          echo "$CLEAN_CERT" | base64 --decode > certificate.p12
+
+          if [ ! -s certificate.p12 ]; then
+            echo "Failed to decode certificate"
+            exit 1
+          fi
+
+          # Create temp keychain. Note: runner is ephemeral and keychain deleted at end of workflow.
+          KEYCHAIN_PASS=$(openssl rand -base64 16)
+          security create-keychain -p "$KEYCHAIN_PASS" build.keychain
+          security set-keychain-settings -lut 3600 build.keychain
+          security unlock-keychain -p "$KEYCHAIN_PASS" build.keychain
+          security list-keychains -d user -s build.keychain login.keychain
+
+          # Convert certificate to macOS-compatible format
+          openssl pkcs12 -in certificate.p12 -out temp_cert.pem -clcerts -nokeys -passin pass:"$APPLE_CERTIFICATE_PASSWORD"
+          openssl pkcs12 -in certificate.p12 -out temp_key.pem -nocerts -nodes -passin pass:"$APPLE_CERTIFICATE_PASSWORD"
+          openssl pkcs12 -export -out macos_certificate.p12 -inkey temp_key.pem -in temp_cert.pem -passout pass:"$APPLE_CERTIFICATE_PASSWORD" -keypbe PBE-SHA1-3DES -certpbe PBE-SHA1-3DES -macalg sha1
+
+          # Import converted certificate
+          security import macos_certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASS" build.keychain
+
+          # Clean up certificate files
+          rm macos_certificate.p12 \
+             certificate.p12 \
+             temp_cert.pem \
+             temp_key.pem
+
+          echo "Certificate installed successfully"
+
+      - name: Setup provisioning profile
+        env:
+          PROVISIONING_PROFILE: ${{ secrets.APP_STORE_PROVISIONING_PROFILE }}
+        run: |
+          if [ -z "$PROVISIONING_PROFILE" ]; then
+            echo "Provisioning profile secret is not set"
+            exit 1
+          fi
+
+          # Create provisioning profiles directory
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+
+          # Install provisioning profile
+          echo "$PROVISIONING_PROFILE" | base64 --decode > profile.mobileprovision
+
+          if [ ! -s profile.mobileprovision ]; then
+            echo "Failed to decode provisioning profile"
+            exit 1
+          fi
+
+          # Extract profile info
+          PROFILE_UUID=$(security cms -D -i profile.mobileprovision | plutil -extract UUID raw -)
+          PROFILE_NAME=$(security cms -D -i profile.mobileprovision | plutil -extract Name raw -)
+
+          # Install profile
+          cp profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/"$PROFILE_UUID".mobileprovision
+
+          # Export for later use
+          echo "PROVISIONING_PROFILE_NAME=$PROFILE_NAME" >> $GITHUB_ENV
+          echo "PROVISIONING_PROFILE_UUID=$PROFILE_UUID" >> $GITHUB_ENV
+
+          # Clean up profile file
+          rm profile.mobileprovision
+
+          echo "Provisioning profile installed: $PROFILE_NAME"
+
+      - name: Setup App Store Connect API Key
+        working-directory: fastlane
+        env:
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+        run: |
+          # Decode API key (try base64 first, fallback to raw)
+          KEY_PATH="$RUNNER_TEMP/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8"
+          if echo "$APP_STORE_CONNECT_API_KEY" | base64 --decode > "$KEY_PATH" 2>/dev/null; then
+            echo "Decoded base64 API key"
+          else
+            echo "$APP_STORE_CONNECT_API_KEY" > "$KEY_PATH"
+          fi
+          # Expose path for Fastlane
+          echo "APP_STORE_CONNECT_API_KEY_PATH=$KEY_PATH" >> "$GITHUB_ENV"
+
+      - name: Resolve Package Dependencies
+        working-directory: fastlane
+        run: |
+          xcodebuild -resolvePackageDependencies -workspace ../Thunderbird.xcworkspace -scheme Thunderbird
+
+      - name: Build and Deploy to TestFlight
+        working-directory: fastlane
+        env:
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          VERSION_INPUT: ${{ inputs.version }}
+          NOTIFY_TESTERS: ${{ inputs.notify_testers }}
+          TEST_DEVICE: ${{ inputs.test_device }}
+          APP_STORE_CONNECT_API_KEY_PATH: ${{ env.APP_STORE_CONNECT_API_KEY_PATH }}
+        run: |
+          bundle exec fastlane beta
+
+      - name: Upload build artifacts (if build fails)
+        if: failure()
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: ios-build-logs-${{ github.run_id }}
+          path: |
+            fastlane/logs/
+            ~/Library/Logs/gym/
+          retention-days: 7
+
+      - name: Clean up sensitive files
+        if: always()
+        run: |
+          rm -f fastlane/AuthKey_*.p8 \
+                "$RUNNER_TEMP"/AuthKey_*.p8 \
+                profile.mobileprovision \
+                ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision \
+                macos_certificate.p12 \
+                certificate.p12 \
+                temp_cert.pem \
+                temp_key.pem
+          if security list-keychains | grep -q "build.keychain"; then
+            security delete-keychain build.keychain
+          fi
+
