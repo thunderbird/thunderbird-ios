@@ -38,7 +38,7 @@ jobs:
           xcode-select-version: '26.0'
 
       - name: Setup Ruby and Fastlane
-        uses: ruby/setup-ruby@ac793fdd38cc468a4dd57246fa9d0e868aba9085 # v1.270.0
+        uses: ruby/setup-ruby@ae195bbe749a7cef685ac729197124a48305c1cb # v1.276.0
         with:
           ruby-version: '3.0'
           bundler-cache: true
