@@ -11,6 +11,7 @@ import Account
 struct EmailListView: View {
     @Environment(Accounts.self) private var accounts: Accounts
     @Environment(\.openURL) private var openURL
+    @State private var showAccountDrawer = false
     let tempEmails = TempEmail.sampleData
 
     //Hardcoded for testing
@@ -84,7 +85,19 @@ struct EmailListView: View {
                 .padding()
             }
             .navigationTitle("inbox_header")
+            .sheet(isPresented: $showAccountDrawer) {
+                AccountDrawerView()
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+            }
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showAccountDrawer = true
+                    } label: {
+                        Label("accounts_button", systemImage: "person.crop.circle")
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Button(
