@@ -41,7 +41,7 @@ jobs:
         run: xcrun simctl list devices
 
       - name: Boot simulator
-        uses: nick-invision/retry@v3
+        uses: nick-invision/retry@v4
         with:
           timeout_minutes: 5
           max_attempts: 5
@@ -55,7 +55,7 @@ jobs:
             echo "Simulator booted and ready."
 
       - name: Run tests
-        uses: nick-invision/retry@v3
+        uses: nick-invision/retry@v4
         with:
           timeout_minutes: 15
           max_attempts: 3
