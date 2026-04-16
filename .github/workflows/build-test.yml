@@ -64,7 +64,8 @@ jobs:
             echo "Running tests in ${DEVICE} simulator..."
             xcodebuild test \
               -workspace Thunderbird.xcworkspace \
-              -scheme ThunderbirdTests \
+              -scheme Thunderbird \
+              -testPlan Thunderbird \
               -sdk iphonesimulator \
               -destination "platform=iOS Simulator,name=${DEVICE}"
 
