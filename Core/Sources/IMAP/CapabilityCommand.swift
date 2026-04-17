@@ -47,7 +47,7 @@ class CapabilityHandler: IMAPCommandHandler, @unchecked Sendable {
         case .untagged(let payload):
             switch payload {
             case .capabilityData(let capabilities):
-                self.capabilities = capabilities
+                self.capabilities = capabilities.map { Capability($0) }
             default:
                 break
             }
