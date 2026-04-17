@@ -1,9 +1,15 @@
 import Foundation
 
+public typealias Accounts = AccountManager
+
+/// Globally manage shared, persistent accounts from the SwiftUI environment.
 @Observable
-public class Accounts {
+public class AccountManager {
     public private(set) var allAccounts: [Account] = []
-    public private(set) var error: Error?
+    public var error: AccountError?
+
+    /// Feature flag enables autoconfiguring new accounts using [JMAP](https://jmap.io), when supported by email provider.
+    public var isJMAPAvailable: Bool = false
 
     public func account(for id: UUID) -> Account? {
         allAccounts.filter({ $0.id == id }).first
@@ -26,7 +32,7 @@ public class Accounts {
             try FileManager.default.write(accounts, to: .accounts)
             allAccounts = try FileManager.default.readAccounts(from: .accounts)
         } catch {
-            self.error = error
+            self.error = .fileManager(error)
         }
     }
 
@@ -36,7 +42,7 @@ public class Accounts {
             try FileManager.default.write(allAccounts.filter { $0.id != account.id }, to: .accounts)
             allAccounts = try FileManager.default.readAccounts(from: .accounts)
         } catch {
-            self.error = error
+            self.error = .fileManager(error)
         }
     }
 
@@ -46,7 +52,7 @@ public class Accounts {
             try FileManager.default.write([], to: .accounts)
             allAccounts = []
         } catch {
-            self.error = error
+            self.error = .fileManager(error)
         }
     }
 
@@ -55,11 +61,7 @@ public class Accounts {
             guard try FileManager.default.fileExists(at: .accounts) else { return }
             allAccounts = try FileManager.default.readAccounts(from: .accounts)
         } catch {
-            self.error = error
+            self.error = .fileManager(error)
         }
     }
-}
-
-private extension URL {
-    static var accounts: Self { documents("Accounts.json") }
 }

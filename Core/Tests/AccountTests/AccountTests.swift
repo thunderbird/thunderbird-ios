@@ -24,6 +24,25 @@ struct AccountTests {
     }
 }
 
+extension AccountTests {
+    @Test func autoconfig() async throws {
+        var account: Account = try await .autoconfig("example@fastmail.com", isJMAPAvailable: true)
+        #expect(account.incomingServer?.serverProtocol == .jmap)
+        #expect(account.incomingServer?.hostname == "autodiscover.fastmail.com")
+        #expect(account.incomingServer?.port == 443)
+        #expect(account.outgoingServer?.serverProtocol == .jmap)
+        #expect(account.outgoingServer?.hostname == "autodiscover.fastmail.com")
+        #expect(account.outgoingServer?.port == 443)
+        account = try await .autoconfig("example@fastmail.com")
+        #expect(account.incomingServer?.serverProtocol == .imap)
+        #expect(account.incomingServer?.hostname == "imap.fastmail.com")
+        #expect(account.incomingServer?.port == 993)
+        #expect(account.outgoingServer?.serverProtocol == .smtp)
+        #expect(account.outgoingServer?.hostname == "smtp.fastmail.com")
+        #expect(account.outgoingServer?.port == 465)
+    }
+}
+
 private extension Server {
     static var jmap: Self {
         Self(

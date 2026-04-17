@@ -5,8 +5,8 @@ import Foundation
 struct ServerProtocolTests {
     @Test func defaultPort() {
         #expect(ServerProtocol.jmap.defaultPort == 443)
-        #expect(ServerProtocol.imap.defaultPort == 143)
-        #expect(ServerProtocol.smtp.defaultPort == 26)
+        #expect(ServerProtocol.imap.defaultPort == 993)
+        #expect(ServerProtocol.smtp.defaultPort == 587)
     }
 }
 

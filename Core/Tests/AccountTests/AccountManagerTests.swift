@@ -2,11 +2,11 @@
 import Testing
 import Foundation
 
-struct AccountsTests {
+struct AccountManagerTests {
     @Test func set() {
         lock.lock()
         defer { lock.unlock() }
-        let accounts: Accounts = Accounts()
+        let accounts: AccountManager = AccountManager()
         accounts.deleteAccounts()
         #expect(accounts.error == nil)
         let allAccounts: [Account] = [
@@ -24,9 +24,10 @@ struct AccountsTests {
         #expect(accounts.allAccounts[1].name == "Example 2a")
         #expect(accounts.error == nil)
         accounts.set(Account(name: "Example 2b", id: allAccounts[1].id), at: 0)
-        #expect(accounts.allAccounts == [Account(name: "Example ?", id: allAccounts[1].id), allAccounts[0], allAccounts[2]])
+        #expect(accounts.allAccounts == [Account(name: "Example 2b", id: allAccounts[1].id), allAccounts[0], allAccounts[2]])
         #expect(accounts.allAccounts[0].name == "Example 2b")
         #expect(accounts.error == nil)
+        accounts.set(Account(name: "Example 2", id: allAccounts[1].id), at: 0)
         let account: Account = Account(name: "Example 4")
         accounts.set(account)
         #expect(accounts.allAccounts == [allAccounts[1], allAccounts[0], allAccounts[2], account])
@@ -38,7 +39,7 @@ struct AccountsTests {
     @Test func delete() {
         lock.lock()
         defer { lock.unlock() }
-        let accounts: Accounts = Accounts()
+        let accounts: AccountManager = AccountManager()
         accounts.deleteAccounts()
         #expect(accounts.error == nil)
         let allAccounts: [Account] = [
