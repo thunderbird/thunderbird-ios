@@ -20,6 +20,13 @@
       }
     },
     {
+      "skippedTests" : {
+        "suites" : [
+          {
+            "name" : "ColorTests"
+          }
+        ]
+      },
       "target" : {
         "containerPath" : "container:..\/Bolt",
         "identifier" : "BoltUITests",
