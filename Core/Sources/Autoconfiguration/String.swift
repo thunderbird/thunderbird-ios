@@ -1,8 +1,6 @@
 import Foundation
 
-public typealias EmailAddress = String
-
-extension EmailAddress {
+extension String {
     public var host: Self {
         get throws {
             // Ensure valid host/domain with `URL` initializer, then discard the `URL`.
@@ -24,7 +22,7 @@ extension EmailAddress {
         }
     }
 
-    public func query(_ service: Service) throws -> String {
+    public func query(_ service: Service) throws -> Self {
         "_\(service.rawValue)._tcp.\(try host)"
     }
 }

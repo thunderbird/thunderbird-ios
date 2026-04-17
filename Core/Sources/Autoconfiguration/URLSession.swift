@@ -2,7 +2,7 @@ import Foundation
 
 extension URLSession {
     /// Query multiple autoconfig sources for a given email address.
-    public func autoconfig(_ emailAddress: EmailAddress, sources: [Source] = Source.allCases, queryMX: Bool = true) async throws -> (config: ClientConfig, source: Source) {
+    public func autoconfig(_ emailAddress: String, sources: [Source] = Source.allCases, queryMX: Bool = true) async throws -> (config: ClientConfig, source: Source) {
         for source in sources {
             guard let config: ClientConfig = try? await autoconfig(emailAddress, source: source).config else { continue }
             return (config, source)
@@ -19,7 +19,7 @@ extension URLSession {
     }
 
     /// Query a single autoconfig source using  a given email address.
-    public func autoconfig(_ emailAddress: EmailAddress, source: Source) async throws -> (config: ClientConfig, data: (Data, Data)) {
+    public func autoconfig(_ emailAddress: String, source: Source) async throws -> (config: ClientConfig, data: (Data, Data)) {
         let url: URL = try .autoconfig(emailAddress, source: source)
         let data: (Data, URLResponse) = try await data(from: url)
         switch (data.1 as? HTTPURLResponse)?.statusCode {

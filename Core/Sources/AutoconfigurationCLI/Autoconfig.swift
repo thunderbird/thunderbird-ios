@@ -5,7 +5,7 @@ import Foundation
 @main
 struct Autoconfig: AsyncParsableCommand {
     @Argument(help: "Specify email address to query.")
-    var emailAddress: EmailAddress
+    var emailAddress: String
 
     @Flag(name: .shortAndLong, help: "Save config files to working directory.")
     var save: Bool = false
@@ -37,7 +37,7 @@ struct Autoconfig: AsyncParsableCommand {
         }
     }
 
-    @discardableResult private func query(_ emailAddress: EmailAddress, domain: String? = nil) async throws -> Bool {
+    @discardableResult private func query(_ emailAddress: String, domain: String? = nil) async throws -> Bool {
         var found: Bool = false  // Keep track of findings while looping sources
         for source in Source.allCases {
             print("Querying the \(source) for \(domain ?? (try? emailAddress.host) ?? emailAddress)…")

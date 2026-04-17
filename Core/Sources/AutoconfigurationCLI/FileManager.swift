@@ -2,7 +2,7 @@ import Autoconfiguration
 import Foundation
 
 extension FileManager {
-    func save(_ emailAdress: EmailAddress, data: (Data, Data), to url: URL = Bundle.main.executableDirectory) throws {
+    func save(_ emailAdress: String, data: (Data, Data), to url: URL = Bundle.main.executableDirectory) throws {
         guard fileExists(at: url, isDirectory: true) else {
             throw URLError(.fileDoesNotExist)
         }

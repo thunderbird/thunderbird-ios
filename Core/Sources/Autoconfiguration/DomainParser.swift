@@ -5,7 +5,7 @@ struct DomainParser {
     let host: String
     let suffix: String
 
-    init(_ emailAddress: EmailAddress, suffixList: [String]) throws {
+    init(_ emailAddress: String, suffixList: [String]) throws {
         let host: String = try emailAddress.host
         try self.init(host: host, suffixList: suffixList)
     }

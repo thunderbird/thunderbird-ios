@@ -2,13 +2,13 @@ import Foundation
 
 // Translate client config XML into JSON
 class XMLToJSONParser: NSObject, XMLParserDelegate {
-    private(set) var emailAddress: EmailAddress!
+    private(set) var emailAddress: String!
     private(set) var dictionary: [String: Any] = [:]
 
     var data: Data {
         get throws {
             try JSONSerialization.data(
-                dictionary,
+                withJSONObject: dictionary,
                 options: [
                     .withoutEscapingSlashes,
                     .prettyPrinted,
@@ -17,7 +17,7 @@ class XMLToJSONParser: NSObject, XMLParserDelegate {
         }
     }
 
-    init(_ emailAddress: EmailAddress, data: Data) {
+    init(_ emailAddress: String, data: Data) {
         parser = XMLParser(data: data)
         super.init()
         self.emailAddress = emailAddress
@@ -172,7 +172,7 @@ class XMLToJSONParser: NSObject, XMLParserDelegate {
 }
 
 private extension String {
-    func applying(_ emailAddress: EmailAddress) -> Self {
+    func applying(_ emailAddress: Self) -> Self {
         var string: Self = replacingOccurrences(of: "%EMAILADDRESS%", with: emailAddress)
         string = string.replacingOccurrences(of: "%EMAILLOCALPART%", with: (try? emailAddress.local) ?? "")
         string = string.replacingOccurrences(of: "%EMAILDOMAIN%", with: (try? emailAddress.host) ?? "")
