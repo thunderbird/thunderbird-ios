@@ -2,9 +2,9 @@ import Autoconfiguration
 import SwiftUI
 
 struct AutoconfigView: View {
-    let emailAddress: EmailAddress
+    let emailAddress: String
 
-    init(_ config: Binding<ClientConfig?>, for emailAddress: EmailAddress) {
+    init(_ config: Binding<ClientConfig?>, for emailAddress: String) {
         self.emailAddress = emailAddress
         _config = config
     }
@@ -93,6 +93,6 @@ struct AutoconfigView: View {
         .padding()
 }
 
-extension EmailAddress {
+extension String {
     var isEmailAddress: Bool { (try? host) != nil && (try? local) != nil }
 }

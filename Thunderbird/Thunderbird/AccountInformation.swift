@@ -124,7 +124,9 @@ struct AccountInformation: View {
             refreshAccount()
         }
         .scrollContentBackground(.hidden)
+        #if os(iOS)
         .navigationBarTitleDisplayMode(NavigationBarItem.TitleDisplayMode.inline)
+        #endif
         .navigationTitle("account_server_information_title")
     }
 }

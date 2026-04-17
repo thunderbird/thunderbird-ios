@@ -52,9 +52,8 @@ struct EditServerView: View {
                 Text("Connection Security")
                 Spacer()
                 Picker("Connection Security", selection: $server.connectionSecurity) {
-                    ForEach(ConnectionSecurity.allCases) { security in
-                        Text(security.text)
-                            .tag(security)
+                    ForEach(Server.ConnectionSecurity.allCases, id: \.self) {
+                        Text($0.description.uppercased())
                     }
                 }
             }
@@ -101,15 +100,6 @@ private extension AuthenticationType {
         switch self {
         case .oAuth2: description
         default: description.capitalized
-        }
-    }
-}
-
-private extension ConnectionSecurity {
-    var text: String {
-        switch self {
-        case .none: description.capitalized
-        default: description
         }
     }
 }

@@ -188,6 +188,7 @@ struct SingleAttachment: View {
     }
 }
 
+#if os(iOS)
 struct WebView: UIViewRepresentable {
     let htmlString: String
 
@@ -199,6 +200,22 @@ struct WebView: UIViewRepresentable {
         webView.loadHTMLString(htmlString, baseURL: nil)
     }
 }
+#else
+struct WebView: View {
+    let htmlString: String
+
+    var body: some View {
+        ContentUnavailableView("", systemImage: "rectangle.slash")
+    }
+}
+#endif
+
+#if os(macOS)
+extension ToolbarItemPlacement {
+    static var bottomBar: Self { automatic }
+    static var topBarTrailing: Self { automatic }
+}
+#endif
 
 struct SenderView: View {
     init(email: TempEmail) {
@@ -332,7 +349,9 @@ struct SenderView: View {
                     }.listRowSeparator(.hidden)
 
                 }
+                #if os(iOS)
                 .listSectionSpacing(.compact)
+                #endif
             }
             .presentationDetents([.medium])
 

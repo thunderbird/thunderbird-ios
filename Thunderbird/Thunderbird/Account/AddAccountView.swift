@@ -3,14 +3,14 @@ import Autoconfiguration
 import SwiftUI
 
 struct AddAccountView: View {
-    init(_ emailAddress: EmailAddress = "") {
+    init(_ emailAddress: String = "") {
         self.emailAddress = emailAddress
     }
 
     @Environment(Accounts.self) private var accounts: Accounts
     @Environment(\.dismiss) var dismiss
     @State private var showManual: Bool = false
-    @State private var emailAddress: EmailAddress
+    @State private var emailAddress: String
     @State private var account: Account?
     @State private var config: ClientConfig?
     @State private var error: Error?

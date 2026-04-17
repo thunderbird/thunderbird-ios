@@ -4,9 +4,9 @@ import Autoconfiguration
 import SwiftUI
 
 struct OAuthButton: View {
-    let emailAddress: EmailAddress
+    let emailAddress: String
 
-    init(_ emailAddress: EmailAddress = "", token: Binding<Token?>, error: Binding<Error?>) {
+    init(_ emailAddress: String = "", token: Binding<Token?>, error: Binding<Error?>) {
         self.emailAddress = emailAddress
         _token = token
         _error = error
@@ -21,7 +21,7 @@ struct OAuthButton: View {
         do {
             error = nil
             guard let request else { return }
-            let url: URL = try await webAuthenticationSession.authenticate(
+            let _: URL = try await webAuthenticationSession.authenticate(
                 using: request.authURL(hint: emailAddress),
                 callback: .customScheme("\(Bundle.main.schemes.first!)"),
                 additionalHeaderFields: [:])

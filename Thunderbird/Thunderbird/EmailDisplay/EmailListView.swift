@@ -12,7 +12,9 @@ struct EmailListView: View {
     @Environment(Accounts.self) private var accounts: Accounts
     @Environment(\.openURL) private var openURL
     let tempEmails = TempEmail.sampleData
+    #if os(iOS)
     @State var editMode: EditMode = .inactive
+    #endif
     @State private var selections = Set<UUID>()
 
     //Hardcoded for testing
@@ -71,15 +73,20 @@ struct EmailListView: View {
                         List(tempEmails, id: \.uuid, selection: $selections) { email in
                             EmailCellView(email: email)
                                 .listRowSeparator(.hidden)
-                                .onLongPressGesture {
-                                    withAnimation {
-                                        editMode = .active
-                                    }
+                                #if os(iOS)
+                            .onLongPressGesture {
+                                withAnimation {
+                                    editMode = .active
                                 }
+                            }
+                                #endif
                         }
-                    }.environment(\.editMode, $editMode)
-                        .listStyle(.plain)
-                        .scrollContentBackground(.hidden)
+                    }
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
+                    #if os(iOS)
+                    .environment(\.editMode, $editMode)
+                    #endif
                 }
                 Button {
                     // Action
@@ -97,8 +104,11 @@ struct EmailListView: View {
                 .disabled(true)
             }
             .navigationTitle("inbox_header")
+            #if os(iOS)
             .navigationBarBackButtonHidden(editMode.isEditing)
+            #endif
             .toolbar {
+                #if os(iOS)
                 ToolbarItem(placement: .cancellationAction) {
                     if editMode.isEditing == true {
                         Button(
@@ -110,6 +120,7 @@ struct EmailListView: View {
                             })
                     }
                 }
+                #endif
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Button(
@@ -133,6 +144,7 @@ struct EmailListView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
+                        #if os(iOS)
                         Button(
                             editMode.isEditing ? "done_button" : "select_all_button",
                             action: {
@@ -141,6 +153,7 @@ struct EmailListView: View {
                                 }
                                 selectAll()
                             })
+                        #endif
                         Button(
                             "mark_all_read_button",
                             action: {

@@ -89,10 +89,10 @@ private extension Image {
 @Observable
 class LoginDetails {
     var inProgressAccount: Account?
-    var enteredEmail: EmailAddress
+    var enteredEmail: String
     var serverProtocol: ServerProtocol?
 
-    init(inProgressAccount: Account? = nil, enteredEmail: EmailAddress = "", serverProtocol: ServerProtocol? = nil) {
+    init(inProgressAccount: Account? = nil, enteredEmail: String = "", serverProtocol: ServerProtocol? = nil) {
         self.inProgressAccount = inProgressAccount
         self.enteredEmail = enteredEmail
         self.serverProtocol = serverProtocol

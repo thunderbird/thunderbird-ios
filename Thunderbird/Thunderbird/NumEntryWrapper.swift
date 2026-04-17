@@ -25,11 +25,13 @@ struct NumEntryWrapper: View {
         Text(headerText)
             .listRowSeparator(.visible, edges: .bottom)
         TextField(suggestionText, value: $entryText, formatter: NumberFormatter())
-            .keyboardType(.numberPad)
-            .listRowSeparator(.hidden)
-            .textFieldStyle(.plain)
+            #if os(iOS)
+        .keyboardType(.numberPad)
+        .listRowSeparator(.hidden)
+        .textFieldStyle(.plain)
+        .autocapitalization(.none)
+            #endif
             .autocorrectionDisabled()
-            .autocapitalization(.none)
             .focusable()
 
     }
