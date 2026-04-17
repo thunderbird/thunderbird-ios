@@ -5,7 +5,7 @@ public protocol EmailAddressProtocol: Sendable {
 }
 
 /// Shared email address model suitable for IMAP, JMAP and SMTP
-public struct EmailAddress: Codable, CustomStringConvertible, Equatable, EmailAddressProtocol, ExpressibleByStringLiteral, Identifiable {
+public struct EmailAddress: Codable, CustomStringConvertible, Equatable, EmailAddressProtocol, ExpressibleByStringLiteral, Hashable, Identifiable {
     public let value: String
     public let label: String?
 
@@ -17,10 +17,18 @@ public struct EmailAddress: Codable, CustomStringConvertible, Equatable, EmailAd
         value.contains("@") ? value.components(separatedBy: "@").dropLast().joined(separator: "@") : nil
     }
 
+    public var isEmailAddress: Bool { !(host ?? "").isEmpty && !(local ?? "").isEmpty }
+
     public init(_ value: String, label: String? = nil) {
-        let label: String = label?.trimmed() ?? ""
-        self.label = !label.isEmpty ? label : nil
-        self.value = value.trimmed()
+        let components: [String] = value.trimmed().components(separatedBy: "<")
+        if components.count == 2, components[1].hasSuffix(">") {  // "Example Name <name@example.com>"
+            self.value = "\(components[1].dropLast())"
+            self.label = label ?? components[0].trimmed()
+        } else {
+            let label: String = label?.trimmed() ?? ""
+            self.value = components[0].trimmed()
+            self.label = !label.isEmpty ? label : nil
+        }
     }
 
     // MARK: Codable
@@ -48,14 +56,7 @@ public struct EmailAddress: Codable, CustomStringConvertible, Equatable, EmailAd
 
     // MARK: ExpressibleByStringLiteral
     public init(stringLiteral value: StringLiteralType) {
-        let components: [String] = value.trimmed().components(separatedBy: "<")
-        if components.count == 2, components[1].hasSuffix(">") {
-            // "Example Name <name@example.com>"
-            self.init("\(components[1].dropLast())", label: components[0].trimmed())
-        } else {
-            // "name@example.com"
-            self.init(components[0].trimmed())
-        }
+        self.init(value)
     }
 
     // MARK: Identifiable
@@ -77,11 +78,5 @@ extension EmailAddress {
 
         // MARK: EmailAddressProtocol
         public var addresses: [EmailAddress] { email.flatMap { $0.addresses } }
-    }
-}
-
-private extension String {
-    func trimmed() -> Self {
-        trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

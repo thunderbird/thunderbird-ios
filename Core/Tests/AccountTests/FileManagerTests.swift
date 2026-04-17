@@ -40,3 +40,17 @@ struct FileManagerTests {
         #expect(try FileManager.default.fileExists(at: url) == false)
     }
 }
+
+struct URLTests {
+    @Test func documents() {
+        #expect(URL.documents("Test.json").absoluteString.hasSuffix("/Test.json"))
+        #expect(URL.documents("Test.txt") == .temporaryDirectory.appending(path: "Test.txt"))
+        #expect(URL.documents() == .temporaryDirectory)
+    }
+}
+
+struct ProcessInfoTests {
+    @Test func isTestEnvironment() {
+        #expect(ProcessInfo.processInfo.isTestEnvironment == true)
+    }
+}

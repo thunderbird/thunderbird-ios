@@ -18,6 +18,14 @@ struct EmailAddressTests {
         #expect(EmailAddress(" ").local == nil)
     }
 
+    @Test func isEmailAddress() {
+        #expect(EmailAddress("user@example.com").isEmailAddress == true)
+        #expect(EmailAddress("h@x0r@192.168.1.1").isEmailAddress == true)
+        #expect(EmailAddress("abc@").isEmailAddress == false)
+        #expect(EmailAddress("example.com").isEmailAddress == false)
+        #expect(EmailAddress(" ").isEmailAddress == false)
+    }
+
     @Test func valueInit() {
         #expect(EmailAddress("name@example.com", label: "Example Name").value == "name@example.com")
         #expect(EmailAddress("name@example.com", label: "Example Name").label == "Example Name")

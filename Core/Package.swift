@@ -26,6 +26,11 @@ let package: Package = Package(
                 "Autoconfiguration"
             ]),
         .library(
+            name: "Core",
+            targets: [
+                "Core"
+            ]),
+        .library(
             name: "EmailAddress",
             targets: [
                 "EmailAddress"
@@ -61,7 +66,16 @@ let package: Package = Package(
         .package(url: "https://github.com/apple/swift-nio-transport-services", branch: "main")
     ],
     targets: [
-        .target(name: "Account"),
+        .target(
+            name: "Account",
+            dependencies: [
+                "Autoconfiguration",
+                "EmailAddress",
+                "IMAP",
+                "JMAP",
+                "MIME",
+                "SMTP"
+            ]),
         .testTarget(
             name: "AccountTests",
             dependencies: [
@@ -82,6 +96,11 @@ let package: Package = Package(
             name: "AutoconfigurationTests",
             dependencies: [
                 "Autoconfiguration"
+            ]),
+        .target(
+            name: "Core",
+            dependencies: [
+                "Account"
             ]),
         .target(name: "EmailAddress"),
         .testTarget(
@@ -113,9 +132,7 @@ let package: Package = Package(
             dependencies: [
                 "JMAP"
             ]),
-        .target(
-            name: "MIME",
-            dependencies: []),
+        .target(name: "MIME"),
         .testTarget(
             name: "MIMETests",
             dependencies: [

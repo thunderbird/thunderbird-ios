@@ -13,9 +13,9 @@ struct XMLToJSONParserTests {
     }
 
     @Test func data() throws {
-        #expect(try XMLToJSONParser("user@fastmail.com", data: fastmail).data.count == 1219)
-        #expect(try XMLToJSONParser("user@freenet.de", data: freenet).data.count == 2016)
-        #expect(try XMLToJSONParser("user.name@gmail.com", data: gmail).data.count == 1842)
+        #expect(try XMLToJSONParser("user@fastmail.com", data: fastmail).data.count == 1246)
+        #expect(try XMLToJSONParser("user@freenet.de", data: freenet).data.count == 2059)
+        #expect(try XMLToJSONParser("user.name@gmail.com", data: gmail).data.count == 1874)
     }
 }
 

@@ -1,5 +1,6 @@
 import Foundation
 
+// Read and write accounts to JSON file on disk; stopgap for account persistence
 extension FileManager {
     func readAccounts(from url: URL) throws -> [Account] {
         lock.lock()
@@ -18,7 +19,7 @@ extension FileManager {
         defer {
             lock.unlock()
         }
-        let data: Data = try JSONEncoder().encode(accounts)
+        let data: Data = try JSONEncoder(.prettyPrinted).encode(accounts)
         try? removeItem(at: url)
         guard !accounts.isEmpty else { return }
         try data.write(to: url)
@@ -32,4 +33,24 @@ extension FileManager {
     }
 }
 
+extension JSONEncoder {
+    convenience init(_ outputFormatting: OutputFormatting) {
+        self.init()
+        self.outputFormatting = outputFormatting
+    }
+}
+
+extension URL {
+    static var accounts: Self { documents("Accounts.json") }
+
+    static func documents(_ path: String = "") -> Self {
+        (isTestEnvironment ? Self.temporaryDirectory : .documentsDirectory).appending(path: path)
+    }
+}
+
+extension ProcessInfo {
+    var isTestEnvironment: Bool { environment["XCTestSessionIdentifier"] != nil }
+}
+
+var isTestEnvironment: Bool { ProcessInfo.processInfo.isTestEnvironment }
 private let lock: NSLock = NSLock()

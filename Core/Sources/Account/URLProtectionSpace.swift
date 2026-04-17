@@ -2,7 +2,7 @@ import Foundation
 
 extension URLProtectionSpace {
 
-    ///  Named secure realm for Thunderbird app-owned accounts on the keychain
+    // Named secure realm for Thunderbird app-owned accounts on the keychain
     static let account: URLProtectionSpace = URLProtectionSpace(host: "thunderbird.net")
 
     convenience init(host: String) {

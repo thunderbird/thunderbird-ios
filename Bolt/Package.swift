@@ -11,6 +11,11 @@ let package: Package = Package(
     ],
     products: [
         .library(
+            name: "Bolt",
+            targets: [
+                "Bolt"
+            ]),
+        .library(
             name: "BoltUI",
             targets: [
                 "BoltUI"
@@ -22,6 +27,11 @@ let package: Package = Package(
             ])
     ],
     targets: [
+        .target(
+            name: "Bolt",
+            dependencies: [
+                "BoltUI"
+            ]),
         .target(
             name: "BoltUI",
             dependencies: [
