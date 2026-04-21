@@ -1,3 +1,14 @@
 "onboarding_welcome_developed_by" = "Air a leasachadh le sgioba shònraichte aig MZLA Technologies agus coimhearsnachd eadar-nàiseanta de shaor-thoilich. Na phàirt de theaghlach Mozilla.";
 "onboarding_welcome_text" = "Aplacaid puist-d airson iOS le còd fosgailte gun sanasachd is cudrom air prìobhaideachd.";
 "onboarding_welcome_start_button" = "Dèanamaid toiseach-tòiseachaidh";
+"onboarding_welcome_text_early" = "Tha an aplacaid seo fo obair-leasachaidh. Mòran taing airson fheuchainn agus tha fàilte ro bheachdan is sinne ag obair air.";
+"account_oauth_sign_in_button" = "Clàraich a-steach";
+"account_sign_out_button" = "Clàraich a-mach";
+"account_oauth_sign_in_with_google_button" = "Clàraich a-steach le Google";
+"account_oauth_sign_in_description" = "Ath-stiùirichidh sinn gu solaraiche a’ phuist-d agad airson clàradh a-steach. Feumaidh tu cead-inntrigidh do chunntas a’ phuist-d agad a thoirt dhan aplacaid.";
+"account_oauth_loading_message" = "Gad chlàradh a-steach le OAuth";
+"account_oauth_loading_error" = "Dh’fhàillig an clàradh a-steach le OAuth";
+"account_server_settings_email_address_label" = "Seòladh puist-d";
+"account_server_settings_protocol_type_label" = "Pròtacal";
+"account_server_settings_security_label" = "Cleachd SSL/TLS";
+"account_server_settings_port_label" = "Port";
