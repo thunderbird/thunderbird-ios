@@ -3,5 +3,5 @@
 "account_server_settings_security_label" = "নিরাপত্তা";
 "account_server_settings_port_label" = "পোর্ট";
 "account_server_settings_authentication_label" = "যাচাইকরণ";
-"account_server_settings_username_label" = "নাম";
 "account_server_settings_authentication_none" = "কোনটি নয়";
+"account_oauth_sign_in_description" = "সাইন ইন করতে আমরা আপনাকে আপনার ইমেল প্রোভাইডারের কাছে পাঠিয়ে দেব।আপনাকে অ্যাপটিকে আপনার ইমেল অ্যাকাউন্ট ব্যবহারের অনুমতি দিতে হবে।";
