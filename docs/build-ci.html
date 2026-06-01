@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Build &amp; CI — Thunderbird for iOS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="assets/docs.css" />
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="index.html" class="brand"><span class="logo">🕊</span> Thunderbird&nbsp;iOS&nbsp;Docs</a>
+  <div class="links">
+    <a href="index.html">Overview</a>
+    <a href="level1-context.html">L1 · Context</a>
+    <a href="level2-containers.html">L2 · Containers</a>
+    <a href="level3-components.html">L3 · Components</a>
+    <a href="level4-code.html">L4 · Code</a>
+    <a href="data-flows.html">Flows</a>
+    <a href="build-ci.html" class="active">Build &amp; CI</a>
+  </div>
+  <div class="spacer"></div>
+  <button id="toc-toggle" class="icon-btn toc-toggle" title="Contents">☰</button>
+  <button id="theme-toggle" class="icon-btn" title="Toggle theme">☾</button>
+</nav>
+
+<div class="layout">
+  <aside class="toc">
+    <div class="toc-title">On this page</div>
+    <a href="#workspace">Workspace &amp; schemes</a>
+    <a href="#testing">Testing</a>
+    <a href="#ci">CI pipelines</a>
+    <a href="#security">Security scanning</a>
+    <a href="#release">Release (fastlane)</a>
+    <a href="#l10n">Localization</a>
+    <a href="#docs">Documentation</a>
+  </aside>
+
+  <main class="content">
+    <span class="eyebrow">Operations</span>
+    <h1>Build &amp; CI</h1>
+    <p class="lead">How the three units come together into a shippable app, how they're tested, and the automation that guards the main branch.</p>
+
+    <h2 id="workspace">Workspace &amp; schemes</h2>
+    <p><code>Thunderbird.xcworkspace</code> is the unit of work — it references the app project, the <code>Bolt</code> and <code>Core</code> packages, the test plan, and the <code>docs</code> folder. The app project ships two shared schemes.</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Setting</th><th>Value</th></tr></thead>
+      <tbody>
+        <tr><td>Workspace</td><td><code>Thunderbird.xcworkspace</code></td></tr>
+        <tr><td>App project</td><td><code>Thunderbird/Thunderbird.xcodeproj</code></td></tr>
+        <tr><td>Shared schemes</td><td><code>Thunderbird</code>, <code>ThunderbirdTests</code></td></tr>
+        <tr><td>Bundle ID (app / tests)</td><td><code>net.thunderbird.ios</code> / <code>net.thunderbird.ThunderbirdTests</code></td></tr>
+        <tr><td>Deployment targets</td><td>iOS 18.0 · macOS 15.0 · watchOS 11.0</td></tr>
+        <tr><td>Swift language / tools</td><td>6.0 / 6.2</td></tr>
+        <tr><td>Code signing</td><td>Manual; no bitcode</td></tr>
+      </tbody>
+    </table></div>
+
+    <h2 id="testing">Testing</h2>
+    <p><code>Thunderbird.xctestplan</code> aggregates <strong>10 test targets</strong>. The bulk of the suite is in <code>Core/Tests</code> (13,106 LOC) — protocol clients and parsers verified against recorded fixtures. Server-dependent integration tests (live IMAP/SMTP/JMAP, DNS) are present but skipped in the default plan.</p>
+    <div class="acc-controls">
+      <button class="btn-ghost" id="expand-all">＋ Expand all</button>
+      <button class="btn-ghost" id="collapse-all">－ Collapse all</button>
+    </div>
+    <div class="accordion">
+      <div class="accordion-item">
+        <button class="accordion-trigger"><span>Test targets</span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <div class="table-wrap"><table>
+            <thead><tr><th>Target</th><th>Covers</th><th>Skipped (integration)</th></tr></thead>
+            <tbody>
+              <tr><td><code>IMAPTests</code></td><td>Commands, parsing, mailbox ops</td><td><code>allCommands()</code></td></tr>
+              <tr><td><code>SMTPTests</code></td><td>Send pipeline</td><td><code>send(server:)</code></td></tr>
+              <tr><td><code>JMAPTests</code></td><td>Methods, models</td><td><code>allMethods()</code>, <code>URLSession</code></td></tr>
+              <tr><td><code>MIMETests</code></td><td>Encode/decode (with resource corpora)</td><td>—</td></tr>
+              <tr><td><code>AccountTests</code></td><td>Account/server modeling</td><td><code>autoconfig()</code>, <code>imapClient()</code>, <code>jmapClient()</code></td></tr>
+              <tr><td><code>AutoconfigurationTests</code></td><td>XML parsing, suffix list</td><td>DNS, DomainParser, URLSession</td></tr>
+              <tr><td><code>EmailAddressTests</code></td><td>Address parsing</td><td>—</td></tr>
+              <tr><td><code>BoltUITests</code> / <code>EditorTests</code></td><td>Design-system</td><td>Color tests</td></tr>
+              <tr><td><code>ThunderbirdTests</code></td><td>App utils (SmartDateFormatter, FeatureFlags)</td><td>—</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </div>
+    </div>
+
+    <h2 id="ci">CI pipelines</h2>
+    <p>Thirteen GitHub Actions workflows under <code>.github/workflows/</code>. The core gates run on every push/PR to <code>main</code>.</p>
+    <div class="grid grid-2">
+      <div class="card"><span class="badge primary">test.yml</span><p style="margin:.5rem 0 0;"><strong>Xcode Build.</strong> On push/PR to main, <code>macos-26</code>: resolve deps, build, analyze, boot an iPhone 17 simulator, run tests, archive (unsigned Release).</p></div>
+      <div class="card"><span class="badge">swift-format.yml</span><p style="margin:.5rem 0 0;"><strong>Swift Format.</strong> <code>swift-format lint . --parallel --recursive --strict</code> — formatting is enforced, not advisory.</p></div>
+      <div class="card"><span class="badge warning">shippable-builds.yml</span><p style="margin:.5rem 0 0;"><strong>TestFlight.</strong> Weekly + manual; Xcode 26.0 on <code>macos-26</code>, <code>thunderbird_release</code> environment, calls the fastlane <code>beta</code> lane.</p></div>
+      <div class="card"><span class="badge">deploy-docs.yml</span><p style="margin:.5rem 0 0;"><strong>Docs.</strong> Builds &amp; publishes the developer documentation.</p></div>
+    </div>
+    <p style="font-size:.85rem;color:hsl(var(--muted-foreground));margin-top:.75rem;">Plus PR automation: <code>pulls-auto-assign</code>, <code>pulls-merged</code>, and the <code>needinfo-*</code> trio.</p>
+
+    <h2 id="security">Security scanning</h2>
+    <p>An unusually thorough supply-chain &amp; SAST posture for a mobile app — four dedicated security workflows:</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Workflow</th><th>Tool</th><th>Cadence</th></tr></thead>
+      <tbody>
+        <tr><td><code>security-codeql.yml</code></td><td>CodeQL (actions, ruby, swift; manual build mode)</td><td>Weekly (Thu)</td></tr>
+        <tr><td><code>security-scorecard.yml</code></td><td>OpenSSF Scorecard supply-chain checks</td><td>Weekly (Wed) + push</td></tr>
+        <tr><td><code>security-fluidattacks.yml</code></td><td>Fluid Attacks SAST + SCA → SARIF</td><td>Weekly (Mon)</td></tr>
+        <tr><td><code>zizmor.yml</code></td><td>GitHub Actions workflow security analysis</td><td>Push / PR</td></tr>
+      </tbody>
+    </table></div>
+    <p style="font-size:.85rem;color:hsl(var(--muted-foreground));">Scanner configs live in <code>config/fluidattacks/</code> (<code>config-sast.yaml</code>, <code>config-sca.yaml</code>); wrappers in <code>CI/security_fluidattacks_scan</code>.</p>
+
+    <h2 id="release">Release (fastlane)</h2>
+    <p>Two lanes in <code>fastlane/Fastfile</code>:</p>
+    <div class="grid grid-2">
+      <div class="card"><span class="badge warning">beta</span><p style="margin:.5rem 0 0;">Build &amp; upload to <strong>TestFlight</strong>. Build number is a timestamp (<code>YYYYMMDDHHmm</code>); handles signing &amp; provisioning.</p></div>
+      <div class="card"><span class="badge success">release</span><p style="margin:.5rem 0 0;">Build &amp; submit to the <strong>App Store</strong>.</p></div>
+    </div>
+
+    <h2 id="l10n">Localization</h2>
+    <p><strong>69</strong> language bundles under <code>Thunderbird/Thunderbird/Localization/*.lproj</code> — from Arabic and Chinese (Simplified &amp; Traditional) to Kabyle, Esperanto, and Welsh — managed through Thunderbird's translation tooling. The UI is built string-key-first so new locales drop in without code changes.</p>
+
+    <h2 id="docs">Documentation</h2>
+    <ul>
+      <li><strong>These C4 docs</strong> — static HTML in <code>docs/</code> (Tailwind + shadcn-styled components).</li>
+      <li><strong>Developer handbook</strong> — an mdBook (<code>docs/book.toml</code>): <em>“Thunderbird for iOS — Developer Documentation,”</em> with mermaid, page-ToC, and last-changed preprocessors, deployed via <code>deploy-docs.yml</code>.</li>
+      <li><strong>In-tree DocC</strong> — <code>Thunderbird/Thunderbird/Documentation.docc/</code>: <code>Thunderbird.md</code>, <code>Design.md</code>, <code>Database.md</code>, <code>Localization.md</code>.</li>
+    </ul>
+
+    <div class="page-nav">
+      <a class="pn-prev" href="data-flows.html"><small>Previous</small>← Runtime Flows</a>
+      <a class="pn-next" href="index.html"><small>Back to</small>Overview →</a>
+    </div>
+    <footer class="docfoot">Thunderbird for iOS — Architecture Documentation</footer>
+  </main>
+</div>
+
+<script src="assets/docs.js"></script>
+</body>
+</html>

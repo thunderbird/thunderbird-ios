@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Level 1 · System Context — Thunderbird for iOS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="assets/docs.css" />
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="index.html" class="brand"><span class="logo">🕊</span> Thunderbird&nbsp;iOS&nbsp;Docs</a>
+  <div class="links">
+    <a href="index.html">Overview</a>
+    <a href="level1-context.html" class="active">L1 · Context</a>
+    <a href="level2-containers.html">L2 · Containers</a>
+    <a href="level3-components.html">L3 · Components</a>
+    <a href="level4-code.html">L4 · Code</a>
+    <a href="data-flows.html">Flows</a>
+    <a href="build-ci.html">Build &amp; CI</a>
+  </div>
+  <div class="spacer"></div>
+  <button id="toc-toggle" class="icon-btn toc-toggle" title="Contents">☰</button>
+  <button id="theme-toggle" class="icon-btn" title="Toggle theme">☾</button>
+</nav>
+
+<div class="layout">
+  <aside class="toc">
+    <div class="toc-title">On this page</div>
+    <a href="#diagram">Context diagram</a>
+    <a href="#actors">Actors</a>
+    <a href="#systems">External systems</a>
+    <a href="#scope">What's in scope</a>
+    <a href="#why">Why these choices</a>
+  </aside>
+
+  <main class="content">
+    <span class="eyebrow">C4 · Level 1</span>
+    <h1>System Context</h1>
+    <p class="lead">The 50,000-foot view. One box is the whole product; everything else is a person who uses it or an external system it depends on. No internal structure yet — just boundaries and relationships.</p>
+
+    <h2 id="diagram">Context diagram</h2>
+    <div class="card">
+      <div class="c4">
+        <div class="c4-row">
+          <div class="c4-box person">
+            <div class="c4-type">Person</div>
+            <div class="c4-name">Email User</div>
+            <div class="c4-desc">Reads, triages, and (soon) composes mail on iPhone &amp; iPad.</div>
+          </div>
+        </div>
+        <div class="c4-arrow">│</div>
+        <div class="c4-label">reads &amp; manages mail using</div>
+        <div class="c4-arrow">▼</div>
+        <div class="c4-row">
+          <div class="c4-box system" style="max-width:360px;">
+            <div class="c4-type">Software System</div>
+            <div class="c4-name">Thunderbird for iOS</div>
+            <div class="c4-desc">Native SwiftUI email client. Connects directly to the user's mail providers — no Thunderbird-operated backend in the data path.</div>
+          </div>
+        </div>
+        <div class="c4-arrow">▼</div>
+        <div class="c4-label">connects directly to the user's providers over the open internet</div>
+        <div class="c4-row" style="margin-top:1rem;">
+          <div class="c4-box external"><div class="c4-type">External</div><div class="c4-name">IMAP / SMTP servers</div><div class="c4-desc">Receive &amp; send mail (Gmail, iCloud, generic hosts).</div></div>
+          <div class="c4-box external"><div class="c4-type">External</div><div class="c4-name">JMAP servers</div><div class="c4-desc">Modern mail API (Fastmail, Thundermail).</div></div>
+          <div class="c4-box external"><div class="c4-type">External</div><div class="c4-name">OAuth2 providers</div><div class="c4-desc">Google, Microsoft, Yahoo, AOL, Fastmail, Thundermail.</div></div>
+        </div>
+        <div class="c4-row">
+          <div class="c4-box external"><div class="c4-type">External</div><div class="c4-name">Autoconfig sources</div><div class="c4-desc">Mozilla ISPDB, provider <code>.well-known</code>, DNS MX/SRV.</div></div>
+          <div class="c4-box external"><div class="c4-type">External</div><div class="c4-name">Feature-flag CDN</div><div class="c4-desc">GitHub Pages JSON config per distribution.</div></div>
+          <div class="c4-box external"><div class="c4-type">External</div><div class="c4-name">Apple Keychain</div><div class="c4-desc">On-device secure credential storage.</div></div>
+        </div>
+      </div>
+      <p class="diagram-caption">C4 Level 1 — Thunderbird for iOS talks to mail providers directly; Thunderbird the organization operates no mail relay in this path.</p>
+    </div>
+
+    <div class="callout info">
+      <span class="ci">🔑</span>
+      <span class="ct"><strong>Key architectural fact</strong>
+      The app is a <em>direct</em> mail client. There is no proprietary sync server between the device and the user's mailbox — the engine speaks IMAP/SMTP/JMAP to the provider itself. This shapes every level below: networking, security, and offline behavior all live on-device.</span>
+    </div>
+
+    <h2 id="actors">Actors</h2>
+    <div class="accordion">
+      <div class="accordion-item">
+        <button class="accordion-trigger"><span>👤 Email User</span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p>The single human actor. Brings one or more existing email accounts (the app does not provision mailboxes). Goals: add accounts quickly, see new mail, read messages with proper rendering and attachments, and manage folders. Interacts only through the SwiftUI app on iOS 18+.</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 id="systems">External systems</h2>
+    <div class="accordion">
+      <div class="accordion-item">
+        <button class="accordion-trigger"><span>📥 IMAP / SMTP servers</span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p>The classic pairing: IMAP4rev1 for reading/synchronizing mailboxes and SMTP for submission. The engine speaks both over TLS or STARTTLS via SwiftNIO. Used for any provider without JMAP, and for OAuth2 providers such as Google, Microsoft, and Yahoo.</p>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <button class="accordion-trigger"><span>⚡ JMAP servers</span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p>The modern JSON-over-HTTP mail protocol (RFC 8620). A single batched request can fetch mailboxes, query messages, and resolve threads — no per-mailbox <code>SELECT</code> round-trips. Detected for Fastmail and used by Thundermail. Preferred over IMAP when available for an account.</p>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <button class="accordion-trigger"><span>🔐 OAuth2 identity providers</span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p>Token-based sign-in instead of passwords. The app ships pre-registered client configurations for <strong>AOL, Fastmail, Google, Microsoft, Thundermail (Keycloak), and Yahoo</strong>. The provider is chosen by matching the email domain's MX records, then an <code>ASWebAuthenticationSession</code> performs the browser-based flow.</p>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <button class="accordion-trigger"><span>🧭 Autoconfiguration sources</span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p>So users type only an email address. Sources are tried in trust order: the provider's own <code>.well-known/autoconfig</code>, the Mozilla ISPDB (<code>autoconfig.thunderbird.net</code>), and — as a fallback — DNS <strong>MX</strong> lookup to derive the real provider domain. Results are decoded from Thunderbird's autoconfig XML into a typed <code>ClientConfig</code>.</p>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <button class="accordion-trigger"><span>🚩 Feature-flag CDN</span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p>Per-distribution JSON hosted on GitHub Pages (<code>thunderbird.github.io/thunderbird-ios/feature_flag_config_{debug,beta,appstore}.json</code>). Lets features be toggled remotely without a release, gated by a user opt-in for remote flags.</p>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <button class="accordion-trigger"><span>🗝 Apple Keychain</span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p>Credentials (passwords and OAuth2 tokens) never sit in app storage or in account JSON. They are written to the system keychain via <code>URLCredentialStorage</code>, keyed per account/protocol. See <a href="level4-code.html#account">Level 4 · Account bridging</a>.</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 id="scope">What's in scope</h2>
+    <div class="grid grid-2">
+      <div class="card">
+        <h4 style="margin-top:0;color:hsl(var(--success));">✓ In the system</h4>
+        <ul>
+          <li>Account onboarding &amp; autoconfiguration</li>
+          <li>IMAP/SMTP and JMAP connectivity</li>
+          <li>Mailbox &amp; message listing, reading, HTML rendering, attachments</li>
+          <li>OAuth2 and password authentication</li>
+          <li>On-device credential storage</li>
+          <li>69-language localization</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0;color:hsl(var(--muted-foreground));">○ Outside / emerging</h4>
+        <ul>
+          <li>No Thunderbird-operated sync backend</li>
+          <li>Compose/send UI is present in the engine; app compose is still landing</li>
+          <li>OAuth2 token exchange in-app is partially stubbed (see Level 4)</li>
+          <li>Push/IDLE wired in the engine; not yet surfaced as background refresh</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2 id="why">Why these choices</h2>
+    <div class="accordion">
+      <div class="accordion-item">
+        <button class="accordion-trigger"><span>Why a direct client with no backend?</span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p>Privacy and trust. Mail flows only between the device and the user's own provider; Thunderbird never sees message content. The cost is that synchronization, threading, and connection management must all be solved client-side — which is exactly what the <a href="level2-containers.html">Core engine</a> exists to do.</p>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <button class="accordion-trigger"><span>Why support both IMAP and JMAP?</span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p>IMAP is universal; JMAP is better. Supporting both means the app works with every provider today while delivering a faster, batch-friendly experience where JMAP exists. The <code>Account</code> module hides the difference behind unified <code>Server</code>, <code>Mailbox</code>, and message models so the UI is protocol-agnostic.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-nav">
+      <a class="pn-prev" href="index.html"><small>Previous</small>← Overview</a>
+      <a class="pn-next" href="level2-containers.html"><small>Next</small>Level 2 · Containers →</a>
+    </div>
+    <footer class="docfoot">Thunderbird for iOS — Architecture Documentation</footer>
+  </main>
+</div>
+
+<script src="assets/docs.js"></script>
+</body>
+</html>

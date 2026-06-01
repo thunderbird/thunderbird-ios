@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Level 2 · Containers — Thunderbird for iOS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="assets/docs.css" />
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="index.html" class="brand"><span class="logo">🕊</span> Thunderbird&nbsp;iOS&nbsp;Docs</a>
+  <div class="links">
+    <a href="index.html">Overview</a>
+    <a href="level1-context.html">L1 · Context</a>
+    <a href="level2-containers.html" class="active">L2 · Containers</a>
+    <a href="level3-components.html">L3 · Components</a>
+    <a href="level4-code.html">L4 · Code</a>
+    <a href="data-flows.html">Flows</a>
+    <a href="build-ci.html">Build &amp; CI</a>
+  </div>
+  <div class="spacer"></div>
+  <button id="toc-toggle" class="icon-btn toc-toggle" title="Contents">☰</button>
+  <button id="theme-toggle" class="icon-btn" title="Toggle theme">☾</button>
+</nav>
+
+<div class="layout">
+  <aside class="toc">
+    <div class="toc-title">On this page</div>
+    <a href="#diagram">Container diagram</a>
+    <a href="#containers">The three containers</a>
+    <a href="#containers" class="sub">Thunderbird app</a>
+    <a href="#containers" class="sub">Core engine</a>
+    <a href="#containers" class="sub">Bolt design system</a>
+    <a href="#deps">Dependency direction</a>
+    <a href="#tech">Technology stack</a>
+  </aside>
+
+  <main class="content">
+    <span class="eyebrow">C4 · Level 2</span>
+    <h1>Containers</h1>
+    <p class="lead">Zoom into the system box. A “container” is a separately deployable/runnable thing or, here, a separately-buildable Swift unit. Thunderbird for iOS is one process composed of three units: the <strong>app target</strong>, the <strong>Core</strong> engine package, and the <strong>Bolt</strong> design system.</p>
+
+    <h2 id="diagram">Container diagram</h2>
+    <div class="card">
+      <div class="c4">
+        <div class="c4-row">
+          <div class="c4-box person"><div class="c4-type">Person</div><div class="c4-name">Email User</div></div>
+        </div>
+        <div class="c4-arrow">▼</div>
+        <div class="c4-row">
+          <div class="c4-box container" style="max-width:340px;">
+            <div class="c4-type">Container · Xcode app</div>
+            <div class="c4-name">Thunderbird (SwiftUI)</div>
+            <div class="c4-desc">Screens, navigation, view models, feature flags. <code>net.thunderbird.ios</code>, iOS 18+.</div>
+          </div>
+        </div>
+        <div class="c4-row" style="margin-top:.4rem;">
+          <div class="c4-label">uses ▸ depends on</div>
+        </div>
+        <div class="c4-row">
+          <div class="c4-box container">
+            <div class="c4-type">Container · SPM package</div>
+            <div class="c4-name">Core</div>
+            <div class="c4-desc">Email engine — IMAP, SMTP, JMAP, MIME, Autoconfiguration, Account. No UI.</div>
+          </div>
+          <div class="c4-box container">
+            <div class="c4-type">Container · SPM package</div>
+            <div class="c4-name">Bolt</div>
+            <div class="c4-desc">Design system — colors, type scale, rich-text Editor. SwiftUI only.</div>
+          </div>
+        </div>
+        <div class="c4-arrow">▼</div>
+        <div class="c4-label">Core speaks the wire protocols to</div>
+        <div class="c4-row">
+          <div class="c4-box external"><div class="c4-name">IMAP/SMTP · JMAP servers</div></div>
+          <div class="c4-box external"><div class="c4-name">OAuth2 · Autoconfig · DNS</div></div>
+        </div>
+      </div>
+      <p class="diagram-caption">C4 Level 2 — the app composes Core (engine) and Bolt (UI primitives) into a single iOS process.</p>
+    </div>
+
+    <h2 id="containers">The three containers</h2>
+    <div class="acc-controls">
+      <button class="btn-ghost" id="expand-all">＋ Expand all</button>
+      <button class="btn-ghost" id="collapse-all">－ Collapse all</button>
+    </div>
+    <div class="accordion">
+
+      <div class="accordion-item" id="app">
+        <button class="accordion-trigger"><span class="num">📱</span><span>Thunderbird — the SwiftUI app<span class="tt-sub">Xcode project · net.thunderbird.ios · 31 files · 3,033 LOC</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p>The only runnable target. A pure-SwiftUI app entered at <code>App.swift</code> (<code>@main</code>), which holds the root state — an <code>Accounts</code> model and a <code>FeatureFlags</code> instance — and injects them through the SwiftUI environment. <code>ContentView</code> branches on whether any authorized account exists: if not, it shows onboarding; if so, the mailbox UI.</p>
+          <h4>Responsibilities</h4>
+          <ul>
+            <li>Onboarding &amp; account setup flow (<code>WelcomeScreen</code> → <code>ManualAccount</code> navigation stack)</li>
+            <li>Mailbox navigation (<code>DrawerView</code>) and the email list / reading screens</li>
+            <li>OAuth2 and password credential capture</li>
+            <li>Feature-flag gating &amp; debug tooling</li>
+            <li>Localization (69 <code>.lproj</code> bundles) and app assets</li>
+          </ul>
+          <p>It depends on <strong>both</strong> packages: <code>import Account</code> / <code>Autoconfiguration</code> / <code>EmailAddress</code> from Core, and BoltUI for styling. It contains no networking code of its own.</p>
+          <p><span class="badge primary">Detail</span> See <a href="level3-components.html#app">Level 3 · App components</a>.</p>
+        </div>
+      </div>
+
+      <div class="accordion-item" id="core">
+        <button class="accordion-trigger"><span class="num">⚙️</span><span>Core — the email engine<span class="tt-sub">SPM package · 125 source files · 6,052 LOC · 9 products</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p>A UI-free Swift package that contains everything about <em>talking to mail servers</em>. It exposes nine products, layered so that protocol modules are independent and the <code>Account</code> module composes them into a unified API. The umbrella <code>Core</code> product simply <code>@_exported import Account</code>.</p>
+          <h4>Products</h4>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Product</th><th>Kind</th><th>Purpose</th></tr></thead>
+            <tbody>
+              <tr><td><code>Core</code></td><td>library</td><td>Umbrella — re-exports Account</td></tr>
+              <tr><td><code>Account</code></td><td>library</td><td>Accounts, servers, keychain, client pooling</td></tr>
+              <tr><td><code>IMAP</code></td><td>library</td><td>IMAP4rev1 client (SwiftNIO)</td></tr>
+              <tr><td><code>SMTP</code></td><td>library</td><td>SMTP submission (SwiftNIO)</td></tr>
+              <tr><td><code>JMAP</code></td><td>library</td><td>JMAP client (URLSession)</td></tr>
+              <tr><td><code>MIME</code></td><td>library</td><td>RFC 2045 parsing/building</td></tr>
+              <tr><td><code>EmailAddress</code></td><td>library</td><td>Shared address/group model</td></tr>
+              <tr><td><code>Autoconfiguration</code></td><td>library</td><td>Server discovery + OAuth2 config</td></tr>
+              <tr><td><code>AutoconfigurationCLI</code></td><td>executable</td><td>Command-line autoconfig tester</td></tr>
+            </tbody>
+          </table></div>
+          <p>Transport split: <strong>IMAP &amp; SMTP use SwiftNIO</strong> (streaming, long-lived connections, IDLE); <strong>JMAP &amp; Autoconfiguration use URLSession</strong> (request/response HTTP). All public operations are <code>async</code>.</p>
+          <p><span class="badge primary">Detail</span> See <a href="level3-components.html#core">Level 3 · Core components</a>.</p>
+        </div>
+      </div>
+
+      <div class="accordion-item" id="bolt">
+        <button class="accordion-trigger"><span class="num">🎨</span><span>Bolt — the design system<span class="tt-sub">SPM package · 7 files · 411 LOC · zero deps</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p>A small SwiftUI-only package providing the visual language. Three products in a tidy chain: <code>Editor</code> (rich-text editing primitives) → <code>BoltUI</code> (re-exports Editor, adds the design tokens) → <code>Bolt</code> (umbrella).</p>
+          <h4>What's inside BoltUI</h4>
+          <ul>
+            <li><code>Color.swift</code> — a semantic palette: <code>neutral</code>, intent colors (<code>primary</code>, <code>secondary</code>, <code>success</code>, <code>warning</code>, <code>critical</code>) each with soft/default/hover/pressed steps, <code>text</code> roles, and an <code>accent</code> set — all with light &amp; dark variants.</li>
+            <li><code>Font.swift</code> — a <code>Font.Style</code> scale (<code>titleLarge</code>…<code>caption</code>) carrying size, line spacing, kerning, and weight, plus a <code>.textStyle(_:)</code> view modifier that honors Dynamic Type.</li>
+            <li><code>Editor</code> — placeholder module reserved for the rich-text compose editor.</li>
+          </ul>
+          <p>No external dependencies and no Core dependency — Bolt is purely presentational.</p>
+          <p><span class="badge primary">Detail</span> See <a href="level3-components.html#bolt">Level 3 · Bolt components</a>.</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 id="deps">Dependency direction</h2>
+    <p>Dependencies point strictly downward — the app knows about the packages; the packages never know about the app, and Bolt never knows about Core.</p>
+    <div class="card">
+      <div class="layer view"><div class="l-title">Thunderbird app</div><div class="l-desc">SwiftUI screens &amp; view models → imports Account, Autoconfiguration, EmailAddress, BoltUI</div></div>
+      <div style="text-align:center;color:hsl(var(--muted-foreground));">↓ depends on ↓</div>
+      <div class="grid grid-2" style="margin:.4rem 0;">
+        <div class="layer service"><div class="l-title">Core · Account</div><div class="l-desc">composes IMAP + SMTP + JMAP + MIME + Autoconfiguration + EmailAddress</div></div>
+        <div class="layer data"><div class="l-title">Bolt · BoltUI</div><div class="l-desc">re-exports Editor; no Core dependency</div></div>
+      </div>
+      <div style="text-align:center;color:hsl(var(--muted-foreground));">↓</div>
+      <div class="layer model"><div class="l-title">Protocol &amp; format modules</div><div class="l-desc">IMAP · SMTP · JMAP → depend on MIME + EmailAddress · MIME &amp; EmailAddress are leaf modules</div></div>
+    </div>
+    <div class="callout success">
+      <span class="ci">✅</span>
+      <span class="ct"><strong>Acyclic by construction</strong>
+      Because Core is UI-free and Bolt is Core-free, both packages build, test, and (in principle) ship independently of the app. This is what keeps the 13k-line <code>Core/Tests</code> suite runnable without a simulator UI.</span>
+    </div>
+
+    <h2 id="tech">Technology stack</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Concern</th><th>Technology</th><th>Where</th></tr></thead>
+      <tbody>
+        <tr><td>UI</td><td>SwiftUI (iOS 18+)</td><td>Thunderbird app, BoltUI</td></tr>
+        <tr><td>Concurrency</td><td>Swift <code>async/await</code>, <code>@Observable</code>, actors</td><td>throughout</td></tr>
+        <tr><td>IMAP / SMTP transport</td><td>SwiftNIO + NIO-SSL + swift-nio-imap</td><td>Core/IMAP, Core/SMTP</td></tr>
+        <tr><td>JMAP / Autoconfig transport</td><td>Foundation <code>URLSession</code></td><td>Core/JMAP, Core/Autoconfiguration</td></tr>
+        <tr><td>DNS (MX/SRV)</td><td>swift-async-dns-resolver</td><td>Core/Autoconfiguration</td></tr>
+        <tr><td>Local model</td><td>SwiftData (<code>@Model</code>)</td><td>app — <code>TempEmail</code></td></tr>
+        <tr><td>Auth</td><td>AuthenticationServices (<code>ASWebAuthenticationSession</code>)</td><td>app — OAuth2</td></tr>
+        <tr><td>Secrets</td><td>Keychain via <code>URLCredentialStorage</code></td><td>Core/Account</td></tr>
+        <tr><td>CLI tooling</td><td>swift-argument-parser</td><td>Core/AutoconfigurationCLI</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="page-nav">
+      <a class="pn-prev" href="level1-context.html"><small>Previous</small>← Level 1 · Context</a>
+      <a class="pn-next" href="level3-components.html"><small>Next</small>Level 3 · Components →</a>
+    </div>
+    <footer class="docfoot">Thunderbird for iOS — Architecture Documentation</footer>
+  </main>
+</div>
+
+<script src="assets/docs.js"></script>
+</body>
+</html>

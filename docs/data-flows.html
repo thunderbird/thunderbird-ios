@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Runtime Flows — Thunderbird for iOS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="assets/docs.css" />
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="index.html" class="brand"><span class="logo">🕊</span> Thunderbird&nbsp;iOS&nbsp;Docs</a>
+  <div class="links">
+    <a href="index.html">Overview</a>
+    <a href="level1-context.html">L1 · Context</a>
+    <a href="level2-containers.html">L2 · Containers</a>
+    <a href="level3-components.html">L3 · Components</a>
+    <a href="level4-code.html">L4 · Code</a>
+    <a href="data-flows.html" class="active">Flows</a>
+    <a href="build-ci.html">Build &amp; CI</a>
+  </div>
+  <div class="spacer"></div>
+  <button id="toc-toggle" class="icon-btn toc-toggle" title="Contents">☰</button>
+  <button id="theme-toggle" class="icon-btn" title="Toggle theme">☾</button>
+</nav>
+
+<div class="layout">
+  <aside class="toc">
+    <div class="toc-title">On this page</div>
+    <a href="#add">Adding an account</a>
+    <a href="#autoconfig">Autoconfiguration</a>
+    <a href="#oauth">OAuth2 sign-in</a>
+    <a href="#fetch">Fetching a mailbox</a>
+    <a href="#send">Sending a message</a>
+  </aside>
+
+  <main class="content">
+    <span class="eyebrow">Cross-cutting</span>
+    <h1>Runtime flows</h1>
+    <p class="lead">The levels describe structure; these describe behavior. Each flow traces a single user-visible action through the layers — app view → <code>Account</code> facade → protocol module → external system — so you can see where responsibilities hand off.</p>
+
+    <div class="acc-controls">
+      <button class="btn-ghost" id="expand-all">＋ Expand all</button>
+      <button class="btn-ghost" id="collapse-all">－ Collapse all</button>
+    </div>
+
+    <div class="accordion">
+
+      <div class="accordion-item" id="add">
+        <button class="accordion-trigger"><span class="num">①</span><span>Adding an account<span class="tt-sub">From WelcomeScreen to a persisted, authorized account</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <ol class="steps">
+            <li><strong>Launch with no accounts</strong> — <code>ContentView</code> sees <code>hasAuthorization == false</code> and shows <code>WelcomeScreen</code>, which presents <code>ManualAccount</code> as a sheet.</li>
+            <li><strong>Enter email</strong> — <code>AccountInformation</code> captures the address into the shared <code>LoginDetails</code>.</li>
+            <li><strong>Discover settings</strong> — <code>AutoconfigView</code> calls <code>Account.autoconfig(_:)</code> (see the Autoconfiguration flow). On success it pre-fills servers; otherwise the user picks a protocol in <code>EmailAccountTypeSelection</code> and fills <code>ManualServerSetup</code>.</li>
+            <li><strong>Authenticate</strong> — <code>AuthorizationView</code> collects a password or runs OAuth2; the credential is assigned to <code>Server.authorization</code>, which writes it to the keychain.</li>
+            <li><strong>Persist</strong> — <code>accounts.set(account)</code> stores account metadata to disk via <code>FileManager</code>.</li>
+            <li><strong>Enter the app</strong> — <code>hasAuthorization</code> flips true; <code>ContentView</code> swaps to <code>EmailListView</code>.</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="accordion-item" id="autoconfig">
+        <button class="accordion-trigger"><span class="num">②</span><span>Autoconfiguration<span class="tt-sub">Email address → typed ClientConfig</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p><code>URLSession.autoconfig(emailAddress:sources:queryMX:)</code> tries sources in trust order and returns the first match:</p>
+          <ol class="steps">
+            <li><strong>Provider <code>.well-known</code></strong> — fetch <code>https://&lt;provider&gt;/.well-known/autoconfig/mail/config-v1.1.xml</code>.</li>
+            <li><strong>Mozilla ISPDB</strong> — fall back to <code>autoconfig.thunderbird.net</code>, the same database Thunderbird desktop uses.</li>
+            <li><strong>MX fallback</strong> — if still unresolved and <code>queryMX</code> is on, a DNS <strong>MX</strong> lookup (<code>swift-async-dns-resolver</code>) finds the real mail host; <code>DomainParser</code> reduces it to a registrable domain via the public-suffix list, and discovery retries.</li>
+            <li><strong>Decode</strong> — <code>XMLToJSONParser</code> converts the autoconfig XML to JSON, decoded into <code>ClientConfig</code> (<code>EmailProvider</code> + servers + OAuth2 params).</li>
+          </ol>
+          <p><code>Account.autoconfig(_:isJMAPAvailable:)</code> wraps this, adds a Fastmail-JMAP special case, and returns a populated <code>Account</code>.</p>
+          <div class="callout info"><span class="ci">🛠</span><span class="ct"><strong>Try it from the terminal</strong> The <code>AutoconfigurationCLI</code> executable runs this exact pipeline for any address — handy for debugging a provider without launching the app.</span></div>
+        </div>
+      </div>
+
+      <div class="accordion-item" id="oauth">
+        <button class="accordion-trigger"><span class="num">③</span><span>OAuth2 sign-in<span class="tt-sub">Domain → provider config → browser flow → token</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <ol class="steps">
+            <li><strong>Match provider</strong> — <code>OAuth2.request(_ emailAddress:)</code> does an MX lookup and matches the host against built-in configs for <strong>AOL, Fastmail, Google, Microsoft, Thundermail, Yahoo</strong>.</li>
+            <li><strong>Configure button</strong> — <code>OAuthButton.configure()</code> resolves the <code>OAuth2.Request</code> (authorization URL, scope, redirect).</li>
+            <li><strong>Browser auth</strong> — <code>authenticate()</code> opens an <code>ASWebAuthenticationSession</code> against the provider's auth URL with callback scheme <code>&lt;bundle-scheme&gt;://oauth2redirect</code>.</li>
+            <li><strong>Token</strong> — the returned code is exchanged for a bearer token, set on the binding and stored via <code>Server.authorization = .oauth(...)</code> into the keychain.</li>
+          </ol>
+          <div class="callout warning"><span class="ci">🚧</span><span class="ct"><strong>Status</strong> Provider matching and the browser session are wired; the final token-exchange step is partially stubbed in-app (see <code>Account/OAuth2.swift</code>).</span></div>
+        </div>
+      </div>
+
+      <div class="accordion-item" id="fetch">
+        <button class="accordion-trigger"><span class="num">④</span><span>Fetching a mailbox<span class="tt-sub">Two paths: IMAP vs JMAP</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p><code>Account.emailProtocol</code> chooses the path — JMAP when the account supports it, otherwise IMAP. The UI calls the same facade either way.</p>
+          <div class="grid grid-2">
+            <div class="card">
+              <h4 style="margin-top:0;">IMAP path</h4>
+              <ol class="steps">
+                <li><code>imapClient</code> (cached by UUID) <code>connect()</code> + <code>login()</code></li>
+                <li><code>list()</code> mailboxes, <code>select(mailbox:)</code> the target</li>
+                <li><code>fetch(uid:attributes:)</code> streams messages via NIO handlers</li>
+                <li>Bodies decoded through <strong>MIME</strong> into displayable content</li>
+              </ol>
+            </div>
+            <div class="card">
+              <h4 style="margin-top:0;">JMAP path</h4>
+              <ol class="steps">
+                <li><code>session(server:)</code> once</li>
+                <li><code>mailboxes()</code> → <code>emails(in:)</code> → <code>emails(_:)</code>, batched</li>
+                <li><code>thread(for:)</code> resolves conversations</li>
+                <li>Server returns parsed structure — minimal client-side MIME</li>
+              </ol>
+            </div>
+          </div>
+          <p>Both converge on the unified <code>Account.Mailbox</code>/message shape the views consume.</p>
+        </div>
+      </div>
+
+      <div class="accordion-item" id="send">
+        <button class="accordion-trigger"><span class="num">⑤</span><span>Sending a message<span class="tt-sub">Compose → SMTP submission</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <ol class="steps">
+            <li><strong>Build</strong> — an <code>SMTP.Email</code> (sender, recipients, subject, body, date) is constructed from the compose data.</li>
+            <li><strong>Bridge</strong> — the account's outgoing <code>Server</code> converts to an <code>SMTP.Server</code> (credentials pulled from the keychain).</li>
+            <li><strong>Submit</strong> — <code>SMTPClient.send(email:)</code> opens a NIO connection; <code>SendHandler</code> walks the state machine (EHLO → STARTTLS → AUTH → MAIL FROM → RCPT TO ×N → DATA → QUIT). See <a href="level4-code.html#smtp">Level 4 · SMTP</a>.</li>
+            <li><strong>Result</strong> — success closes the connection; failures surface as typed <code>SMTPError</code> cases for the UI.</li>
+          </ol>
+          <div class="callout info"><span class="ci">🧭</span><span class="ct"><strong>Engine vs app</strong> The send pipeline is complete in <code>Core/SMTP</code>; the in-app compose surface that drives it is still landing (the list view's compose FAB is currently disabled).</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-nav">
+      <a class="pn-prev" href="level4-code.html"><small>Previous</small>← Level 4 · Code</a>
+      <a class="pn-next" href="build-ci.html"><small>Next</small>Build &amp; CI →</a>
+    </div>
+    <footer class="docfoot">Thunderbird for iOS — Architecture Documentation</footer>
+  </main>
+</div>
+
+<script src="assets/docs.js"></script>
+</body>
+</html>

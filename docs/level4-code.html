@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Level 4 · Code — Thunderbird for iOS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="assets/docs.css" />
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="index.html" class="brand"><span class="logo">🕊</span> Thunderbird&nbsp;iOS&nbsp;Docs</a>
+  <div class="links">
+    <a href="index.html">Overview</a>
+    <a href="level1-context.html">L1 · Context</a>
+    <a href="level2-containers.html">L2 · Containers</a>
+    <a href="level3-components.html">L3 · Components</a>
+    <a href="level4-code.html" class="active">L4 · Code</a>
+    <a href="data-flows.html">Flows</a>
+    <a href="build-ci.html">Build &amp; CI</a>
+  </div>
+  <div class="spacer"></div>
+  <button id="toc-toggle" class="icon-btn toc-toggle" title="Contents">☰</button>
+  <button id="theme-toggle" class="icon-btn" title="Toggle theme">☾</button>
+</nav>
+
+<div class="layout">
+  <aside class="toc">
+    <div class="toc-title">On this page</div>
+    <a href="#imap">IMAPClient internals</a>
+    <a href="#smtp">SMTP send state machine</a>
+    <a href="#jmap">JMAP batch requests</a>
+    <a href="#mime">MIME parsing</a>
+    <a href="#account">Account &amp; keychain</a>
+    <a href="#patterns">Cross-cutting patterns</a>
+  </aside>
+
+  <main class="content">
+    <span class="eyebrow">C4 · Level 4</span>
+    <h1>Code — inner workings</h1>
+    <p class="lead">Ground level. The actual types, their methods, and the mechanics that make the engine work — command execution over NIO, the SMTP state machine, JMAP batching, MIME decoding, and how credentials cross into the keychain. Signatures here are taken from the source.</p>
+
+    <div class="callout warning">
+      <span class="ci">📍</span>
+      <span class="ct"><strong>This is the deep end</strong>
+      The C4 model treats Level 4 as optional and volatile — code changes faster than architecture. Treat the snippets as a faithful map of intent; the source is ground truth. File paths are given for every type.</span>
+    </div>
+
+    <div class="acc-controls">
+      <button class="btn-ghost" id="expand-all">＋ Expand all</button>
+      <button class="btn-ghost" id="collapse-all">－ Collapse all</button>
+    </div>
+
+    <div class="accordion">
+
+      <!-- IMAP -->
+      <div class="accordion-item" id="imap">
+        <button class="accordion-trigger"><span class="num">⚙</span><span>IMAPClient — command execution over NIO<span class="tt-sub">Core/Sources/IMAP/IMAPClient.swift</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p><code>IMAPClient</code> is a reference type wrapping a NIO <code>Channel</code> and an <code>EventLoopGroup</code>. State is minimal: the <code>Server</code> config, a discovered <code>Set&lt;Capability&gt;</code>, and an optional <code>idleHandler</code>.</p>
+<pre><code>public class IMAPClient {
+    public let server: Server
+    public private(set) var capabilities: Set&lt;Capability&gt; = []
+    public var isConnected: Bool { channel != nil &amp;&amp; channel!.isActive }
+    public var isIdling: Bool   { idleHandler != nil }
+
+    public func connect() async throws { … }                 // bootstrap + refreshCapabilities()
+    public func login() async throws                         // uses Server credentials
+    public func login(username:password:) async throws
+    public func list(wildcard:) async throws -> [(Mailbox, Mailbox.Status?)]
+    public func select(mailbox:) async throws -> Mailbox.Status
+    public func fetch(_ set: SequenceSet = .all,
+                      attributes: [FetchAttribute] = .header) async throws -> MessageSet
+    public func fetch(uid: UID, attributes: [FetchAttribute] = .complete) async throws -> Message
+    @discardableResult public func idle() async throws -> AsyncStream&lt;IdleEvent&gt;
+}</code></pre>
+          <h4>The command runner</h4>
+          <p>Every operation funnels through one generic method:</p>
+<pre><code>private func execute&lt;T: IMAPCommand&gt;(command: T) async throws -> T.Result</code></pre>
+          <p>Each command type (<code>LoginCommand</code>, <code>ListCommand</code>, <code>FetchCommand</code>, …) conforms to <code>IMAPCommand</code>, declaring its NIO handler and its <code>Result</code>. <code>execute</code> installs the handler, writes the tagged command, and bridges the handler's completion into the <code>async</code> world. This keeps the public API flat while all the streaming/parsing lives in per-command handlers.</p>
+          <h4>Connection lifecycle</h4>
+          <ul>
+            <li><code>connect()</code> bootstraps via <code>ClientBootstrap.bootstrap(server:logger:group:)</code>, then immediately calls <code>refreshCapabilities()</code>.</li>
+            <li><code>login(username:password:)</code> runs <code>LoginCommand</code> and merges any post-login capabilities the server advertises.</li>
+            <li>Fetch comes in coarse (<code>SequenceSet</code>/<code>UIDSet</code> → <code>MessageSet</code>) and single-message (<code>.complete</code>) variants; UID-based fetch is the stable identifier.</li>
+            <li>Push: <code>idle()</code> returns an <code>AsyncStream&lt;IdleEvent&gt;</code>; <code>done()</code> ends it; <code>noop()</code> polls when not idling.</li>
+          </ul>
+          <p>Errors are normalized through <code>IMAPError(error)</code> so NIO/SSL failures surface as <code>IMAPError</code> cases (<code>notConnected</code>, <code>alreadyConnected</code>, <code>timedOut</code>, <code>capabilityNotSupported</code>, …).</p>
+        </div>
+      </div>
+
+      <!-- SMTP -->
+      <div class="accordion-item" id="smtp">
+        <button class="accordion-trigger"><span class="num">📤</span><span>SMTP — the send state machine<span class="tt-sub">Core/Sources/SMTP/SendHandler.swift</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p>SMTP is a strict request/response conversation, so it's modeled as an explicit state machine inside a NIO <code>ChannelInboundHandler</code>. The handler tracks what it is waiting for with an <code>Expect</code> enum and advances on each server <code>.ok</code>:</p>
+<pre><code>private enum Expect {
+    case initialMessageFromServer
+    case okForHello            // EHLO
+    case okForStartTLS
+    case tlsHandlerToBeAdded
+    case okForAuthBegin        // AUTH LOGIN
+    case okAfterUsername
+    case okAfterPassword
+    case okAfterMailFrom
+    case okAfterRecipient      // one per RCPT TO
+    case okAfterData
+    case okAfterTransferData
+    case okAfterQuit
+    case error(Error)
+    case nothing
+}</code></pre>
+          <p>In <code>channelRead</code>, a <code>.ok</code> response is matched against the current <code>Expect</code> and the next command is written; anything else flips the machine to <code>.error</code>. The TLS branch is notable: on <code>okForStartTLS</code> it dynamically inserts an <code>NIOSSLClientHandler</code> into the pipeline (<code>tlsHandlerToBeAdded</code>) before continuing to AUTH — that's how STARTTLS upgrades an open plaintext connection.</p>
+          <div class="c4" style="margin-top:1rem;">
+            <div class="c4-row">
+              <div class="c4-box component" style="max-width:140px;"><div class="c4-name">greeting</div></div>
+              <span class="c4-arrow" style="padding:0 .3rem;">→</span>
+              <div class="c4-box component" style="max-width:120px;"><div class="c4-name">EHLO</div></div>
+              <span class="c4-arrow" style="padding:0 .3rem;">→</span>
+              <div class="c4-box component" style="max-width:140px;"><div class="c4-name">STARTTLS</div></div>
+              <span class="c4-arrow" style="padding:0 .3rem;">→</span>
+              <div class="c4-box component" style="max-width:120px;"><div class="c4-name">AUTH</div></div>
+            </div>
+            <div class="c4-row" style="margin-top:.5rem;">
+              <div class="c4-box component" style="max-width:140px;"><div class="c4-name">MAIL FROM</div></div>
+              <span class="c4-arrow" style="padding:0 .3rem;">→</span>
+              <div class="c4-box component" style="max-width:140px;"><div class="c4-name">RCPT TO ×N</div></div>
+              <span class="c4-arrow" style="padding:0 .3rem;">→</span>
+              <div class="c4-box component" style="max-width:120px;"><div class="c4-name">DATA</div></div>
+              <span class="c4-arrow" style="padding:0 .3rem;">→</span>
+              <div class="c4-box component" style="max-width:120px;"><div class="c4-name">QUIT</div></div>
+            </div>
+          </div>
+          <p>Supporting handlers split responsibilities: <code>RequestEncoder</code> (commands→bytes), <code>MessageHandler</code> (line framing), <code>ResponseHandler</code> (parse codes), <code>LoggingHandler</code> (debug). <code>SMTPClient.send(email:)</code> sends to all recipients, looping <code>RCPT TO</code> per address.</p>
+        </div>
+      </div>
+
+      <!-- JMAP -->
+      <div class="accordion-item" id="jmap">
+        <button class="accordion-trigger"><span class="num">⚡</span><span>JMAP — sessions &amp; batched methods<span class="tt-sub">Core/Sources/JMAP/JMAPClient.swift, Email.swift</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p>Unlike IMAP, JMAP is stateless HTTP. A session is fetched once, then every operation is one or more <em>methods</em> POSTed as a batch.</p>
+<pre><code>// 1. Discover the session document
+let session = try await JMAPClient.session(server: server)   // GET /.well-known/jmap
+
+// 2. Call methods against the session's apiURL
+let mailboxes = try await client.mailboxes()                 // Mailbox/get
+let ids       = try await client.emails(in: inbox)           // Email/query
+let emails    = try await client.emails(ids)                 // Email/get
+let thread    = try await client.thread(for: email)          // Thread/get</code></pre>
+          <p>Each call conforms to a <code>Method</code> protocol and encodes to the JMAP invocation tuple <code>["Email/get", { … }, "callId"]</code>. A <code>URLSession</code> extension (<code>jmapAPI</code>/<code>jmapSession</code>) handles posting the batch and decoding the parallel response array into <code>MethodGetResponse</code>/<code>MethodQueryResponse</code> values. Filtering uses <code>Filter</code> / <code>Email.Condition</code> (<code>inMailbox</code>, <code>hasKeyword</code>, <code>before/after</code>, full-text). Authorization is a bearer token or OAuth2.</p>
+          <div class="callout info"><span class="ci">💡</span><span class="ct"><strong>Why JMAP is faster</strong> Listing the inbox is one HTTP round-trip carrying <code>Email/query</code> + <code>Email/get</code> together, versus IMAP's connect → login → select → fetch sequence over a stateful socket.</span></div>
+        </div>
+      </div>
+
+      <!-- MIME -->
+      <div class="accordion-item" id="mime">
+        <button class="accordion-trigger"><span class="num">✉</span><span>MIME — recursive part decoding<span class="tt-sub">Core/Sources/MIME/Part.swift, Body.swift</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p>A message is a <code>Part</code>: headers plus a body. When the <code>ContentType</code> is multipart, the <code>Body</code> splits on the boundary and recursively decodes each child into its own <code>Part</code> — so <code>multipart/alternative</code> inside <code>multipart/mixed</code> with attachments parses into a tree.</p>
+          <ul>
+            <li><code>Part</code> is <code>RawRepresentable</code>: <code>Part(rawValue: Data)</code> parses; <code>part.rawValue</code> re-serializes — symmetric parse/build.</li>
+            <li><code>ContentTransferEncoding</code> decodes base64 / quoted-printable bodies to bytes.</li>
+            <li><code>ContentDisposition</code> distinguishes inline content from named attachments.</li>
+            <li>Header lookups are fuzzy/case-insensitive to tolerate real-world senders.</li>
+          </ul>
+          <p>This is the bridge between the wire (IMAP/SMTP bytes) and typed content the UI can render — the body that <code>ReadEmailView</code> hands to its <code>WKWebView</code> originates here.</p>
+        </div>
+      </div>
+
+      <!-- Account -->
+      <div class="accordion-item" id="account">
+        <button class="accordion-trigger"><span class="num">🗝</span><span>Account — unified Server &amp; keychain bridging<span class="tt-sub">Core/Sources/Account/Server.swift</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p>The <code>Account.Server</code> struct is protocol-agnostic and — crucially — its credentials never live in the struct's <code>Codable</code> form. The <code>authorization</code> property is a computed bridge to the keychain:</p>
+<pre><code>public struct Server: Codable, Equatable, Hashable, Identifiable, Sendable {
+    public var serverProtocol: ServerProtocol          // imap · jmap · smtp
+    public var connectionSecurity: ConnectionSecurity  // == IMAP.ConnectionSecurity
+    public var authenticationType: AuthenticationType
+    public var username: String
+    public var hostname: String
+    public var port: Int
+
+    public var authorization: Authorization {
+        set { URLCredentialStorage.shared.set(authorization:
+                  Authorization(user: user, password: newValue.password),
+                  persistence: .permanent) }
+        get { … URLCredentialStorage.shared.authorization(for: user) … }
+    }
+
+    // keychain key = "user@example.com IMAP:E621E1F8"  (unique per account+protocol)
+    var user: String { … username + protocol + UUID suffix … }
+}</code></pre>
+          <p>So persisting an account writes only non-secret metadata to disk; the password/token round-trips through <code>URLCredentialStorage</code> keyed by a synthesized <code>user</code> that appends the protocol and a UUID suffix — letting the same address have distinct IMAP/SMTP/JMAP credentials.</p>
+          <h4>Protocol bridging</h4>
+          <p>Typed initializers convert the unified server into each protocol's own <code>Server</code>, enforcing capability rules along the way:</p>
+<pre><code>extension IMAP.Server { public init(_ server: Account.Server) throws { … } }
+extension JMAP.Server { public init(_ server: Account.Server) throws {
+    self.init(authorization: .bearer(server.authorization.rawValue),
+              host: server.hostname, port: server.port) } }
+extension SMTP.Server { public init(_ server: Account.Server) throws { … } }
+
+// guards surface as protocol-specific errors:
+IMAPError.oAuth2NotSupported / .serverProtocolMismatch
+JMAPError.oAuth2NotSupported / .serverProtocolMismatch / .sessionNotFound</code></pre>
+          <p>For example, IMAP with an OAuth2-only auth type throws <code>IMAPError.oAuth2NotSupported</code> — the mismatch is caught at bridge time, not at connect time. The <code>Account</code> caches the resulting <code>IMAPClient</code>/<code>JMAPClient</code> by UUID and reuses it.</p>
+        </div>
+      </div>
+
+      <!-- Patterns -->
+      <div class="accordion-item" id="patterns">
+        <button class="accordion-trigger"><span class="num">🧩</span><span>Cross-cutting patterns<span class="tt-sub">Idioms that repeat across the engine</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <div class="table-wrap"><table>
+            <thead><tr><th>Pattern</th><th>Where</th><th>Why</th></tr></thead>
+            <tbody>
+              <tr><td>Generic command/method protocols</td><td><code>IMAPCommand</code>, JMAP <code>Method</code></td><td>Flat client API; per-operation parsing isolated &amp; type-safe</td></tr>
+              <tr><td>State-machine NIO handlers</td><td>SMTP <code>SendHandler</code>, IMAP fetch/idle</td><td>Model strict protocol choreography explicitly</td></tr>
+              <tr><td>Unified-then-bridge models</td><td><code>Account.Server</code>/<code>Mailbox</code> → protocol types</td><td>UI stays protocol-agnostic; differences caught at the seam</td></tr>
+              <tr><td>Computed keychain properties</td><td><code>Server.authorization</code></td><td>Secrets never serialize; storage stays Codable-safe</td></tr>
+              <tr><td>Error normalization</td><td><code>IMAPError(_:)</code>, <code>JMAPError</code>, <code>SMTPError</code></td><td>Transport faults become typed, user-presentable cases</td></tr>
+              <tr><td><code>async/await</code> everywhere</td><td>~60 async funcs in Core</td><td>No callback pyramids; NIO futures bridged to async</td></tr>
+              <tr><td><code>@Observable</code> stores</td><td><code>Accounts</code>, <code>FeatureFlags</code>, <code>AlertManager</code></td><td>SwiftUI-native state with minimal boilerplate</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-nav">
+      <a class="pn-prev" href="level3-components.html"><small>Previous</small>← Level 3 · Components</a>
+      <a class="pn-next" href="data-flows.html"><small>Next</small>Runtime Flows →</a>
+    </div>
+    <footer class="docfoot">Thunderbird for iOS — Architecture Documentation</footer>
+  </main>
+</div>
+
+<script src="assets/docs.js"></script>
+</body>
+</html>

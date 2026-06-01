@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Thunderbird for iOS — Architecture Documentation</title>
+<meta name="description" content="C4-model architecture documentation for the Thunderbird for iOS email client." />
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="assets/docs.css" />
+</head>
+<body>
+
+<!-- Top navigation -->
+<nav class="topnav">
+  <a href="index.html" class="brand"><span class="logo">🕊</span> Thunderbird&nbsp;iOS&nbsp;Docs</a>
+  <div class="links">
+    <a href="index.html" class="active">Overview</a>
+    <a href="level1-context.html">L1 · Context</a>
+    <a href="level2-containers.html">L2 · Containers</a>
+    <a href="level3-components.html">L3 · Components</a>
+    <a href="level4-code.html">L4 · Code</a>
+    <a href="data-flows.html">Flows</a>
+    <a href="build-ci.html">Build &amp; CI</a>
+  </div>
+  <div class="spacer"></div>
+  <button id="toc-toggle" class="icon-btn toc-toggle" title="Contents">☰</button>
+  <button id="theme-toggle" class="icon-btn" title="Toggle theme">☾</button>
+</nav>
+
+<div class="layout">
+  <!-- Floating ToC -->
+  <aside class="toc">
+    <div class="toc-title">On this page</div>
+    <a href="#intro">Introduction</a>
+    <a href="#metrics">Codebase metrics</a>
+    <a href="#metrics" class="sub">By language</a>
+    <a href="#metrics" class="sub">By area &amp; module</a>
+    <a href="#metrics" class="sub">Largest files</a>
+    <a href="#c4">The C4 levels</a>
+    <a href="#topology">Repository topology</a>
+    <a href="#reference">Reference</a>
+  </aside>
+
+  <!-- Content -->
+  <main class="content">
+    <span class="eyebrow">Architecture Documentation</span>
+    <h1>Thunderbird for iOS</h1>
+    <p class="lead">A native SwiftUI email client built on a protocol-complete email engine (IMAP, SMTP, JMAP, MIME) and a custom design system. This documentation follows the <strong>C4 model</strong> — four zoom levels from a 50,000-foot system context down to the inner workings of individual types.</p>
+
+    <div class="callout info">
+      <span class="ci">🧭</span>
+      <span class="ct"><strong>How to read these docs</strong>
+      Start at <a href="level1-context.html">Level 1 (Context)</a> for the big picture, then descend one level at a time. Every section below is a collapsed accordion — click to expand, or use <em>Expand all</em>. The left sidebar tracks your position.</span>
+    </div>
+
+    <h2 id="intro">Introduction</h2>
+    <p>Thunderbird for iOS is organized as a workspace of three independently-buildable units:</p>
+    <div class="grid grid-3" style="margin:1rem 0;">
+      <div class="card">
+        <span class="badge success">Core</span>
+        <p style="margin:.5rem 0 0;"><strong>The email engine.</strong> Pure Swift, no UI. Implements IMAP, SMTP, JMAP, MIME, autoconfiguration, and account/credential management on top of SwiftNIO.</p>
+      </div>
+      <div class="card">
+        <span class="badge warning">Bolt</span>
+        <p style="margin:.5rem 0 0;"><strong>The design system.</strong> Semantic colors, typography scale, and a rich-text Editor module shared across the UI.</p>
+      </div>
+      <div class="card">
+        <span class="badge primary">Thunderbird</span>
+        <p style="margin:.5rem 0 0;"><strong>The app.</strong> The SwiftUI iOS target — onboarding, account setup, mailbox navigation, and email reading — consuming Core and Bolt.</p>
+      </div>
+    </div>
+
+    <h2 id="metrics">Codebase metrics</h2>
+    <p style="color:hsl(var(--muted-foreground));font-size:.9rem;">Measured with <a href="https://github.com/AlDanial/cloc"><code>cloc</code> v2.08</a> across the <code>Bolt</code>, <code>Core</code>, and <code>Thunderbird</code> source trees. Production + test Swift, excludes build artifacts and SPM checkouts.</p>
+
+    <div class="stat-grid">
+      <div class="stat-card primary"><div class="sv">22,998</div><div class="sl">Lines of Swift</div></div>
+      <div class="stat-card"><div class="sv">237</div><div class="sl">Swift files</div></div>
+      <div class="stat-card success"><div class="sv">97</div><div class="sl">Avg LOC / file</div></div>
+      <div class="stat-card warning"><div class="sv">69</div><div class="sl">Localizations</div></div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="sv">3</div><div class="sl">Email protocols</div></div>
+      <div class="stat-card"><div class="sv">32</div><div class="sl">SwiftUI views</div></div>
+      <div class="stat-card"><div class="sv">9</div><div class="sl">SPM deps (direct)</div></div>
+      <div class="stat-card success"><div class="sv">10</div><div class="sl">Test targets</div></div>
+    </div>
+
+    <div class="acc-controls">
+      <button class="btn-ghost" id="expand-all">＋ Expand all</button>
+      <button class="btn-ghost" id="collapse-all">－ Collapse all</button>
+    </div>
+
+    <div class="accordion">
+      <div class="accordion-item" id="m-lang">
+        <button class="accordion-trigger"><span class="num">①</span><span>Distribution by language<span class="tt-sub">All tracked languages in the repository</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <div class="table-wrap"><table>
+            <thead><tr><th>Language</th><th>Files</th><th>Code</th><th>Comment</th><th>Blank</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Swift</strong></td><td>237</td><td>22,998</td><td>5,457</td><td>3,777</td></tr>
+              <tr><td>YAML</td><td>17</td><td>681</td><td>94</td><td>112</td></tr>
+              <tr><td>Markdown</td><td>15</td><td>635</td><td>3</td><td>337</td></tr>
+              <tr><td>JSON</td><td>13</td><td>294</td><td>0</td><td>0</td></tr>
+              <tr><td>Bourne Shell</td><td>1</td><td>38</td><td>9</td><td>12</td></tr>
+              <tr><td><strong>Total</strong></td><td><strong>283</strong></td><td><strong>24,646</strong></td><td><strong>5,563</strong></td><td><strong>4,238</strong></td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <div class="accordion-item" id="m-area">
+        <button class="accordion-trigger"><span class="num">②</span><span>Swift by build area<span class="tt-sub">Where the code lives across the three units</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <div class="table-wrap"><table>
+            <thead><tr><th>Area</th><th>Files</th><th>Code</th><th>Avg LOC/file</th><th>Role</th></tr></thead>
+            <tbody>
+              <tr><td><code>Core/Sources</code></td><td>125</td><td>6,052</td><td>48</td><td>Email engine (IMAP/SMTP/JMAP/MIME/Account)</td></tr>
+              <tr><td><code>Core/Tests</code></td><td>67</td><td>13,106</td><td>196</td><td>Protocol &amp; parser test fixtures</td></tr>
+              <tr><td><code>Thunderbird/Thunderbird</code></td><td>31</td><td>3,033</td><td>98</td><td>SwiftUI app target</td></tr>
+              <tr><td><code>Bolt/Sources</code></td><td>7</td><td>411</td><td>59</td><td>Design system (BoltUI + Editor)</td></tr>
+              <tr><td><code>Bolt/Tests</code></td><td>3</td><td>86</td><td>29</td><td>Design-system tests</td></tr>
+              <tr><td><code>ThunderbirdTests</code></td><td>2</td><td>106</td><td>53</td><td>App unit tests</td></tr>
+            </tbody>
+          </table></div>
+          <p style="font-size:.83rem;color:hsl(var(--muted-foreground));">Tests outweigh source in <code>Core</code> roughly 2:1 — the protocol layer is heavily fixture-driven (recorded server transcripts, MIME corpora).</p>
+        </div>
+      </div>
+
+      <div class="accordion-item" id="m-module">
+        <button class="accordion-trigger"><span class="num">③</span><span>Core engine by module<span class="tt-sub">Per-module source size</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <div class="table-wrap"><table>
+            <thead><tr><th>Module</th><th>Files</th><th>Code</th><th>Avg LOC/file</th><th>Responsibility</th></tr></thead>
+            <tbody>
+              <tr><td><code>IMAP</code></td><td>43</td><td>1,826</td><td>42</td><td>IMAP4rev1 client over SwiftNIO</td></tr>
+              <tr><td><code>JMAP</code></td><td>22</td><td>1,338</td><td>61</td><td>JMAP (RFC 8620) client over URLSession</td></tr>
+              <tr><td><code>Account</code></td><td>14</td><td>832</td><td>59</td><td>Accounts, servers, keychain, client pooling</td></tr>
+              <tr><td><code>MIME</code></td><td>11</td><td>732</td><td>67</td><td>RFC 2045 part parsing &amp; building</td></tr>
+              <tr><td><code>Autoconfiguration</code></td><td>17</td><td>637</td><td>37</td><td>Server discovery (ISPDB, well-known, MX)</td></tr>
+              <tr><td><code>SMTP</code></td><td>11</td><td>492</td><td>45</td><td>SMTP send pipeline over SwiftNIO</td></tr>
+              <tr><td><code>EmailAddress</code></td><td>2</td><td>62</td><td>31</td><td>Shared address/group model</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <div class="accordion-item" id="m-files">
+        <button class="accordion-trigger"><span class="num">④</span><span>Largest source files<span class="tt-sub">By total line count</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <div class="table-wrap"><table>
+            <thead><tr><th>File</th><th>Lines</th><th>Role</th></tr></thead>
+            <tbody>
+              <tr><td><code>EmailDisplay/ReadEmailView.swift</code></td><td>625</td><td>Email reading screen + toolbar</td></tr>
+              <tr><td><code>JMAP/Email.swift</code></td><td>386</td><td>JMAP email model + get/query methods</td></tr>
+              <tr><td><code>IMAP/IMAPClient.swift</code></td><td>381</td><td>IMAP connection &amp; command runner</td></tr>
+              <tr><td><code>EmailDisplay/EmailCellView.swift</code></td><td>375</td><td>List-row email preview</td></tr>
+              <tr><td><code>Util/TempEmailModel.swift</code></td><td>334</td><td>SwiftData email model + sample data</td></tr>
+              <tr><td><code>BoltUI/Color.swift</code></td><td>255</td><td>Semantic color palette</td></tr>
+              <tr><td><code>JMAP/Mailbox.swift</code></td><td>237</td><td>JMAP mailbox model</td></tr>
+              <tr><td><code>Account/Server.swift</code></td><td>209</td><td>Unified server + protocol bridging</td></tr>
+              <tr><td><code>AccountAuth/ManualServerSetup.swift</code></td><td>208</td><td>Manual server configuration form</td></tr>
+              <tr><td><code>MIME/String.swift</code></td><td>203</td><td>Header encoding/decoding helpers</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <div class="accordion-item" id="m-deps">
+        <button class="accordion-trigger"><span class="num">⑤</span><span>Dependencies &amp; toolchain<span class="tt-sub">External SPM packages and platform targets</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p><strong>Direct SPM dependencies (Core):</strong></p>
+          <p>
+            <span class="badge">swift-nio</span> <span class="badge">swift-nio-ssl</span>
+            <span class="badge">swift-nio-imap</span> <span class="badge">swift-nio-extras</span>
+            <span class="badge">swift-nio-transport-services</span> <span class="badge">swift-async-dns-resolver</span>
+            <span class="badge">swift-argument-parser</span>
+          </p>
+          <p style="font-size:.85rem;color:hsl(var(--muted-foreground));">Transitively pulls in <code>swift-algorithms</code>, <code>swift-async-algorithms</code>, <code>swift-asn1</code>, <code>swift-atomics</code>, <code>swift-collections</code>. <strong>Bolt has zero external dependencies</strong> — Foundation/SwiftUI only.</p>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Setting</th><th>Value</th></tr></thead>
+            <tbody>
+              <tr><td>Swift tools version</td><td><code>6.2</code></td></tr>
+              <tr><td>Swift language version (app)</td><td><code>6.0</code></td></tr>
+              <tr><td>Min iOS / macOS / watchOS</td><td><code>18.0</code> / <code>15.0</code> / <code>11.0</code></td></tr>
+              <tr><td>Bundle identifier</td><td><code>net.thunderbird.ios</code></td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </div>
+    </div>
+
+    <h2 id="c4">The C4 levels</h2>
+    <p>Each level zooms in one step. Higher levels answer <em>“what and why”</em>; lower levels answer <em>“how.”</em></p>
+    <div class="grid grid-2">
+      <a class="nav-card" href="level1-context.html">
+        <div class="nc-label">Level 1 · 50,000 ft</div>
+        <div class="nc-title">System Context</div>
+        <div class="nc-desc">The user, the app, and the external mail systems it talks to — IMAP/SMTP servers, JMAP servers, OAuth2 identity providers, and autoconfig sources.</div>
+      </a>
+      <a class="nav-card" href="level2-containers.html">
+        <div class="nc-label">Level 2 · 10,000 ft</div>
+        <div class="nc-title">Containers</div>
+        <div class="nc-desc">The three build units — the SwiftUI app, the Core engine package, and the Bolt design system — plus the technology in each.</div>
+      </a>
+      <a class="nav-card" href="level3-components.html">
+        <div class="nc-label">Level 3 · 1,000 ft</div>
+        <div class="nc-title">Components</div>
+        <div class="nc-desc">Inside each container: the Core modules (IMAP/SMTP/JMAP/MIME/Account/Autoconfig) and the app's feature areas and view models.</div>
+      </a>
+      <a class="nav-card" href="level4-code.html">
+        <div class="nc-label">Level 4 · ground level</div>
+        <div class="nc-title">Code</div>
+        <div class="nc-desc">The inner workings — IMAPClient command execution, the SMTP send state machine, JMAP batch requests, MIME parsing, and account/keychain bridging.</div>
+      </a>
+      <a class="nav-card" href="data-flows.html">
+        <div class="nc-label">Cross-cutting</div>
+        <div class="nc-title">Runtime Flows</div>
+        <div class="nc-desc">End-to-end sequences: adding an account, autoconfiguration, OAuth2 sign-in, fetching a mailbox, and sending a message.</div>
+      </a>
+      <a class="nav-card" href="build-ci.html">
+        <div class="nc-label">Operations</div>
+        <div class="nc-title">Build &amp; CI</div>
+        <div class="nc-desc">Workspace layout, schemes, the test plan, the GitHub Actions pipelines, security scanning, and release via fastlane.</div>
+      </a>
+    </div>
+
+    <h2 id="topology">Repository topology</h2>
+    <div class="tree"><b>thunderbird-ios/</b>
+├── <b>Thunderbird.xcworkspace</b>        <em># ties the three units together</em>
+├── <b>Core/</b>                          <em># SPM package — the email engine</em>
+│   ├── Package.swift
+│   └── Sources/{IMAP, SMTP, JMAP, MIME,
+│                Autoconfiguration, Account,
+│                EmailAddress, Core, AutoconfigurationCLI}
+├── <b>Bolt/</b>                          <em># SPM package — design system</em>
+│   └── Sources/{Bolt, BoltUI, Editor}
+├── <b>Thunderbird/</b>                   <em># Xcode app project</em>
+│   └── Thunderbird/{App.swift, ContentView.swift,
+│                    Account, AccountAuth, AccountList,
+│                    EmailDisplay, Settings, FeatureFlags,
+│                    Util, Localization/*.lproj}
+├── <b>fastlane/</b>                      <em># beta + release lanes</em>
+├── <b>.github/workflows/</b>             <em># build, lint, security, docs</em>
+├── <b>CI/</b>, <b>config/</b>                   <em># security-scan wrappers</em>
+└── <b>docs/</b>                          <em># this documentation + mdBook</em>
+</div>
+
+    <h2 id="reference">Reference</h2>
+    <ul>
+      <li><a href="https://c4model.com/">The C4 model for software architecture</a> — Simon Brown</li>
+      <li><a href="https://github.com/thunderbird/thunderbird-ios">thunderbird/thunderbird-ios</a> on GitHub</li>
+      <li>In-tree DocC catalog: <code>Thunderbird/Thunderbird/Documentation.docc/</code> (Thunderbird, Design, Database, Localization)</li>
+    </ul>
+
+    <div class="page-nav">
+      <span></span>
+      <a class="pn-next" href="level1-context.html"><small>Next</small>Level 1 · System Context →</a>
+    </div>
+    <footer class="docfoot">Thunderbird for iOS — Architecture Documentation · generated from source with the C4 model</footer>
+  </main>
+</div>
+
+<script src="assets/docs.js"></script>
+</body>
+</html>

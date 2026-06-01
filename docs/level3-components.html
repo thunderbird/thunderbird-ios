@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Level 3 · Components — Thunderbird for iOS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="assets/docs.css" />
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="index.html" class="brand"><span class="logo">🕊</span> Thunderbird&nbsp;iOS&nbsp;Docs</a>
+  <div class="links">
+    <a href="index.html">Overview</a>
+    <a href="level1-context.html">L1 · Context</a>
+    <a href="level2-containers.html">L2 · Containers</a>
+    <a href="level3-components.html" class="active">L3 · Components</a>
+    <a href="level4-code.html">L4 · Code</a>
+    <a href="data-flows.html">Flows</a>
+    <a href="build-ci.html">Build &amp; CI</a>
+  </div>
+  <div class="spacer"></div>
+  <button id="toc-toggle" class="icon-btn toc-toggle" title="Contents">☰</button>
+  <button id="theme-toggle" class="icon-btn" title="Toggle theme">☾</button>
+</nav>
+
+<div class="layout">
+  <aside class="toc">
+    <div class="toc-title">On this page</div>
+    <a href="#core">Core components</a>
+    <a href="#core" class="sub">EmailAddress</a>
+    <a href="#core" class="sub">MIME</a>
+    <a href="#core" class="sub">IMAP</a>
+    <a href="#core" class="sub">SMTP</a>
+    <a href="#core" class="sub">JMAP</a>
+    <a href="#core" class="sub">Autoconfiguration</a>
+    <a href="#core" class="sub">Account</a>
+    <a href="#app">App components</a>
+    <a href="#app" class="sub">Entry &amp; navigation</a>
+    <a href="#app" class="sub">Account setup</a>
+    <a href="#app" class="sub">Mailbox &amp; reading</a>
+    <a href="#app" class="sub">State &amp; flags</a>
+    <a href="#bolt">Bolt components</a>
+  </aside>
+
+  <main class="content">
+    <span class="eyebrow">C4 · Level 3</span>
+    <h1>Components</h1>
+    <p class="lead">Open up each container and name the components inside — the modules, view groups, and the principal types that carry the responsibilities. This is where the architecture becomes concrete.</p>
+
+    <div class="acc-controls">
+      <button class="btn-ghost" id="expand-all">＋ Expand all</button>
+      <button class="btn-ghost" id="collapse-all">－ Collapse all</button>
+    </div>
+
+    <h2 id="core">Core engine components</h2>
+    <p>Seven library modules form a clean dependency layering: two leaf modules (<code>EmailAddress</code>, <code>MIME</code>), three protocol clients that build on them (<code>IMAP</code>, <code>SMTP</code>, <code>JMAP</code>), a discovery module (<code>Autoconfiguration</code>), and the <code>Account</code> facade that unifies them all.</p>
+
+    <div class="card" style="margin:1rem 0;">
+      <div class="layer data"><div class="l-title">Leaf · EmailAddress, MIME</div><div class="l-desc">No internal dependencies — shared value types</div></div>
+      <div class="layer model"><div class="l-title">Protocol clients · IMAP, SMTP, JMAP</div><div class="l-desc">depend on MIME + EmailAddress (+ SwiftNIO for IMAP/SMTP)</div></div>
+      <div class="layer service"><div class="l-title">Discovery · Autoconfiguration</div><div class="l-desc">depends on swift-async-dns-resolver</div></div>
+      <div class="layer view"><div class="l-title">Facade · Account</div><div class="l-desc">composes all of the above into unified Account / Server / Mailbox + client pooling</div></div>
+    </div>
+
+    <div class="accordion">
+      <div class="accordion-item" id="c-emailaddress">
+        <button class="accordion-trigger"><span class="num">①</span><span>EmailAddress<span class="tt-sub">2 files · 62 LOC · leaf module</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p><strong>Responsibility:</strong> one shared address model so IMAP, JMAP, and SMTP don't each reinvent it.</p>
+          <ul>
+            <li><code>EmailAddress</code> — struct with an optional display label and the address; <code>Codable</code>, <code>Hashable</code>, <code>Identifiable</code>, and <code>ExpressibleByStringLiteral</code> so <code>"Name &lt;a@b.com&gt;"</code> parses directly.</li>
+            <li><code>EmailAddress.Group</code> — a named group of addresses (RFC group syntax).</li>
+            <li><code>EmailAddressProtocol</code> — abstraction for polymorphic address collections.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="accordion-item" id="c-mime">
+        <button class="accordion-trigger"><span class="num">②</span><span>MIME<span class="tt-sub">11 files · 732 LOC · RFC 2045</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p><strong>Responsibility:</strong> parse and build MIME message parts — multipart boundaries, content types, transfer encodings, attachments.</p>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Type</th><th>Role</th></tr></thead>
+            <tbody>
+              <tr><td><code>Part</code></td><td>A single MIME part (headers + encoded body); <code>RawRepresentable</code> between <code>Data</code> and structured form</td></tr>
+              <tr><td><code>Body</code></td><td>Multipart body; recursively decodes child parts on the boundary</td></tr>
+              <tr><td><code>ContentType</code></td><td>Media type enum (text/image/…); carries boundary &amp; charset</td></tr>
+              <tr><td><code>ContentTransferEncoding</code></td><td>base64, quoted-printable, …</td></tr>
+              <tr><td><code>ContentDisposition</code></td><td>inline vs. attachment + filename</td></tr>
+              <tr><td><code>MIMEError</code></td><td>parsing/encoding failure cases</td></tr>
+            </tbody>
+          </table></div>
+          <p>Headers are matched case-insensitively/fuzzily for robustness against real-world mail.</p>
+        </div>
+      </div>
+
+      <div class="accordion-item" id="c-imap">
+        <button class="accordion-trigger"><span class="num">③</span><span>IMAP<span class="tt-sub">43 files · 1,826 LOC · over SwiftNIO</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p><strong>Responsibility:</strong> a full IMAP4rev1 client. Connection lifecycle, login, capability negotiation, mailbox listing/selection, message fetch (by sequence number or UID), flag updates, and IDLE push.</p>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Type</th><th>Role</th></tr></thead>
+            <tbody>
+              <tr><td><code>IMAPClient</code></td><td>Owns the NIO channel; runs tagged commands; exposes <code>connect</code>, <code>login</code>, <code>list</code>, <code>select</code>, <code>fetch</code>, <code>idle</code>, <code>noop</code></td></tr>
+              <tr><td><code>Server</code></td><td>Host, port, credentials, <code>ConnectionSecurity</code> (TLS/STARTTLS/plain)</td></tr>
+              <tr><td><code>Message</code> / <code>Envelope</code></td><td>Parsed message: flags, UID, envelope (from/to/subject/date), body</td></tr>
+              <tr><td><code>Mailbox</code></td><td>Name, path, attributes, status</td></tr>
+              <tr><td><code>Flag</code></td><td><code>\Seen</code>, <code>\Flagged</code>, <code>\Draft</code>, <code>\Deleted</code>, …</td></tr>
+              <tr><td><code>IMAPCommand</code></td><td>Protocol for each command (Login, Capability, List, Select, Fetch, UIDFetch, Idle, Store, Create, Delete, Rename, Status, Noop)</td></tr>
+              <tr><td><code>IMAPError</code></td><td>notConnected, timedOut, commandFailed, unexpectedResponse, serverDisconnected, …</td></tr>
+            </tbody>
+          </table></div>
+          <p>Built on <code>swift-nio-imap</code> for the protocol codec. Fetch responses stream through NIO handlers and assemble incrementally rather than buffering whole messages. <span class="badge primary">Detail</span> <a href="level4-code.html#imap">Level 4 · IMAPClient</a>.</p>
+        </div>
+      </div>
+
+      <div class="accordion-item" id="c-smtp">
+        <button class="accordion-trigger"><span class="num">④</span><span>SMTP<span class="tt-sub">11 files · 492 LOC · over SwiftNIO</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p><strong>Responsibility:</strong> submit a message. A NIO handler pipeline drives the SMTP conversation as a state machine.</p>
+          <ul>
+            <li><code>SMTPClient</code> — <code>send(email:)</code>, iterating one <code>RCPT TO</code> per recipient.</li>
+            <li><code>Email</code> — sender, recipients, subject, body, date.</li>
+            <li><code>SendHandler</code> — the state machine: greeting → EHLO → STARTTLS → AUTH LOGIN → MAIL FROM → RCPT → DATA → QUIT. Supported by <code>RequestEncoder</code>, <code>ResponseHandler</code>, <code>MessageHandler</code>, <code>LoggingHandler</code>.</li>
+            <li><code>SMTPError</code> — requiredTLSNotConfigured, emailRecipientNotFound, remoteConnectionClosed, responseNotDecoded.</li>
+          </ul>
+          <p><span class="badge primary">Detail</span> <a href="level4-code.html#smtp">Level 4 · SMTP send state machine</a>.</p>
+        </div>
+      </div>
+
+      <div class="accordion-item" id="c-jmap">
+        <button class="accordion-trigger"><span class="num">⑤</span><span>JMAP<span class="tt-sub">22 files · 1,338 LOC · over URLSession</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p><strong>Responsibility:</strong> a JMAP (RFC 8620) client. Stateless JSON method calls instead of stateful IMAP sessions.</p>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Type</th><th>Role</th></tr></thead>
+            <tbody>
+              <tr><td><code>JMAPClient</code></td><td><code>session(server:)</code>, <code>mailboxes()</code>, <code>emails(in:)</code>, <code>emails(_:)</code>, <code>thread(for:)</code></td></tr>
+              <tr><td><code>Session</code></td><td>From <code>/.well-known/jmap</code> — accounts, capabilities, API URL</td></tr>
+              <tr><td><code>Email</code></td><td>blobID, threadID, addresses, keywords, size, dates + <code>GetMethod</code>/<code>QueryMethod</code></td></tr>
+              <tr><td><code>Mailbox</code> / <code>Thread</code></td><td>Roles, rights, counts / thread email IDs</td></tr>
+              <tr><td><code>Authorization</code></td><td>Bearer token or OAuth2</td></tr>
+              <tr><td><code>Filter</code> / <code>Email.Condition</code></td><td>Query filters (inMailbox, hasKeyword, before/after, text)</td></tr>
+              <tr><td><code>JMAPError</code></td><td>method / request / set / underlying URL errors</td></tr>
+            </tbody>
+          </table></div>
+          <p>Methods serialize to the JMAP <code>["Email/get", {…}, "callId"]</code> tuple form and POST in a batch via a <code>URLSession</code> extension. <span class="badge primary">Detail</span> <a href="level4-code.html#jmap">Level 4 · JMAP batch requests</a>.</p>
+        </div>
+      </div>
+
+      <div class="accordion-item" id="c-autoconfig">
+        <button class="accordion-trigger"><span class="num">⑥</span><span>Autoconfiguration<span class="tt-sub">17 files · 637 LOC</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p><strong>Responsibility:</strong> turn an email address into server settings, trying trusted sources in order.</p>
+          <ul>
+            <li><code>URLSession.autoconfig(emailAddress:sources:queryMX:)</code> — the entry point.</li>
+            <li><code>Source</code> — provider <code>.well-known</code> → Mozilla ISPDB → MX fallback.</li>
+            <li><code>EmailProvider</code> / <code>EmailProvider.Server</code> — discovered config (host, port, socket type, auth methods).</li>
+            <li><code>ClientConfig</code> — aggregate result (provider + OAuth2 + webmail).</li>
+            <li><code>XMLToJSONParser</code> — converts Thunderbird autoconfig XML to decodable JSON.</li>
+            <li><code>DomainParser</code> / <code>SuffixListParser</code> — public-suffix-aware domain extraction.</li>
+            <li><code>SRVResolver</code> / DNS MX queries via <code>swift-async-dns-resolver</code>; <code>OAuth2</code> request params.</li>
+          </ul>
+          <p>Also home to the <code>AutoconfigurationCLI</code> executable for testing discovery from the command line. <span class="badge primary">Detail</span> <a href="data-flows.html#autoconfig">Flows · Autoconfiguration</a>.</p>
+        </div>
+      </div>
+
+      <div class="accordion-item" id="c-account">
+        <button class="accordion-trigger"><span class="num">⑦</span><span>Account — the facade<span class="tt-sub">14 files · 832 LOC</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p><strong>Responsibility:</strong> the single API the app uses. Models accounts &amp; servers protocol-agnostically, stores credentials in the keychain, pools live clients, and runs autoconfiguration.</p>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Type</th><th>Role</th></tr></thead>
+            <tbody>
+              <tr><td><code>Account</code></td><td>Identities + servers; <code>emailProtocol</code> picks JMAP when available else IMAP; <code>incomingServer</code>/<code>outgoingServer</code>; <code>autoconfig(_:)</code></td></tr>
+              <tr><td><code>Server</code></td><td>Unified server for any protocol; bridges to <code>IMAP.Server</code>, <code>SMTP.Server</code>, <code>JMAP.Server</code>; keychain-backed <code>authorization</code></td></tr>
+              <tr><td><code>ServerProtocol</code></td><td><code>imap</code> · <code>jmap</code> · <code>smtp</code></td></tr>
+              <tr><td><code>Mailbox</code></td><td>Unified mailbox with <code>Role</code> (inbox/drafts/sent/trash/junk/archive) and <code>Rights</code>; built from IMAP <em>or</em> JMAP mailboxes</td></tr>
+              <tr><td><code>AccountManager</code> / <code>Accounts</code></td><td><code>@Observable</code> store — persist to disk via <code>FileManager</code>, add/update/delete</td></tr>
+              <tr><td><code>Authorization</code> / <code>Token</code></td><td><code>basic(user,password)</code> · <code>oauth(user,token)</code> · <code>none</code></td></tr>
+              <tr><td><code>MailboxManager</code></td><td>Per-account mailbox state</td></tr>
+            </tbody>
+          </table></div>
+          <p>Clients are cached per account UUID (<code>imapClient</code>/<code>jmapClient</code>) and reconnect/login lazily. <span class="badge primary">Detail</span> <a href="level4-code.html#account">Level 4 · Account &amp; keychain</a>.</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 id="app">App components</h2>
+    <p>The app target groups its 32 SwiftUI views into feature folders. Navigation is driven entirely by SwiftUI state — there is no coordinator object.</p>
+
+    <div class="accordion">
+      <div class="accordion-item" id="a-entry">
+        <button class="accordion-trigger"><span class="num">🚪</span><span>Entry &amp; root navigation<span class="tt-sub">App.swift · ContentView.swift</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <ul>
+            <li><code>App</code> (<code>@main</code>) — holds <code>@State accounts: Accounts</code> and <code>@State featureFlags: FeatureFlags(distribution:)</code>, injects both into the environment, and overlays a global <code>FeatureNotImplementedView</code> driven by <code>AlertManager.shared</code>.</li>
+            <li><code>ContentView</code> — computes <code>hasAuthorization</code> from <code>accounts.allAccounts</code> (both incoming &amp; outgoing servers authorized). True → <code>EmailListView</code>; false → a <code>NavigationStack</code> with <code>WelcomeScreen</code> presenting <code>ManualAccount</code> as a sheet.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="accordion-item" id="a-setup">
+        <button class="accordion-trigger"><span class="num">🔑</span><span>Account setup (AccountAuth)<span class="tt-sub">WelcomeScreen → ManualAccount stack</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <p>A string-path <code>NavigationStack</code> rooted at <code>ManualAccount</code>, threading a shared <code>@Observable LoginDetails</code> (in-progress account, entered email, chosen protocol):</p>
+          <ol>
+            <li><code>AccountInformation</code> — email entry; <code>AutoconfigView</code> attempts discovery; on success shows <code>AuthorizationView</code>, else offers manual setup.</li>
+            <li><code>EmailAccountTypeSelection</code> — JMAP vs IMAP toggle (custom <code>FullToggleStyle</code>).</li>
+            <li><code>ManualServerSetup</code> — incoming/outgoing host, port, security, auth; finalizes via <code>accounts.set(account)</code>.</li>
+          </ol>
+          <p>Authentication UI: <code>AuthorizationView</code> switches on <code>AuthenticationType</code> — password (<code>SecureField</code>) or OAuth2 (<code>OAuthButton</code> → <code>ASWebAuthenticationSession</code>). Provider configs live in <code>Account/OAuth2.swift</code>. <span class="badge primary">Detail</span> <a href="data-flows.html#oauth">Flows · OAuth2</a>.</p>
+        </div>
+      </div>
+
+      <div class="accordion-item" id="a-mailbox">
+        <button class="accordion-trigger"><span class="num">📬</span><span>Mailbox &amp; reading (AccountList + EmailDisplay)<span class="tt-sub">DrawerView · EmailListView · EmailCellView · ReadEmailView</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <h4>AccountList — drawer navigation</h4>
+          <ul>
+            <li><code>DrawerView</code> — slide-in sidebar with dimmed overlay; links to <code>GeneralSettingsView</code>.</li>
+            <li><code>DrawerContent</code> — static Inbox/Sent rows + one <code>AccountFolderDisclosureView</code> per account.</li>
+            <li><code>MailboxDropdownRowView</code> / <code>AccountFolderDisclosureView</code> — <code>DisclosureGroup</code> mailbox trees.</li>
+          </ul>
+          <h4>EmailDisplay — list &amp; reading</h4>
+          <ul>
+            <li><code>EmailListView</code> — selectable <code>List</code> of cells with edit-mode multi-select, sort menu, drawer toggle, and a (disabled) compose FAB.</li>
+            <li><code>EmailCellView</code> — row preview: sender, subject, body snippet, smart date, and pin/unread/attachment/thread indicators.</li>
+            <li><code>ReadEmailView</code> — the largest view (625 lines): <code>SenderView</code> header, a <code>WKWebView</code> for HTML body, <code>AttachmentBlockView</code>, plus reply/forward/archive/flag/move toolbars.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="accordion-item" id="a-state">
+        <button class="accordion-trigger"><span class="num">🧮</span><span>State, models &amp; feature flags<span class="tt-sub">TempEmail · AlertManager · FeatureFlags</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <ul>
+            <li><code>TempEmail</code> (<code>@Model</code>, SwiftData) — the in-app email model (addresses, subject, HTML body, date, flags, attachments) with <code>sampleData</code> for previews. Real fetches from Core are being wired in over this shape.</li>
+            <li><code>AlertManager</code> (<code>@MainActor @Observable</code> singleton) — global “not implemented”/error alerts.</li>
+            <li><code>FeatureFlags</code> (<code>@MainActor @Observable</code>) — local <code>featureSettings</code> persisted to <code>UserDefaults</code>, optionally merged with remote JSON; <code>Distribution.current</code> (debug/beta/appstore) selects the config URL. <code>Flag</code> enum keys (e.g. <code>fullDate</code>) are queried with <code>flagForKey(_:)</code>. <code>FeatureFlagDebugView</code> exposes toggles in debug builds.</li>
+            <li><code>SmartDateFormatter</code> — relative/absolute date formatting gated by the <code>fullDate</code> flag.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h2 id="bolt">Bolt components</h2>
+    <div class="accordion">
+      <div class="accordion-item">
+        <button class="accordion-trigger"><span class="num">🎨</span><span>BoltUI &amp; Editor<span class="tt-sub">Color · Font · TextStyle · Editor</span></span><span class="chev">▾</span></button>
+        <div class="accordion-content">
+          <ul>
+            <li><code>Color</code> — semantic palette with light/dark variants: <code>neutral(.base/.lower/.border/…)</code>, intents <code>primary/secondary/success/warning/critical</code> (soft/default/hover/pressed), <code>text(.base/.muted/…)</code>, and an <code>accent</code> set (teal/blue/purple/orange/pink/ink).</li>
+            <li><code>Font.Style</code> — scale from <code>titleLarge</code> (31pt) to <code>caption</code> (11pt), each with size/lineSpacing/kerning/weight; applied via <code>.textStyle(_:isDynamic:)</code> with Dynamic Type support.</li>
+            <li><code>Foundation</code> — hex⇄<code>Int</code> color helpers and RGB component extraction.</li>
+            <li><code>Editor</code> — reserved module for the rich-text compose editor (re-exported through BoltUI).</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-nav">
+      <a class="pn-prev" href="level2-containers.html"><small>Previous</small>← Level 2 · Containers</a>
+      <a class="pn-next" href="level4-code.html"><small>Next</small>Level 4 · Code →</a>
+    </div>
+    <footer class="docfoot">Thunderbird for iOS — Architecture Documentation</footer>
+  </main>
+</div>
+
+<script src="assets/docs.js"></script>
+</body>
+</html>
