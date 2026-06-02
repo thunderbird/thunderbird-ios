@@ -98,36 +98,42 @@
         <button class="accordion-trigger"><span>📥 IMAP / SMTP servers</span><span class="chev">▾</span></button>
         <div class="accordion-content">
           <p>The classic pairing: IMAP4rev1 for reading/synchronizing mailboxes and SMTP for submission. The engine speaks both over TLS or STARTTLS via SwiftNIO. Used for any provider without JMAP, and for OAuth2 providers such as Google, Microsoft, and Yahoo.</p>
+          <p class="srcref"><span class="srcref-label">📄 Code</span> <code>Core/Sources/IMAP/IMAPClient.swift</code> · <code>Core/Sources/SMTP/SMTPClient.swift</code></p>
         </div>
       </div>
       <div class="accordion-item">
         <button class="accordion-trigger"><span>⚡ JMAP servers</span><span class="chev">▾</span></button>
         <div class="accordion-content">
           <p>The modern JSON-over-HTTP mail protocol (RFC 8620). A single batched request can fetch mailboxes, query messages, and resolve threads — no per-mailbox <code>SELECT</code> round-trips. Detected for Fastmail and used by Thundermail. Preferred over IMAP when available for an account.</p>
+          <p class="srcref"><span class="srcref-label">📄 Code</span> <code>Core/Sources/JMAP/JMAPClient.swift</code></p>
         </div>
       </div>
       <div class="accordion-item">
         <button class="accordion-trigger"><span>🔐 OAuth2 identity providers</span><span class="chev">▾</span></button>
         <div class="accordion-content">
           <p>Token-based sign-in instead of passwords. The app ships pre-registered client configurations for <strong>AOL, Fastmail, Google, Microsoft, Thundermail (Keycloak), and Yahoo</strong>. The provider is chosen by matching the email domain's MX records, then an <code>ASWebAuthenticationSession</code> performs the browser-based flow.</p>
+          <p class="srcref"><span class="srcref-label">📄 Code</span> <code>Thunderbird/Thunderbird/Account/OAuth2.swift</code> · <code>Core/Sources/Autoconfiguration/OAuth2.swift</code></p>
         </div>
       </div>
       <div class="accordion-item">
         <button class="accordion-trigger"><span>🧭 Autoconfiguration sources</span><span class="chev">▾</span></button>
         <div class="accordion-content">
           <p>So users type only an email address. Sources are tried in trust order: the provider's own <code>.well-known/autoconfig</code>, the Mozilla ISPDB (<code>autoconfig.thunderbird.net</code>), and — as a fallback — DNS <strong>MX</strong> lookup to derive the real provider domain. Results are decoded from Thunderbird's autoconfig XML into a typed <code>ClientConfig</code>.</p>
+          <p class="srcref"><span class="srcref-label">📄 Code</span> <code>Core/Sources/Autoconfiguration/URLSession.swift</code> · <code>Core/Sources/Autoconfiguration/XMLToJSONParser.swift</code></p>
         </div>
       </div>
       <div class="accordion-item">
         <button class="accordion-trigger"><span>🚩 Feature-flag CDN</span><span class="chev">▾</span></button>
         <div class="accordion-content">
           <p>Per-distribution JSON hosted on GitHub Pages (<code>thunderbird.github.io/thunderbird-ios/feature_flag_config_{debug,beta,appstore}.json</code>). Lets features be toggled remotely without a release, gated by a user opt-in for remote flags.</p>
+          <p class="srcref"><span class="srcref-label">📄 Code</span> <code>Thunderbird/Thunderbird/FeatureFlags/FeatureFlags.swift</code></p>
         </div>
       </div>
       <div class="accordion-item">
         <button class="accordion-trigger"><span>🗝 Apple Keychain</span><span class="chev">▾</span></button>
         <div class="accordion-content">
           <p>Credentials (passwords and OAuth2 tokens) never sit in app storage or in account JSON. They are written to the system keychain via <code>URLCredentialStorage</code>, keyed per account/protocol. See <a href="level4-code.html#account">Level 4 · Account bridging</a>.</p>
+          <p class="srcref"><span class="srcref-label">📄 Code</span> <code>Core/Sources/Account/URLCredentialStorage.swift</code></p>
         </div>
       </div>
     </div>

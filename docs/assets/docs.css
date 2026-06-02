@@ -286,6 +286,19 @@ table code { font-size: 0.78em; }
 .accordion-item.open .accordion-content { display: block; }
 .accordion-content > *:first-child { margin-top: 0.9rem; }
 
+/* Subtle source-file reference inside accordion/section content */
+.srcref {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 0.5rem;
+  margin: 0.9rem 0 0; padding-top: 0.7rem;
+  border-top: 1px dashed hsl(var(--border));
+  font-size: 0.78rem; color: hsl(var(--muted-foreground));
+}
+.srcref .srcref-label {
+  font-size: 0.64rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+  opacity: 0.8;
+}
+.srcref code { font-size: 0.92em; }
+
 .acc-controls { display: flex; gap: 0.5rem; margin: 0.5rem 0 0; }
 .btn-ghost {
   font-size: 0.78rem; font-weight: 500; padding: 0.3rem 0.7rem; cursor: pointer;
