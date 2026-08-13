@@ -12,6 +12,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>net.thunderbird.android.debug</string>
+				<string>com.googleusercontent.apps.769997220831-n207vus74snfmeoeagphatkrco9ckb7s</string>
 			</array>
 		</dict>
 	</array>
