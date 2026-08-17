@@ -55,7 +55,7 @@ extension OAuth2.Request: @retroactive CaseIterable {
             scope: [
                 "https://mail.google.com/"
             ],
-            clientID: "560629489500-no2mlau7e4vn3psh5esaiodgri09jrj9.apps.googleusercontent.com",
+            clientID: "769997220831-n207vus74snfmeoeagphatkrco9ckb7s.apps.googleusercontent.com",
             hosts: [
                 "googlemail.com",
                 "google.com",
