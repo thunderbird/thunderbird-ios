@@ -92,7 +92,7 @@ extension OAuth2.Request: @retroactive CaseIterable {
         try! Self(
             authURI: "https://auth.tb.pro/realms/tbpro/protocol/openid-connect/auth",
             tokenURI: "https://auth.tb.pro/realms/tbpro/protocol/openid-connect/token",
-            redirectURI: "\(Bundle.main.schemes.first!)://oauth2redirect",
+            redirectURI: "\(Bundle.main.schemes.first!):/oauth2redirect",
             responseType: "code",
             scope: [
                 "openid",
@@ -100,7 +100,7 @@ extension OAuth2.Request: @retroactive CaseIterable {
                 "email",
                 "offline_access"
             ],
-            clientID: "mobile-android-thunderbird",
+            clientID: "mobile-ios-thunderbird",
             hosts: [
                 "tb.pro",
                 "thundermail.com"

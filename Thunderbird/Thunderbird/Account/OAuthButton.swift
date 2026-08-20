@@ -38,12 +38,13 @@ struct OAuthButton: View {
                 error = nil
                 guard let authConfig else { return }
                 if !hasSucceeded {
+                    let pkce = OAuth2.PKCE()
                     let authURL: URL = try await webAuthenticationSession.authenticate(
-                        using: authConfig.authURL(hint: emailAddress),
+                        using: authConfig.authURL(hint: emailAddress, pkce: pkce),
                         callback: .customScheme("\(Bundle.main.schemes.first!)"), additionalHeaderFields: [:])
                     let queryItems = URLComponents(string: authURL.absoluteString)?.queryItems
                     let code = (queryItems?.filter({ $0.name == "code" }).first?.value)!
-                    await getToken(code: code)
+                    await getToken(code: code, pkce: pkce)
                     hasSucceeded = true
                 }
             } catch {
@@ -62,13 +63,13 @@ struct OAuthButton: View {
         }
     }
 
-    private func getToken(code: String) async {
+    private func getToken(code: String, pkce: OAuth2.PKCE) async {
         let retries = 3
         error = nil
         guard let authConfig else { return }
         for _ in 0..<retries {
             do {
-                let tokenRequest = try URLRequest.token(authConfig, code: code)
+                let tokenRequest = try URLRequest.token(authConfig, code: code, pkce: pkce)
                 let (data, _) = try await URLSession.shared.data(for: tokenRequest)
                 let response = try JSONDecoder().decode(TokenResponse.self, from: data)
                 token = .bearer(response.accessToken, Date(timeIntervalSinceNow: TimeInterval(response.expiresIn)))
