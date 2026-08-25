@@ -6,7 +6,7 @@ env:
   DEFAULT_VERSION: &default_version "1.0"
   DEFAULT_NOTIFY_TESTERS: &default_notify_testers false
   DEFAULT_TEST_DEVICE: &default_test_device "iPhone 17"
-  XCODE_VERSION: "26.1"
+  XCODE_VERSION: "26.5"
 
 on:
   schedule:
@@ -55,7 +55,25 @@ jobs:
           xcode-select-version: ${{ env.XCODE_VERSION }}
 
       - name: Ensure iOS Simulator Runtime installed
-        run: xcodebuild -downloadPlatform iOS
+        run: |
+          # First check simulator runtime is already installed
+          SDK_VERSION=$(xcrun --sdk iphonesimulator --show-sdk-version)
+          if xcrun simctl runtime list 2>/dev/null | grep -q "iOS ${SDK_VERSION}"; then
+            echo "iOS ${SDK_VERSION} runtime already installed; skipping download."
+            exit 0
+          fi
+
+          for attempt in 1 2 3; do
+            if xcodebuild -downloadPlatform iOS; then
+              exit 0
+            fi
+            echo "::warning::xcodebuild -downloadPlatform iOS failed (attempt ${attempt}/3)"
+            if [ "$attempt" -lt 3 ]; then
+              sleep $((attempt * 30))
+            fi
+          done
+          echo "::error::Could not resolve the iOS simulator runtime after 3 attempts"
+          exit 1
 
       - name: Setup Ruby and Fastlane
         uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
