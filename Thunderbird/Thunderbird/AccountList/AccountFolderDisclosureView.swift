@@ -6,30 +6,28 @@ import Account
 import SwiftUI
 
 struct AccountFolderDisclosureView: View {
-    @Environment(MailboxManager.self) private var mailboxManager: MailboxManager
+    @Environment(FolderManager.self) private var folderManager: FolderManager
     @State private var isExpanded: Bool = false
     @State private var unreadCount: Int = 0
 
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
-            ForEach(mailboxManager.mailboxes) { mailbox in
-                HStack {
-                    MailboxDropdownRowView(mailbox: mailbox)
-                }
+            ForEach(folderManager.folders) { folder in
+                MailboxDropdownRowView(folder: folder)
             }
             .padding(.vertical, 10)
         } label: {
             HStack {
                 AvatarView(
-                    displayName: mailboxManager.account.name,
-                    bubbleColor: Color(mailboxManager.account.avatarColor)
+                    displayName: folderManager.account.name,
+                    bubbleColor: Color(folderManager.account.avatarColor)
                 )
                 VStack(alignment: .leading) {
-                    Text(mailboxManager.account.name)
+                    Text(folderManager.account.name)
                         .font(.body)
                         .truncationMode(.middle)
-                    if (!mailboxManager.account.name.isEmailAddress) {
-                        Text(mailboxManager.account.identities[0].email)
+                    if (!folderManager.account.name.isEmailAddress) {
+                        Text(folderManager.account.identities[0].email)
                             .font(.caption2)
                             .truncationMode(.middle)
                     }
@@ -42,19 +40,19 @@ struct AccountFolderDisclosureView: View {
             }.padding(.vertical, 10)
                 .safeAreaPadding(.horizontal)
         }.task {
-            for mailbox in mailboxManager.mailboxes {
-                unreadCount += mailbox.unreadEmails!
+            for folder in folderManager.folders {
+                unreadCount += folder.unreadEmails!
             }
-        }
-        .background {
-            RoundedRectangle(cornerRadius: 24)
-                .foregroundStyle(.white)
-        }
+        }.padding(.horizontal, 10)
+            .background {
+                RoundedRectangle(cornerRadius: 24)
+                    .foregroundStyle(.white)
+            }
     }
 }
 
 #Preview {
-    @Previewable @State var mailboxes: MailboxManager = MailboxManager(account: Account("temp@email.com"))
+    @Previewable @State var mailboxes: FolderManager = FolderManager(account: Account("temp@email.com"))
 
     AccountFolderDisclosureView()
         .environment(mailboxes)

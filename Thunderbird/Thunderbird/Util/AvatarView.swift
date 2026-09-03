@@ -24,6 +24,7 @@ struct AvatarView: View {
     var body: some View {
         Text(avatarText)
             .font(.body)
+            .foregroundStyle(bubbleColor)
             .overlay {
                 Circle()
                     .stroke(

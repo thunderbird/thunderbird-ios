@@ -9,42 +9,41 @@ private let iconShapes = FolderIconShapes()
 
 struct MailboxDropdownRowView: View {
     @State private var isExpanded: Bool = false
-    var mailbox: Mailbox
-
-    //TODO: Subfolders and 'new' are not fully implemented
-    var tempHasSubfolders: Bool = false
+    var folder: Folder
     var tempHasNew: Bool = false
 
     var body: some View {
-        if tempHasSubfolders {
+        if folder.subfolders.count > 0 {
             DisclosureGroup(isExpanded: $isExpanded) {
-                //TODO: Eventual subfolder
+                ForEach(folder.subfolders) { subfolder in
+                    MailboxDropdownRowView(folder: subfolder)
+                }
             } label: {
                 HStack {
-                    (iconSwitcher(folderName: mailbox.name, tinted: tempHasNew)).frame(width: 24, height: 24)
-                    Text(mailbox.name)
+                    (iconSwitcher(folderName: folder.name!, tinted: tempHasNew)).frame(width: 24, height: 24)
+                    Text(folder.name!)
                         .foregroundStyle(.black)
                     Spacer()
-                    if (!isExpanded && mailbox.unreadEmails! > 0) {
-                        UnreadCounter(unreadCount: mailbox.unreadEmails ?? 0, hasNew: false)
+                    if (!isExpanded && folder.unreadEmails! > 0) {
+                        UnreadCounter(unreadCount: folder.unreadEmails!, hasNew: false)
                     }
                 }
-            }.padding(.horizontal)
-                .font(.subheadline)
+            }.font(.subheadline)
+                .padding(.leading)
         } else {
             HStack {
-                (iconSwitcher(folderName: mailbox.name, tinted: tempHasNew)).frame(width: 24, height: 24)
-                Text(mailbox.name)
+                (iconSwitcher(folderName: folder.name!, tinted: tempHasNew)).frame(width: 24, height: 24)
+                Text(folder.name!)
                     .foregroundStyle(.black)
                 Spacer()
-                if mailbox.unreadEmails! > 0 {
-                    UnreadCounter(unreadCount: mailbox.unreadEmails ?? 0, hasNew: !tempHasNew)
+                if folder.unreadEmails! > 0 {
+                    UnreadCounter(unreadCount: folder.unreadEmails!, hasNew: false)
                 }
             }
             .onTapGesture {
                 //TODO: Load relevant email list
             }
-            .padding(.horizontal)
+            .padding(.leading)
             .font(.subheadline)
         }
 
@@ -52,11 +51,43 @@ struct MailboxDropdownRowView: View {
 }
 
 #Preview {
-    @Previewable @State var accountManager: AccountManager = AccountManager()
-    @Previewable @State var mailbox: Mailbox = Mailbox("Inbox", unreadEmails: 2)
-
-    MailboxDropdownRowView(mailbox: mailbox)
-        .environment(accountManager)
+    @Previewable var parentFolder: Folder = Folder(
+        name: "name",
+        path: "name",
+        unreadEmails: 2,
+        totalEmails: 10,
+        id: "id1",
+        mailbox: Mailbox("name"),
+        subfolders: [
+            Folder(
+                name: "place",
+                path: "name/place",
+                unreadEmails: 2,
+                totalEmails: 10,
+                id: "id2",
+                mailbox: Mailbox("place"),
+                subfolders: [
+                    Folder(
+                        name: "inbox2",
+                        path: "name/inbox2",
+                        unreadEmails: 2,
+                        totalEmails: 10,
+                        id: "id4",
+                        mailbox: Mailbox("inbox2")
+                    )
+                ]
+            ),
+            Folder(
+                name: "inbox1",
+                path: "name/inbox1",
+                unreadEmails: 2,
+                totalEmails: 10,
+                id: "id3",
+                mailbox: Mailbox("inbox1"),
+            )
+        ]
+    )
+    MailboxDropdownRowView(folder: parentFolder)
 }
 
 @ViewBuilder func iconSwitcher(folderName: String, tinted: Bool) -> some View {
