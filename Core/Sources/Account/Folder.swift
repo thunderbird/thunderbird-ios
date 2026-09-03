@@ -21,7 +21,8 @@ public struct Folder: CustomStringConvertible, Hashable, Identifiable {
         unreadEmails: Int?,
         totalEmails: Int?,
         id: String?,
-        mailbox: Mailbox
+        mailbox: Mailbox,
+        subfolders: [Folder] = []
     ) {
         self.name = name
         self.path = path
@@ -29,6 +30,7 @@ public struct Folder: CustomStringConvertible, Hashable, Identifiable {
         self.totalEmails = totalEmails
         self.id = id ?? UUID().uuidString(1)
         self.mailbox = mailbox
+        self.subfolders = subfolders
     }
 
     init(from mailbox: Mailbox) {

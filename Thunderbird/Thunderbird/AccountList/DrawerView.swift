@@ -66,7 +66,7 @@ struct DrawerContent: View {
     var body: some View {
         VStack(alignment: .leading) {
             ForEach(accountManager.allAccounts) { account in
-                let mailboxes: MailboxManager = MailboxManager(account: account)
+                let mailboxes: FolderManager = FolderManager(account: account)
                 AccountFolderDisclosureView()
                     .environment(mailboxes)
             }

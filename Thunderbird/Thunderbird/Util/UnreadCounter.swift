@@ -8,12 +8,12 @@ import SwiftUI
 ///  - unreadCount: number of unread messages
 ///  - hasNew: do any of the unread messages qualify as 'new'
 struct UnreadCounter: View {
-    init(unreadCount: Int = 0, hasNew: Bool = false) {
+    init(unreadCount: Int, hasNew: Bool = false) {
         self.unreadCount = unreadCount
         self.hasNew = hasNew
     }
 
-    @State private var unreadCount: Int = 0
+    @State private var unreadCount: Int
     @State private var hasNew: Bool = false
 
     var body: some View {
