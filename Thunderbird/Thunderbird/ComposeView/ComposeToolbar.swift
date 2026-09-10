@@ -14,12 +14,12 @@ struct ComposeToolbar: View {
         keyboardShown: Binding<Bool>,
         selection: Binding<String>
     ) {
+        _keyboardShown = keyboardShown
+        _selection = selection
         self.textAttributes = textAttributes
         self.isShowingLinkAlert = isShowingLinkAlert
         self.linkText = linkText
         self.linkUrl = linkUrl
-        _keyboardShown = keyboardShown
-        _selection = selection
     }
 
     @State private var textAttributes: TextAttributes

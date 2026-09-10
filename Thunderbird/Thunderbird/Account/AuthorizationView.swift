@@ -21,6 +21,8 @@ struct AuthorizationView: View {
         self.username = username
         self.authenticationType = authenticationType
         _authorization = authorization
+        _error = error
+        _authConfig = authConfig
         switch authorization.wrappedValue {
         case .basic(_, let password):
             self.password = password
@@ -30,8 +32,6 @@ struct AuthorizationView: View {
         case .none:
             break
         }
-        _error = error
-        _authConfig = authConfig
     }
 
     @Binding private var authorization: Authorization
