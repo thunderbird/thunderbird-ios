@@ -20,6 +20,24 @@ struct AutoconfigView: View {
 
     private var isEnabled: Bool { emailAddress.isEmailAddress && !isSearching }
 
+    /// Autoconfig reports "no configuration anywhere" by throwing `URLError`s it builds itself.
+    /// Those carry no localized description, so showing one verbatim gives the user
+    /// "NSURLErrorDomain error -1100". Only errors the system raised describe themselves usefully.
+    private var errorMessage: String {
+        guard let error: Error = error else {
+            return ""
+        }
+        guard let code: URLError.Code = (error as? URLError)?.code else {
+            return error.localizedDescription
+        }
+        switch code {
+        case .notConnectedToInternet, .networkConnectionLost, .timedOut, .cannotConnectToHost:
+            return error.localizedDescription
+        default:
+            return "No configuration found. Use Manual Account Setup to enter your server details."
+        }
+    }
+
     private func search() async {
         error = nil
         isSearching = true
@@ -78,8 +96,8 @@ struct AutoconfigView: View {
                     RoundedRectangle(cornerRadius: 22.0)
                         .fill(.gray.opacity(0.2))
                 }
-            } else if let error {
-                Label(error.localizedDescription, systemImage: "exclamationmark.triangle.fill")
+            } else if error != nil {
+                Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
                     .padding()
             }
         }
