@@ -2,7 +2,6 @@
 "onboarding_welcome_start_button" = "Започни";
 "onboarding_welcome_developed_by" = "Развијено од стране посвећеног тима у MZLA Technologies и глобалне заједнице волонтера. Део је Mozilla породице.";
 "account_oauth_sign_in_button" = "Пријава";
-"account_server_settings_username_label" = "Корисничко име";
 "account_server_settings_protocol_type_label" = "Протокол";
 "account_server_settings_security_label" = "Безбедност";
 "account_server_settings_port_label" = "Порт";
