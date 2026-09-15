@@ -12,6 +12,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>net.thunderbird.ios</string>
+				<string>msauth.net.thunderbird.ios</string>
 			</array>
 		</dict>
 	</array>

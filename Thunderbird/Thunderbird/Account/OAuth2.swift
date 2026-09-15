@@ -69,7 +69,7 @@ extension OAuth2.Request: @retroactive CaseIterable {
         try! Self(
             authURI: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
             tokenURI: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
-            redirectURI: "msauth://\(Bundle.main.schemes.first!)/eaXDuh6T3KFWjcJhsoaObT9OayU%3D",
+            redirectURI: "msauth.\(Bundle.main.schemes.first!)://auth",
             responseType: "code",
             scope: [
                 "profile",
@@ -79,7 +79,7 @@ extension OAuth2.Request: @retroactive CaseIterable {
                 "https://outlook.office.com/SMTP.Send",
                 "offline_access"
             ],
-            clientID: "e6f8716e-299d-4ed9-bbf3-453f192f44e5",
+            clientID: "22c6c0b6-8265-4475-9cb8-b8f225837d93",
             hosts: [
                 "office365.com",
                 "outlook.com"
