@@ -49,6 +49,27 @@ jobs:
     environment: ${{ !inputs.build_test && 'thunderbird_release' || '' }}
 
     steps:
+      - name: Show build configuration
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ inputs.version || env.DEFAULT_VERSION }}
+          INPUT_NOTIFY_TESTERS: ${{ inputs.notify_testers || env.DEFAULT_NOTIFY_TESTERS }}
+          INPUT_TEST_DEVICE: ${{ inputs.test_device || env.DEFAULT_TEST_DEVICE }}
+          INPUT_BUILD_TEST: ${{ inputs.build_test || false }}
+        run: |
+          {
+            echo "### Build configuration"
+            echo ""
+            echo "| Option | Value |"
+            echo "| --- | --- |"
+            echo "| trigger | \`$EVENT_NAME\` |"
+            echo "| version | \`$INPUT_VERSION\` |"
+            echo "| notify_testers | \`$INPUT_NOTIFY_TESTERS\` |"
+            echo "| test_device | \`$INPUT_TEST_DEVICE\` |"
+            echo "| build_test | \`$INPUT_BUILD_TEST\` |"
+            echo "| Xcode version | \`$XCODE_VERSION\` |"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
