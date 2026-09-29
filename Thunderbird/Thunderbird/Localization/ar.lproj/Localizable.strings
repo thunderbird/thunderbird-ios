@@ -2,7 +2,6 @@
 "onboarding_welcome_developed_by" = "تم تطويره من قبل فريق متخصص في MZLA Technologies ومجتمع عالمي من المتطوعين. جزء من عائلة موزيلا.";
 "onboarding_welcome_start_button" = "ابدأ";
 "account_oauth_sign_in_button" = "تسجيل الدخول";
-"account_server_settings_username_label" = "اسم المستخدم";
 "account_server_settings_protocol_type_label" = "البروتوكول";
 "account_server_settings_security_label" = "الحماية";
 "account_server_settings_port_label" = "المنفذ";

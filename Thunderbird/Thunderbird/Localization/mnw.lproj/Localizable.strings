@@ -1,0 +1,16 @@
+"account_server_settings_protocol_type_label" = "ပရဵုတဵုခဝ်";
+"onboarding_welcome_start_button" = "စတရဴစိုအ်";
+"onboarding_welcome_text" = "ဒၞါဲပလံၚ်လိက်ဂီုဂီုကၠီုကၠီုသွက် IOS ကေုာံ သီုဒၞါဲလလောၚ်ဟွံမွဲ.";
+"onboarding_welcome_developed_by" = "ဖောအ်ဗြေဝ်ဖန်ဗဒှ် နူကဵု ဂကောံ MZLA Technoligies ကေုာံ ဂကောံမှာဇန်အရီုဗၚ်ဂၠးကဝ်ရ။ မွဲဂကောံကု ဂြေဝ်ဂတာ Mozila ။.";
+"account_oauth_sign_in_button" = "လုပ်";
+"account_server_settings_security_label" = "သုၚ်စောဲ SSL/TSL";
+"account_server_settings_port_label" = "ပၞော်(ဖတ်)";
+"account_server_settings_server_label" = "သာပါ";
+"configuration_IMAP_not_supported" = "ပြဟ်ဟ်ဏအ် IMAP ဂှ် သုၚ်စောဲဟွံဂွံဏီ";
+"account_server_settings_authentication_client_certificate" = "လိက်စၟတ်သမ္တီတၠမူ";
+"account_server_settings_authentication_label" = "ပွမကဵုအခေါၚ်";
+"account_server_settings_authentication_password_cleartext" = "မလိက်ဓလုက်";
+"account_server_settings_authentication_password_encrypted" = "မဓလုက်မသုၚ်စောဲလဝ်ကုက်အကြာၜါ";
+"account_server_settings_authentication_client_oauth" = "OAuth ၂.၀";
+"account_server_settings_authentication_none" = "မုဟွံသေၚ်";
+"donation_support" = "ကဵုဒါန်";

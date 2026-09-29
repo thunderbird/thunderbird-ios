@@ -1,1 +1,10 @@
 "onboarding_welcome_start_button" = "Aha bdu tura";
+"account_oauth_sign_in_button" = "Qqen";
+"account_oauth_sign_in_with_google_button" = "Qqen s Google";
+"account_oauth_loading_message" = "Qqen s OAuth";
+"account_oauth_loading_error" = "Tuccḍa deg tuqqna s OAuth";
+"account_server_settings_protocol_type_label" = "Aneggaf";
+"account_server_settings_server_label" = "Aqeddac";
+"account_server_settings_port_label" = "Tawwurt";
+"account_server_settings_authentication_none" = "Ula d yiwen";
+"account_server_settings_authentication_client_oauth" = "OAuth 2.0";
