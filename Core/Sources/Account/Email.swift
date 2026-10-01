@@ -16,6 +16,7 @@ public struct Email: CustomStringConvertible, Identifiable, Sendable {
     public var to: [EmailAddressProtocol]
     public var bcc: [EmailAddressProtocol]
     public var cc: [EmailAddressProtocol]
+    public var universalFlags: Set<UniversalFlag>
     public let received: Date?  // IMAP internal message date
     public let sent: Date?  // IMAP envelope date
     public let messageID: [String]
@@ -42,7 +43,8 @@ public struct Email: CustomStringConvertible, Identifiable, Sendable {
         body: EmailBody? = nil,
         blobID: String? = nil,
         uid: UID? = nil,
-        id: String? = nil
+        id: String? = nil,
+        universalFlags: Set<UniversalFlag> = []
     ) {
         self.from = from
         self.sender = sender
@@ -60,6 +62,7 @@ public struct Email: CustomStringConvertible, Identifiable, Sendable {
         self.blobID = blobID
         self.uid = uid
         self.id = id ?? UUID().uuidString(1)
+        self.universalFlags = universalFlags
     }
 
     // MARK: CustomStringConvertible
@@ -86,6 +89,38 @@ extension Email {
         return id
     }
 
+    static func imapFlagsToUniversal(flags: Set<Flag>) -> Set<UniversalFlag> {
+        var unifiedFlags: Set<UniversalFlag> = []
+        for flag in flags {
+            
+        }
+        return unifiedFlags
+    }
+
+    static func jmapKeywordsToUniversal(keywords: [String:Bool]) -> Set<UniversalFlag> {
+        var unifiedFlags: Set<UniversalFlag> = []
+        return unifiedFlags
+    }
+
+    static func universalFlagsToImap(flags: Set<UniversalFlag>) -> [Flag] {
+        var imapFlags: [Flag] = []
+        for flag in flags {
+            guard let imapFlag = imapFlagMap[flag] else { continue }
+            imapFlags.append(imapFlag)
+        }
+        return imapFlags
+    }
+
+    static func universalFlagsToJmap(flags: Set<UniversalFlag> ) -> [String:Bool] {
+        var jmapKeywords: [String: Bool] = [:]
+        for flag in flags {
+            guard let jmapFlag = jmapFlagMap[flag] else { continue }
+            jmapKeywords.updateValue(true, forKey: jmapFlag)
+        }
+        return jmapKeywords
+    }
+
+
     // Map from IMAP message
     init(_ message: IMAP.Message) {
         self.init(
@@ -103,7 +138,8 @@ extension Email {
             subject: message.envelope.subject,
             body: try? EmailBody(body: message.body),
             uid: message.uid,
-            id: message.emailID ?? message.gmailID
+            id: message.emailID ?? message.gmailID,
+            universalFlags: Email.imapFlagsToUniversal(flags: message.flags)
         )
     }
 
@@ -124,7 +160,8 @@ extension Email {
             subject: email.subject,
             body: try? EmailBody(email: email),
             blobID: email.blobID,
-            id: email.id
+            id: email.id,
+            universalFlags: Email.jmapKeywordsToUniversal(keywords: email.keywords)
         )
     }
 }
@@ -159,6 +196,45 @@ extension Email {
         }
 
         return newEmail
+    }
+}
+
+// MARK: - Convenience for unified flag setting
+extension Email {
+    public enum UniversalFlag: String, Sendable {
+        case seen = "seen"
+        case flagged = "flagged"
+        case answered = "answered"
+        case draft = "draft"
+        case deleted = "deleted"
+
+    }
+
+    static let imapFlagMap: [UniversalFlag: Flag] = [
+        .seen: Flag.seen,
+        .answered: Flag.answered,
+        .deleted: Flag.deleted,
+        .draft: Flag.draft,
+        .flagged: Flag.flagged
+    ]
+
+
+    static let jmapFlagMap: [UniversalFlag: String] = [
+        .seen: "$seen",
+        .answered: "$answered",
+        .draft: "$draft",
+        .flagged: "$flagged"
+    ]
+
+
+    public func setFlag(flag: UniversalFlag, setToTrue: Bool){
+        var email = self
+        if setToTrue {
+            email.universalFlags.insert(flag)
+        } else {
+            email.universalFlags.remove(flag)
+        }
+        //push update to mailbox
     }
 }
 
@@ -216,8 +292,8 @@ extension IMAP.Message {
                 inReplyTo: email.inReplyTo.first,
                 messageID: email.messageID.first
             ),
-            flags: [],
-            gmailLabels: [],
+            flags: Email.universalFlagsToImap(flags: email.universalFlags),
+            gmailLabels: [],// TODO: incorporate gmailLabels
             gmailMessageID: email.gmailMessageID,
             gmailThreadID: email.gmailThreadID,
             internalDate: email.received,
@@ -235,7 +311,7 @@ extension JMAP.Email {
             blobID: email.blobID ?? "",
             threadID: email.threadID.first ?? "",
             mailboxIDs: [:],  // TODO: JMAP mailbox IDs not carried
-            keywords: [:],  // TODO: JMAP keywords not implemented
+            keywords: Email.universalFlagsToJmap(flags: email.universalFlags),
             size: 0,
             receivedAt: email.received,
             sentAt: email.sent,
