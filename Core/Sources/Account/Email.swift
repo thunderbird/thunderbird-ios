@@ -89,37 +89,23 @@ extension Email {
         return id
     }
 
+    // Go back and forth between local Universal Flags and IMAP and JMAP representations
     static func imapFlagsToUniversal(flags: Set<Flag>) -> Set<UniversalFlag> {
-        var unifiedFlags: Set<UniversalFlag> = []
-        for flag in flags {
-            
-        }
-        return unifiedFlags
+        return Set(flags.compactMap { imapToUniversalMap[$0] })
     }
 
-    static func jmapKeywordsToUniversal(keywords: [String:Bool]) -> Set<UniversalFlag> {
-        var unifiedFlags: Set<UniversalFlag> = []
-        return unifiedFlags
+    static func jmapKeywordsToUniversal(keywords: [String: Bool]) -> Set<UniversalFlag> {
+        return Set(keywords.keys.compactMap { jmapToUniversalFlagMap[$0] })
     }
 
     static func universalFlagsToImap(flags: Set<UniversalFlag>) -> [Flag] {
-        var imapFlags: [Flag] = []
-        for flag in flags {
-            guard let imapFlag = imapFlagMap[flag] else { continue }
-            imapFlags.append(imapFlag)
-        }
+        var imapFlags: [Flag] = flags.compactMap { imapFlagMap[$0] ?? "" }
         return imapFlags
     }
 
-    static func universalFlagsToJmap(flags: Set<UniversalFlag> ) -> [String:Bool] {
-        var jmapKeywords: [String: Bool] = [:]
-        for flag in flags {
-            guard let jmapFlag = jmapFlagMap[flag] else { continue }
-            jmapKeywords.updateValue(true, forKey: jmapFlag)
-        }
-        return jmapKeywords
+    static func universalFlagsToJmap(flags: Set<UniversalFlag>) -> [String: Bool] {
+        return Dictionary(uniqueKeysWithValues: flags.compactMap { jmapFlagMap[$0] }.map { ($0, true) })
     }
-
 
     // Map from IMAP message
     init(_ message: IMAP.Message) {
@@ -207,7 +193,7 @@ extension Email {
         case answered = "answered"
         case draft = "draft"
         case deleted = "deleted"
-
+        case unknown = "unknown"
     }
 
     static let imapFlagMap: [UniversalFlag: Flag] = [
@@ -218,7 +204,6 @@ extension Email {
         .flagged: Flag.flagged
     ]
 
-
     static let jmapFlagMap: [UniversalFlag: String] = [
         .seen: "$seen",
         .answered: "$answered",
@@ -226,8 +211,22 @@ extension Email {
         .flagged: "$flagged"
     ]
 
+    static let imapToUniversalMap: [Flag: UniversalFlag] = [
+        Flag.seen: .seen,
+        Flag.answered: .answered,
+        Flag.deleted: .deleted,
+        Flag.draft: .draft,
+        Flag.flagged: .flagged
+    ]
 
-    public func setFlag(flag: UniversalFlag, setToTrue: Bool){
+    static let jmapToUniversalFlagMap: [String: UniversalFlag] = [
+        "$seen": .seen,
+        "$answered": .answered,
+        "$draft": .draft,
+        "$flagged": .flagged
+    ]
+
+    public func setFlag(flag: UniversalFlag, setToTrue: Bool) {
         var email = self
         if setToTrue {
             email.universalFlags.insert(flag)
@@ -293,7 +292,7 @@ extension IMAP.Message {
                 messageID: email.messageID.first
             ),
             flags: Email.universalFlagsToImap(flags: email.universalFlags),
-            gmailLabels: [],// TODO: incorporate gmailLabels
+            gmailLabels: [],  // TODO: incorporate gmailLabels
             gmailMessageID: email.gmailMessageID,
             gmailThreadID: email.gmailThreadID,
             internalDate: email.received,
