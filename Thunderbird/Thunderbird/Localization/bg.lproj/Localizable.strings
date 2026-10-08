@@ -5,9 +5,8 @@
 "onboarding_welcome_developed_by" = "Разработено от екип от специалисти в MZLA Technologies и глобална общност от доброволци. Част от семейството на Mozilla.";
 "onboarding_welcome_text" = "Свободно приложение за електронна поща под iOS с отворен код.";
 "account_oauth_sign_in_button" = "Вписване";
-"account_server_settings_username_label" = "Потребителско име";
 "account_server_settings_protocol_type_label" = "Протокол";
-"account_server_settings_security_label" = "Защита";
+"account_server_settings_security_label" = "Използване на SSL/TSL";
 "account_server_settings_port_label" = "Порт";
 "account_server_settings_server_label" = "Сървър";
 "configuration_IMAP_not_supported" = "IMAP не се поддържа";
@@ -15,3 +14,8 @@
 "account_server_settings_authentication_label" = "Удостоверяване";
 "account_server_settings_authentication_password_cleartext" = "Парола";
 "donation_support" = "Дарение";
+"account_oauth_sign_in_with_google_button" = "Вписване с Гугъл";
+"account_oauth_sign_in_description" = "Пренасочваме ви към вашият доставчик на пощенски услуги. Трябва да дадете на приложението достъп до профила си.";
+"account_oauth_loading_message" = "Вписване чрез OAuth";
+"account_oauth_loading_error" = "Вписването чрез OAuth се провали";
+"onboarding_welcome_text_early" = "Това приложение е в разработка. Благодарим за обрартната връзка.";
