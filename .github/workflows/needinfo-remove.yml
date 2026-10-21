@@ -1,7 +1,14 @@
 ---
 name: Remove needinfo label
 
-on:
+# This workflow uses issue_comment so it can update labels when an external
+# user replies to an issue.
+#
+# Security constraints that must be maintained to prevent code injection:
+#   - Do not checkout or execute any code.
+#   - Do not interpolate free-form issue or comment fields.
+
+on: # zizmor: ignore[dangerous-triggers]
   issue_comment:
     types:
       - created
@@ -30,6 +37,7 @@ jobs:
         with:
           app-id: ${{ vars.BOT_CLIENT_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-issues: write
 
       - name: Remove needinfo label and add answered label
         env:

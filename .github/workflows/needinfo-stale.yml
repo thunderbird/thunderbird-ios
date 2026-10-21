@@ -25,6 +25,7 @@ jobs:
         with:
           app-id: ${{ vars.BOT_CLIENT_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-issues: write
 
       - name: Close old issues with the needinfo tag
         uses: imhoffd/needs-reply@71e8d5144caa0d4a1e292348bfafa3866d08c855  # v2.0.0

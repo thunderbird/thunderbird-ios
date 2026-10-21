@@ -29,6 +29,7 @@ jobs:
         with:
           app-id: ${{ vars.BOT_CLIENT_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-issues: write
 
       - name: Remove answered label if both exist
         env:
