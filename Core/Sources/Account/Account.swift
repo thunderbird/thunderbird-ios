@@ -201,7 +201,7 @@ extension Account {
                 // IMAP Client already exists for account ID; reconnect and return
                 if !client.isConnected {
                     try await client.connect()
-                    try await client.login()
+                    try await client.authenticate()
                 }
                 return client
             } else {
@@ -211,7 +211,7 @@ extension Account {
                 }
                 let client: IMAPClient = IMAPClient(try IMAP.Server(incomingServer, authorization: authorization))
                 try await client.connect()
-                try await client.login()
+                try await client.authenticate()
                 Self.clients[id] = client  // Donate to shared pool
                 return client
             }

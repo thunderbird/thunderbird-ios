@@ -11,9 +11,8 @@ extension Server: CaseIterable {
     static var aol: Self {
         Server(
             .ssl,
+            authentication: nil,
             hostname: "imap.aol.com",
-            username: "",
-            password: "",
             port: 993
         )
     }
@@ -22,9 +21,8 @@ extension Server: CaseIterable {
     static var gmail: Self {
         Server(
             .ssl,
+            authentication: nil,
             hostname: "imap.gmail.com",
-            username: "",
-            password: "",
             port: 993
         )
     }
@@ -33,9 +31,8 @@ extension Server: CaseIterable {
     static var icloud: Self {
         Server(
             .ssl,
+            authentication: nil,
             hostname: "imap.mail.me.com",
-            username: "",
-            password: "",
             port: 993
         )
     }
@@ -44,14 +41,13 @@ extension Server: CaseIterable {
     static var outlook: Self {
         Server(
             .ssl,
+            authentication: nil,
             hostname: "outlook.office365.com",
-            username: "",
-            password: "",
             port: 993
         )
     }
 
-    var isDisabled: Bool { (username ?? "").isEmpty || (password ?? "").isEmpty }
+    var isDisabled: Bool { authentication == nil }
 
     static func allCases(disabled: Bool) -> [Self] {
         allCases.filter { $0.isDisabled == disabled }
@@ -63,6 +59,5 @@ extension Server: CaseIterable {
 
 // Catch when test account usernames or passwords are leaking
 @Test(arguments: Server.allCases) func isDisabled(_ server: Server) {
-    #expect((server.username ?? "").isEmpty == true)
-    #expect((server.password ?? "").isEmpty == true)
+    #expect(server.authentication == nil)
 }

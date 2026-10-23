@@ -51,7 +51,7 @@ extension Account {
                         try await client.connect()
                         continuation.yield(.success(description))
                         description = "IMAP AUTHENTICATE"
-                        try await client.login()
+                        try await client.authenticate()
                         continuation.yield(.success(description))
                         for capability in client.capabilities {
                             try await Task.sleep(for: duration)  // Just for drama

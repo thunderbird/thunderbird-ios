@@ -11,7 +11,7 @@ struct IMAPClientTests {
     @Test(arguments: Server.allCases(disabled: false)) func allCommands(_ server: Server) async throws {
         let client: IMAPClient = IMAPClient(server)
         try await client.connect()
-        try await client.login()  // Use credentials in canned `Server`
+        try await client.authenticate()  // Use credentials in canned `Server`
 
         let mailboxes: [(Mailbox, Mailbox.Status?)] = try await client.list()  // List mailboxes
         guard let inbox: Mailbox = mailboxes.filter({ $0.0.path.name.isInbox }).first?.0 else {

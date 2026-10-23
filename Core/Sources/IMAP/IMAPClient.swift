@@ -55,23 +55,32 @@ public class IMAPClient {
         self.channel = nil
     }
 
-    /// Log in to connected IMAP server using configured ``Server`` credentials.
-    public func login() async throws {
-        try await login(username: server.username ?? "", password: server.password ?? "")
+    /// Authenticate with connected IMAP ``Server``. Provided ``Authentication`` overrides `Server` configuration authentication.
+    public func authenticate(_ authentication: Authentication? = nil) async throws {
+        guard let authentication: Authentication = authentication ?? server.authentication else {
+            throw IMAPError.authenticationCredentialNotFound
+        }
+        logger?.info("Authenticating \(authentication)…")
+        switch authentication {
+        case .xoauth2:
+            try isSupported(.authenticate(.xOAuth2))
+            throw IMAPError.commandNotSupported("AUTHENTICATE XOAUTH2")
+        case .plain(let user, let password):
+            do {
+                try isSupported(.saslIR)
+                let capabilities: [Capability] = try await execute(command: AuthenticateCommand(authentication))
+                merge(capabilities: capabilities)
+            } catch {
+                try await login(username: user, password: password)
+            }
+        }
     }
 
-    /// Log in to connected IMAP ``Server`` using locally specified credentials.
+    /// Log in to connected IMAP ``Server`` using basic credentials.
     public func login(username: String, password: String) async throws {
         logger?.info("Logging in \(username)…")
         let capabilities: [Capability] = try await execute(command: LoginCommand(username: username, password: password))
-        if !capabilities.isEmpty {
-            // IMAP servers can return additional capabilities after login
-            logger?.info("Merging capabilities…")
-            for capability in capabilities {
-                self.capabilities.insert(capability)
-            }
-            logger?.info("Capabilities: \(self.capabilities)")
-        }
+        merge(capabilities: capabilities)
     }
 
     /// Log out from connected IMAP ``Server``; leave active NIO channel connection intact.
@@ -326,6 +335,15 @@ public class IMAPClient {
         guard let channel, !channel.isActive else { return }
         self.channel = nil
         logger?.info("Channel reset; ready to connect")
+    }
+
+    private func merge(capabilities: [Capability]) {
+        guard !capabilities.isEmpty else { return }
+        logger?.info("Merging capabilities…")
+        for capability in capabilities {
+            self.capabilities.insert(capability)
+        }
+        logger?.info("Capabilities: \(self.capabilities)")
     }
 
     private var idleHandler: IdleHandler?

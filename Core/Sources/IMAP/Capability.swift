@@ -13,6 +13,7 @@ public struct Capability: CustomStringConvertible, Equatable, Hashable, RawRepre
     public static var mailboxSpecificAppendLimit: Self { Capability(.mailboxSpecificAppendLimit) }
     public static var objectID: Self { Capability(.objectID) }
     public static var preview: Self { Capability(.preview) }
+    public static var saslIR: Self { Capability(.saslIR) }
     public static var uidPlus: Self { Capability(.uidPlus) }
 
     public enum Status: String, CustomStringConvertible, Sendable {
@@ -24,6 +25,10 @@ public struct Capability: CustomStringConvertible, Equatable, Hashable, RawRepre
 
     public static func status(_ status: Status) -> Self {
         Capability(.status(NIOIMAPCore.Capability.StatusKind(status.rawValue)))
+    }
+
+    public static func authenticate(_ mechanism: Authentication.Mechanism) -> Self {
+        Capability(.authenticate(mechanism))
     }
 
     public var label: String { components[0] }

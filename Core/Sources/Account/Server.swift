@@ -90,11 +90,23 @@ extension IMAP.Server {
         }
         self.init(
             IMAP.ConnectionSecurity(server.connectionSecurity),
+            authentication: Authentication(authorization: authorization),
             hostname: server.hostname,
-            username: server.username,
-            password: authorization.rawValue,
             port: server.port
         )
+    }
+}
+
+extension IMAP.Authentication {
+    init?(authorization: Authorization) {
+        switch authorization {
+        case .oauth(let user, let token, _):
+            self = .xoauth2(user, token: token.value)
+        case .basic(let user, let password):
+            self = .plain(user, password: password)
+        case .none:
+            return nil
+        }
     }
 }
 
