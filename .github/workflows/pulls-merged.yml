@@ -24,7 +24,6 @@ jobs:
       name: botmobile
       deployment: false
     permissions:
-      pull-requests: write
       issues: write
     steps:
       - name: App token generate
@@ -34,6 +33,7 @@ jobs:
         with:
           client-id: ${{ vars.BOT_CLIENT_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-issues: write
 
       # NOTE(coreycb): Enable when we have milestones similar to github.com/thunderbird/thunderbird-android/milestones
       #
@@ -81,7 +81,7 @@ jobs:
 
             Hope to see you there! 🚀📱🐦
         run: |
-          gh pr comment $PR_NUMBER --repo $GITHUB_REPOSITORY --body "$MESSAGE"
+          gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" -f body="$MESSAGE"
 
       # NOTE(coreycb): Enable when we have milestones similar to github.com/thunderbird/thunderbird-android/milestones
       #

@@ -22,7 +22,7 @@ jobs:
       name: botmobile
       deployment: false
     permissions:
-      pull-requests: write
+      issues: write
     steps:
       - name: App token generate
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1  # v3.2.0
@@ -31,6 +31,7 @@ jobs:
         with:
           client-id: ${{ vars.BOT_CLIENT_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          permission-issues: write
 
       - name: Assign reviewer to PR
         if: ${{ github.event.requested_reviewer }}
@@ -39,4 +40,4 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
         run: |
-          gh pr edit $PR_NUMBER --repo $GITHUB_REPOSITORY --add-assignee "$PR_REVIEWER"
+          gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/assignees" -f "assignees[]=$PR_REVIEWER"
