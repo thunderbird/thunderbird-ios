@@ -106,7 +106,7 @@ import MIME
 
 let client: IMAPClient = IMAPClient(Server(hostname: "imap.example.com"))
 try await client.connect()
-try await client.login(username: "name@example.com", password: "fAK3-PASs-w0rD")
+try await client.authenticate(.plain("name@example.com", password: "fAK3-PASs-w0rD"))
 ```
 
 For the authenticated client, list mailboxes and select inbox:
@@ -178,8 +178,8 @@ Thunderbird intends to support every flavor of IMAP under the sun, as implemente
 
 IMAP commands were implemented in practical order, i.e., fetching messages requires a selected mailbox. Selecting a mailbox requires an authenticated server connection, and so on. A few commands have not been implemented yet:
 
+* [x] ~~`AUTHENTICATE`: Authenticate IMAP connection with OAuth using [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer); preferred over `LOGIN` using app password.~~
 * [ ] `APPEND`: Add a message to a mailbox; used primarily to save new message drafts on server.
-* [ ] `AUTHENTICATE`: Authenticate IMAP connection with OAuth using [SASL](https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer); preferred over `LOGIN` using app password.
 * [ ] `SEARCH`: Search a mailbox on the server using structured queries.
 
 `IMAP` library uses in-package [`MIME`](#mime) library for decoding and [Swift NIOIMAP](https://github.com/apple/swift-nio-imap) for IMAP commands, models and transport.

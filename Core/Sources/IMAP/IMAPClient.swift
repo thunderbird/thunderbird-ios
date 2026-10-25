@@ -62,9 +62,14 @@ public class IMAPClient {
         }
         logger?.info("Authenticating \(authentication)…")
         switch authentication {
+        case .oauthbearer:
+            try isSupported(.authenticate(.oauthBearer))
+            let capabilities: [Capability] = try await execute(command: AuthenticateCommand(authentication))
+            merge(capabilities: capabilities)
         case .xoauth2:
-            try isSupported(.authenticate(.xOAuth2))
-            throw IMAPError.commandNotSupported("AUTHENTICATE XOAUTH2")
+            try isSupported(.authenticate(.xoauth2))
+            let capabilities: [Capability] = try await execute(command: AuthenticateCommand(authentication))
+            merge(capabilities: capabilities)
         case .plain(let user, let password):
             do {
                 try isSupported(.saslIR)
