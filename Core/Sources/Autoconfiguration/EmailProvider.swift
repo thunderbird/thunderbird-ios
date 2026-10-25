@@ -8,7 +8,7 @@ public struct EmailProvider: Decodable {
     public struct Server: Decodable {
         public enum Authentication: String, CaseIterable, CustomStringConvertible, Decodable {
             case clientIPAddress = "client-IP-address"
-            case oAuth2 = "OAuth2"
+            case oauth2 = "OAuth2"
             case passwordCleartext = "password-cleartext"
             case passwordEncrypted = "password-encrypted"
             case smtpAfterPop = "smtp-after-pop"
@@ -16,7 +16,7 @@ public struct EmailProvider: Decodable {
             // MARK: CustomStringConvertible
             public var description: String {
                 switch self {
-                case .clientIPAddress, .oAuth2: rawValue
+                case .clientIPAddress, .oauth2: rawValue
                 case .passwordCleartext: "clear-text password"
                 case .passwordEncrypted: "encrypted password"
                 case .smtpAfterPop: "SMTP after POP"

@@ -6,7 +6,7 @@ import Autoconfiguration
 
 public enum AuthenticationType: String, Codable, CaseIterable, CustomStringConvertible, Identifiable, Sendable {
     case password
-    case oAuth2 = "OAuth2"
+    case oauth2 = "OAuth2"
     case none
 
     // MARK: CustomStringConvertible
@@ -18,8 +18,8 @@ public enum AuthenticationType: String, Codable, CaseIterable, CustomStringConve
 
 extension AuthenticationType {
     init(_ authentication: [EmailProvider.Server.Authentication]) {
-        if authentication.contains(.oAuth2) {
-            self = .oAuth2  // Prefer OAuth2
+        if authentication.contains(.oauth2) {
+            self = .oauth2  // Prefer OAuth2
         } else if authentication.contains(.passwordCleartext) {
             self = .password
         } else {
