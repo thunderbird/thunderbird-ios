@@ -57,28 +57,6 @@ private extension EnvironmentValues {
     }
 }
 
-#Preview("Semantic Color") {
-    ScrollView {
-        VStack {
-            ForEach(SemanticColor.allCases) {
-                ColorView(Color($0), description: $0.description)
-            }
-        }
-        .padding()
-    }
-}
-
-#Preview("Foundation Color") {
-    ScrollView {
-        VStack {
-            ForEach(FoundationColor.allCases) {
-                ColorView(Color($0), description: $0.description)
-            }
-        }
-        .padding()
-    }
-}
-
 private struct ColorView: View {
     let color: Color
     let description: (String, String)
