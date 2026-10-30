@@ -6,6 +6,13 @@ import Foundation
 
 extension URL {
     /// Generate the appropriate autoconfig URL for a given source and email address.
+    ///
+    /// - Parameters:
+    ///   - emailAddress: An email address or bare host name.
+    ///   - source: Where to look for the configuration. Defaults to ``Source/ispDB``.
+    /// - Returns: The URL of the autoconfig document.
+    /// - Throws: `URLError(.cannotFindHost)` if no host can be parsed, or `URLError(.unsupportedURL)` if the URL can't
+    ///   be built.
     public static func autoconfig(_ emailAddress: String, source: Source = .ispDB) throws -> Self {
         switch source {
         case .provider: try provider(emailAddress)
@@ -14,6 +21,12 @@ extension URL {
         }
     }
 
+    /// `https://autoconfig.<host>/mail/config-v1.1.xml`, with an `emailaddress` query item when a full address is
+    /// given.
+    ///
+    /// - Parameter emailAddress: An email address or bare host name.
+    /// - Returns: The provider's autoconfig URL.
+    /// - Throws: `URLError(.cannotFindHost)` or `URLError(.unsupportedURL)`.
     static func provider(_ emailAddress: String) throws -> Self {
         let host: String = try emailAddress.host
         guard let url: URL = URL(string: "https://autoconfig.\(host)/mail/config-v1.1.xml") else {
@@ -25,6 +38,11 @@ extension URL {
             ]) : url
     }
 
+    /// `https://<host>/.well-known/autoconfig/mail/config-v1.1.xml`.
+    ///
+    /// - Parameter emailAddress: An email address or bare host name.
+    /// - Returns: The provider's well-known autoconfig URL.
+    /// - Throws: `URLError(.cannotFindHost)` or `URLError(.unsupportedURL)`.
     static func wellKnown(_ emailAddress: String) throws -> Self {
         let host: String = try emailAddress.host
         guard let url: URL = URL(string: "https://\(host)/.well-known/autoconfig/mail/config-v1.1.xml") else {
@@ -33,6 +51,11 @@ extension URL {
         return url
     }
 
+    /// Thunderbird's ISP database entry for the host: `https://autoconfig.thunderbird.net/v1.1/<host>`.
+    ///
+    /// - Parameter emailAddress: An email address or bare host name.
+    /// - Returns: The ISPDB URL for the host.
+    /// - Throws: `URLError(.cannotFindHost)` or `URLError(.unsupportedURL)`.
     static func ispDB(_ emailAddress: String) throws -> Self {
         let host: String = try emailAddress.host
         guard let url: URL = URL(string: "https://autoconfig.thunderbird.net/v1.1/\(host)") else {
@@ -43,5 +66,6 @@ extension URL {
 }
 
 extension URL {
+    /// Location of the Public Suffix List.
     static let suffixList: Self = Self(string: "https://publicsuffix.org/list/public_suffix_list.dat")!
 }

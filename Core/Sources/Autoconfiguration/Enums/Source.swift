@@ -2,9 +2,16 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
-/// Autoconfig locations to query, in order of trust: email provider subdomain or well-known, then ISPDB
+/// Autoconfig locations to query. Cases are declared in order of trust, so `allCases` is the preferred query order.
+///
+/// See `URL.autoconfig(_:source:)` for the URL each source resolves to.
 public enum Source: String, CaseIterable, Codable, CustomStringConvertible, Sendable {
-    case provider, wellKnown, ispDB  // Order of trust
+    /// The provider's `autoconfig` subdomain.
+    case provider
+    /// The provider's `.well-known` path.
+    case wellKnown
+    /// Thunderbird's ISP database.
+    case ispDB
 
     // MARK: CustomStringConvertible
     public var description: String {

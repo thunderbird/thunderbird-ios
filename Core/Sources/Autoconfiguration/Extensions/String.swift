@@ -5,6 +5,11 @@
 import Foundation
 
 extension String {
+    /// The validated host portion of an email address or bare host name.
+    ///
+    /// Everything after the last `@` is used.
+    ///
+    /// - Throws: `URLError(.cannotFindHost)` if no valid host can be extracted.
     public var host: Self {
         get throws {
             // Ensure valid host/domain with `URL` initializer, then discard the `URL`.
@@ -17,6 +22,9 @@ extension String {
         }
     }
 
+    /// The local part of an email address: everything before the last `@`.
+    ///
+    /// - Throws: `URLError(.cannotFindHost)` if the string contains no `@`.
     public var local: Self {
         get throws {
             guard contains("@") else {
@@ -26,6 +34,11 @@ extension String {
         }
     }
 
+    /// The DNS SRV query name for a service at this address's host, e.g. `_imaps._tcp.example.com`.
+    ///
+    /// - Parameter service: The service to build the query name for.
+    /// - Returns: The query name, `_<service>._tcp.<host>`.
+    /// - Throws: `URLError(.cannotFindHost)` if no valid host can be extracted.
     public func query(_ service: Service) throws -> Self {
         "_\(service.rawValue)._tcp.\(try host)"
     }

@@ -4,11 +4,18 @@
 
 import Foundation
 
-// Translate client config XML into JSON
+/// Translates Autoconfig client config XML into JSON matching ``ClientConfig``'s `Decodable` layout.
+///
+/// Parsing happens synchronously in `init`. Elements outside the supported set are ignored, and malformed XML
+/// yields a partial (possibly empty) dictionary rather than an error. The `%EMAILADDRESS%`, `%EMAILLOCALPART%` and
+/// `%EMAILDOMAIN%` placeholders are substituted with parts of `emailAddress`.
 class XMLToJSONParser: NSObject, XMLParserDelegate {
+    /// Email address used to substitute placeholders.
     private(set) var emailAddress: String!
+    /// Translated configuration, rooted at `clientConfig`.
     private(set) var dictionary: [String: Any] = [:]
 
+    /// `dictionary` serialized as pretty-printed JSON with sorted keys.
     var data: Data {
         get throws {
             try JSONSerialization.data(
@@ -21,6 +28,11 @@ class XMLToJSONParser: NSObject, XMLParserDelegate {
         }
     }
 
+    /// Parse `data` immediately, substituting placeholders with parts of `emailAddress`.
+    ///
+    /// - Parameters:
+    ///   - emailAddress: Email address to substitute into placeholders.
+    ///   - data: Autoconfig XML.
     init(_ emailAddress: String, data: Data) {
         parser = XMLParser(data: data)
         super.init()
@@ -176,6 +188,10 @@ class XMLToJSONParser: NSObject, XMLParserDelegate {
 }
 
 private extension String {
+    /// Replace `%EMAILADDRESS%`, `%EMAILLOCALPART%` and `%EMAILDOMAIN%` with parts of `emailAddress`.
+    ///
+    /// - Parameter emailAddress: The address to substitute.
+    /// - Returns: The string with placeholders replaced; local part and domain become empty if they can't be parsed.
     func applying(_ emailAddress: Self) -> Self {
         var string: Self = replacingOccurrences(of: "%EMAILADDRESS%", with: emailAddress)
         string = string.replacingOccurrences(of: "%EMAILLOCALPART%", with: (try? emailAddress.local) ?? "")
