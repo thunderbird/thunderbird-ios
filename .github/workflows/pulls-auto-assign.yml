@@ -23,6 +23,7 @@ jobs:
       deployment: false
     permissions:
       issues: write
+      pull-requests: write
     steps:
       - name: App token generate
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510  # v3.3.0
@@ -32,6 +33,7 @@ jobs:
           client-id: ${{ vars.BOT_CLIENT_ID }}
           private-key: ${{ secrets.BOT_PRIVATE_KEY }}
           permission-issues: write
+          permission-pull-requests: write
 
       - name: Assign reviewer to PR
         if: ${{ github.event.requested_reviewer }}
