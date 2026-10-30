@@ -37,7 +37,7 @@ public enum Authentication: CustomStringConvertible, Equatable, Sendable {
             case .oauthbearer(let user, let token):
                 data = Data("n,a=\(user),".utf8) + Data([1]) + Data("auth=Bearer \(token)".utf8) + Data([1]) + Data([1])
             case .plain(let user, let password):
-                 data = Data([0]) + Data(user.utf8) + Data([0]) + Data(password.utf8)
+                data = Data([0]) + Data(user.utf8) + Data([0]) + Data(password.utf8)
             case .xoauth2(let user, let token):
                 data = Data("user=\(user)".utf8) + Data([1]) + Data("auth=Bearer \(token)".utf8) + Data([1]) + Data([1])
             }
