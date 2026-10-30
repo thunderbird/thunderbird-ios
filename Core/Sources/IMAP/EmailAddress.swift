@@ -14,7 +14,7 @@ extension EmailAddressListElement {
     var address: EmailAddressProtocol {
         switch self {
         case .singleAddress(let address): EmailAddress(stringLiteral: "\(address)")
-        case .group(let group): EmailAddress.Group(group.children.addresses, label: "\(group)")
+        case .group(let group): EmailAddress.Group(group.children.map { EmailAddress(stringLiteral: "\($0)") }, label: "\(group)")
         }
     }
 }
