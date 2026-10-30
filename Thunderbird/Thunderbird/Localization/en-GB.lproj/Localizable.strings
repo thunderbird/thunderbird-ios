@@ -15,3 +15,97 @@
 "account_server_settings_authentication_password_encrypted" = "Encrypted Password";
 "configuration_IMAP_not_supported" = "IMAP currently not supported";
 "account_server_settings_authentication_client_oauth" = "OAuth 2.0";
+
+"app_name" = "Thunderbird";
+"onboarding_welcome_text_early" = "This app is in development. Thank you for your interest and feedback as we build.";
+//Account setup
+"accounts_heading" = "Accounts";
+"account_sign_out_button" = "Sign out";
+"account_oauth_sign_in_with_google_button" = "Sign in with Google";
+"account_oauth_sign_in_description" = "We'll redirect you to your email provider to sign in. You need to grant the app access to your email account.";
+"account_oauth_loading_message" = "Signing in using OAuth";
+"account_oauth_loading_error" = "OAuth sign in failed";
+"account_oauth_token_expired" = "OAuth token expired";
+"account_oauth_token_valid" = "OAuth token saved";
+"account_oauth_token_empty" = "OAuth token not found";
+"account_server_settings_name_label" = "Account Name";
+"account_server_settings_email_value_label" = "Email Address";
+"account_server_settings_email_label_label" = "Your Name";
+"account_server_settings_host_label" = "Hostname";
+"imap_text" = "Internet Mail Access Protocol";
+"imap" = "IMAP";
+"jmap" = "JMAP";
+"jmap_text" = "JSON Meta Application Protocol";
+"account_choose_email_type_label" = "Choose Email Account Type";
+"account_incoming_server_label" = "Incoming Server";
+"account_outgoing_server_label" = "Outgoing Server";
+"account_server_edit_configuration" = "Edit Configuration";
+"account_server_manual_configuration" = "Manual Account Setup";
+"account_server_information_title" = "Account Information";
+"account_setup_tips" = "Tips";
+"account_setup_imap_tip" = "* IMAP keeps email synced across devices";
+"account_setup_jmap_tip" = "* JMAP also syncs mail (and sometimes contacts and calendars) but needs an app that supports it";
+"server_setup_contact" = "* Contact your email provider for server settings";
+"server_setup_incoming_tip" = "* Port 443 (JMAP) and Port 993 (IMAP) are common secure ports";
+"server_setup_outgoing_tip" = "* Port 465 and 587 (SMTP) are common secure ports";
+//In development strings
+"feature_not_implemented" = "This feature has not been implemented yet";
+"demo_button" = "Demo";
+//Headers
+"to_header" = "To";
+"from_header" = "From";
+"reply_to_header" = "Reply To";
+"sender_header" = "Sender";
+"cc_header" = "CC";
+"bcc_header" = "BCC";
+"copy_header" = "Copy";
+"blind_copy_header" = "Blind Copy";
+"subject_header" = "Subject";
+// Other
+"next_button" = "Next";
+"save_button" = "Save";
+"test_button" = "Test";
+"close_button" = "Close";
+"all_remote_feature_flags" = "Allow remote feature flags";
+"inbox_header" = "Inbox";
+"sort_button" = "Sort";
+"has_attachments_sort_button" = "Attachments";
+"date_sort_button" = "Date";
+"read_status_sort_button" = "Read/Unread";
+"settings_header" = "Settings";
+"options_button" = "Options";
+"empty_inbox" = "Your inbox is empty";
+"new_messages_will_appear" = "New messages will appear here as they arrive";
+"add_another_account" = "Add another account";
+"add_account_header" = "Add Account";
+"auto_account_header" = "Connect Account";
+"edit_account_header" = "Configure Account";
+//Action buttons
+"delete_button" = "Delete";
+"archive_button" = "Archive";
+"mark_read_button" = "Mark as read";
+"mark_spam_button" = "Mark as Spam";
+"flag_button" = "Flag";
+"unflag_button" = "Unflag";
+"mute_button" = "Mute";
+"unmute_button" = "Unmute";
+"pin_button" = "Pin";
+"unpin_button" = "Unpin";
+"move_button" = "Move";
+"reply_button" = "Reply";
+"reply_all_button" = "Reply All";
+"forward_button" = "Forward";
+"forward_as_button" = "Forward as attachment";
+"edit_as_new_button" = "Edit as new";
+"remove_button" = "remove";
+//Email List Actions
+"mark_all_read_button" = "Mark all read";
+"select_all_button" = "Select All";
+"done_button" = "Done";
+//Predictable folder names
+"inbox_localized" = "Inbox";
+"sent_localized" = "Sent";
+"archive_localized" = "Archive";
+"spam_localized" = "Spam";
+"draft_localized" = "Draft";
+"trash_localized" = "Trash";
