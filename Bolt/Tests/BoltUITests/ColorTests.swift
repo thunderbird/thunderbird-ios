@@ -7,5 +7,5 @@ import SwiftUI
 import Testing
 
 struct ColorTests {
-    
+
 }
