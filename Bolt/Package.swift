@@ -21,9 +21,6 @@ let package: Package = Package(
                 "BoltUI"
             ])
     ],
-    dependencies: [
-        .package(url: "https://github.com/toddheasley/bolt-design-system", branch: "swift-package")
-    ],
     targets: [
         .target(
             name: "Bolt",
@@ -31,10 +28,7 @@ let package: Package = Package(
                 "BoltUI"
             ]),
         .target(
-            name: "BoltUI",
-            dependencies: [
-                .product(name: "BoltDesignSystem", package: "bolt-design-system")
-            ]),
+            name: "BoltUI"),
         .testTarget(
             name: "BoltUITests",
             dependencies: [
