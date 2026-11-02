@@ -4,7 +4,7 @@
 
 import Foundation
 
-/// Short, readable descriptions for the errors `autoconfig` prints.
+/// Extends `URLError` with short, readable descriptions for the errors `autoconfig` prints.
 ///
 /// This is a retroactive conformance, so it applies to every `URLError` printed in the tool's process.
 extension URLError: @retroactive CustomStringConvertible {

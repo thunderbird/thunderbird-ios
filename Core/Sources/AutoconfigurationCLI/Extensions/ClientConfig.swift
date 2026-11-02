@@ -8,7 +8,7 @@ import Cocoa
 #endif
 import Foundation
 
-/// Opening a configuration's web mail login page and documentation links.
+/// Extends `ClientConfig` with actions that open its links in the default browser.
 extension ClientConfig {
     /// Open each of the provider's documentation links in the default browser.
     ///
