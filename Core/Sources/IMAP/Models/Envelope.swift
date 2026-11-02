@@ -7,7 +7,7 @@ import Foundation
 import MIME
 import NIOIMAPCore
 
-/// This is a bridging data class that converts the IMAP library’s NIOIMAPCore.Envelope into the Domain Model - including decoding the subject and parsing the date.
+/// This is a bridging data struct that converts the IMAP library’s NIOIMAPCore.Envelope into the Domain Model - including decoding the subject and parsing the date.
 ///
 /// Its role in the app is:
 ///
