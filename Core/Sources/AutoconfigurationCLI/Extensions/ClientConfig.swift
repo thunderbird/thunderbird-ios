@@ -8,7 +8,13 @@ import Cocoa
 #endif
 import Foundation
 
+/// Extends `ClientConfig` with actions that open its links in the default browser.
 extension ClientConfig {
+    /// Open each of the provider's documentation links in the default browser.
+    ///
+    /// Does nothing if there are no links, or on platforms without Cocoa.
+    ///
+    /// - Throws: `URLError(.resourceUnavailable)` if the configuration has no email provider.
     func openDocumentation() throws {
         guard let urls: [URL] = emailProvider?.documentation else {
             throw URLError(.resourceUnavailable)
@@ -18,6 +24,9 @@ extension ClientConfig {
         }
     }
 
+    /// Open the web mail login page in the default browser. Does nothing on platforms without Cocoa.
+    ///
+    /// - Throws: `URLError(.resourceUnavailable)` if the configuration has no web mail login page.
     func openWebMailLoginPage() throws {
         guard let url: URL = webMail?.loginPage else {
             throw URLError(.resourceUnavailable)
@@ -26,6 +35,7 @@ extension ClientConfig {
     }
 }
 
+/// Open a URL with `NSWorkspace`. Does nothing on platforms without Cocoa.
 // swift-format-ignore
 private func open(_ url: URL) {
 #if canImport(Cocoa)

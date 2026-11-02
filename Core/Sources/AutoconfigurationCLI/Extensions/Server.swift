@@ -4,7 +4,12 @@
 
 import Autoconfiguration
 
+/// Extends arrays of authentication methods with formatting for printing.
 extension [EmailProvider.Server.Authentication] {
+    /// Join the methods' human-readable descriptions, e.g. `OAuth2/clear-text password`.
+    ///
+    /// - Parameter separator: String inserted between descriptions. Defaults to none.
+    /// - Returns: The joined descriptions, or an empty string if there are no methods.
     func joined(separator: String = "") -> String {
         map { $0.description }.joined(separator: separator)
     }
