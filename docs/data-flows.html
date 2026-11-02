@@ -48,16 +48,17 @@
     <div class="accordion">
 
       <div class="accordion-item" id="add">
-        <button class="accordion-trigger"><span class="num">①</span><span>Adding an account<span class="tt-sub">From WelcomeScreen to a persisted, authorized account</span></span><span class="chev">▾</span></button>
+        <button class="accordion-trigger"><span class="num">①</span><span>Adding an account<span class="tt-sub">From WelcomeScreen to a saved, authorized account</span></span><span class="chev">▾</span></button>
         <div class="accordion-content">
           <ol class="steps">
-            <li><strong>Launch with no accounts</strong> — <code>ContentView</code> sees <code>hasAuthorization == false</code> and shows <code>WelcomeScreen</code>, which presents <code>ManualAccount</code> as a sheet.</li>
-            <li><strong>Enter email</strong> — <code>AccountInformation</code> captures the address into the shared <code>LoginDetails</code>.</li>
-            <li><strong>Discover settings</strong> — <code>AutoconfigView</code> calls <code>Account.autoconfig(_:)</code> (see the Autoconfiguration flow). On success it pre-fills servers; otherwise the user picks a protocol in <code>EmailAccountTypeSelection</code> and fills <code>ManualServerSetup</code>.</li>
-            <li><strong>Authenticate</strong> — <code>AuthorizationView</code> collects a password or runs OAuth2; the credential is assigned to <code>Server.authorization</code>, which writes it to the keychain.</li>
-            <li><strong>Persist</strong> — <code>accounts.set(account)</code> stores account metadata to disk via <code>FileManager</code>.</li>
-            <li><strong>Enter the app</strong> — <code>hasAuthorization</code> flips true; <code>ContentView</code> swaps to <code>EmailListView</code>.</li>
+            <li><strong>Launch with no accounts</strong> — <code>ContentView</code> sees that <code>accountManager.allAccounts</code> is empty and shows <code>WelcomeScreen</code>. Its start button presents <code>AccountView</code> as a sheet.</li>
+            <li><strong>Enter email</strong> — <code>AccountAddView</code> takes the address and display name.</li>
+            <li><strong>Discover settings</strong> — <strong>Next</strong> calls <code>Account.autoconfigured()</code> (see the Autoconfiguration flow) and continues to <code>AccountAutoView</code>, which also offers a JMAP configuration when <code>Account.jmapConfigured()</code> finds one. The manual configuration link goes straight to <code>AccountEditView</code> instead.</li>
+            <li><strong>Authenticate</strong> — <code>AuthorizationView</code> collects a password or runs OAuth2; the credential is assigned to <code>Account.authorization</code>, which stores it in <code>URLCredentialStorage</code> (the keychain).</li>
+            <li><strong>Persist</strong> — <strong>Save</strong> calls <code>accountManager.set(account)</code>, which writes account metadata to disk via <code>FileManager</code>.</li>
+            <li><strong>Enter the app</strong> — <code>allAccounts</code> is no longer empty, so <code>ContentView</code> swaps to <code>EmailListView</code>.</li>
           </ol>
+          <p>A second, older flow is reachable from General settings: <code>ManualAccount</code> hosts <code>AccountInformation</code> → <code>EmailAccountTypeSelection</code> → <code>ManualServerSetup</code>, sharing state through <code>LoginDetails</code>.</p>
         </div>
       </div>
 
@@ -71,7 +72,7 @@
             <li><strong>MX fallback</strong> — if still unresolved and <code>queryMX</code> is on, a DNS <strong>MX</strong> lookup (<code>swift-async-dns-resolver</code>) finds the real mail host; <code>DomainParser</code> reduces it to a registrable domain via the public-suffix list, and discovery retries.</li>
             <li><strong>Decode</strong> — <code>XMLToJSONParser</code> converts the autoconfig XML to JSON, decoded into <code>ClientConfig</code> (<code>EmailProvider</code> + servers + OAuth2 params).</li>
           </ol>
-          <p><code>Account.autoconfig(_:isJMAPAvailable:)</code> wraps this, adds a Fastmail-JMAP special case, and returns a populated <code>Account</code>.</p>
+          <p><code>Account.autoconfigured()</code> wraps this and returns a populated <code>Account</code>; <code>Account.jmapConfigured()</code> adds the Fastmail JMAP special case.</p>
           <div class="callout info"><span class="ci">🛠</span><span class="ct"><strong>Try it from the terminal</strong> The <code>AutoconfigurationCLI</code> executable runs this exact pipeline for any address — handy for debugging a provider without launching the app.</span></div>
         </div>
       </div>
@@ -80,12 +81,12 @@
         <button class="accordion-trigger"><span class="num">③</span><span>OAuth2 sign-in<span class="tt-sub">Domain → provider config → browser flow → token</span></span><span class="chev">▾</span></button>
         <div class="accordion-content">
           <ol class="steps">
-            <li><strong>Match provider</strong> — <code>OAuth2.request(_ emailAddress:)</code> does an MX lookup and matches the host against built-in configs for <strong>AOL, Fastmail, Google, Microsoft, Thundermail, Yahoo</strong>.</li>
-            <li><strong>Configure button</strong> — <code>OAuthButton.configure()</code> resolves the <code>OAuth2.Request</code> (authorization URL, scope, redirect).</li>
-            <li><strong>Browser auth</strong> — <code>authenticate()</code> opens an <code>ASWebAuthenticationSession</code> against the provider's auth URL with callback scheme <code>&lt;bundle-scheme&gt;://oauth2redirect</code>.</li>
-            <li><strong>Token</strong> — the returned code is exchanged for a bearer token, set on the binding and stored via <code>Server.authorization = .oauth(...)</code> into the keychain.</li>
+            <li><strong>Match provider</strong> — <code>OAuth2.configuration(_:)</code> does an MX lookup and matches the host against the built-in configurations for <strong>AOL, Fastmail, Google, Microsoft, Thundermail, Yahoo</strong> (registered at launch from <code>Account/Authorization/OAuth2.swift</code>).</li>
+            <li><strong>Configure button</strong> — <code>OAuthButton.configure()</code> finds the <code>OAuth2.Configuration</code> (authorization and token URLs, scopes, client ID, redirect URI). Sign-in stays disabled if none matches.</li>
+            <li><strong>Browser auth</strong> — <code>authenticate()</code> opens an <code>ASWebAuthenticationSession</code> at the configuration's authorization URL, with a PKCE challenge and the app's first URL scheme as the callback scheme. Each provider's redirect URI is built from that scheme.</li>
+            <li><strong>Token</strong> — the returned code is exchanged with <code>URLRequest.token(_:code:pkce:)</code> for access and refresh tokens, stored via <code>Account.authorization = .oauth(...)</code> in <code>URLCredentialStorage</code> (the keychain).</li>
+            <li><strong>Renewal</strong> — at launch, <code>ContentView</code> calls <code>AccountManager.checkAndRenewExpirations()</code>, which uses refresh tokens to renew expired OAuth2 tokens.</li>
           </ol>
-          <div class="callout warning"><span class="ci">🚧</span><span class="ct"><strong>Status</strong> Provider matching and the browser session are wired; the final token-exchange step is partially stubbed in-app (see <code>Account/OAuth2.swift</code>).</span></div>
         </div>
       </div>
 
