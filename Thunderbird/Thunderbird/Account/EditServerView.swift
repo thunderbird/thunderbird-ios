@@ -5,7 +5,13 @@
 import Account
 import SwiftUI
 
+/// Older server editor with protocol, host, port, username, security and authentication fields.
+///
+/// Only used by ``EditAccountView``, which isn't currently shown in the app.
 struct EditServerView: View {
+    /// - Parameters:
+    ///   - server: Server to edit.
+    ///   - account: Account whose sign-in is edited.
     init(_ server: Binding<Server>, _ account: Binding<Account>) {
         _server = server
         _account = account
@@ -97,7 +103,9 @@ struct EditServerView: View {
     }
 }
 
+/// Extends `AuthenticationType` with display names for pickers.
 private extension AuthenticationType {
+    /// The type's description, capitalized except for OAuth2.
     var text: String {
         switch self {
         case .oAuth2: description

@@ -6,6 +6,9 @@ import Account
 import BoltUI
 import SwiftUI
 
+/// Sheet that hosts the manual account setup flow, starting at ``AccountInformation``.
+///
+/// It dismisses itself as soon as the number of saved accounts changes, which is how a successful save closes it.
 struct ManualAccount: View {
     @Environment(AccountManager.self) private var accountManager: AccountManager
     @Environment(\.dismiss) private var dismiss: DismissAction
@@ -63,11 +66,19 @@ struct ManualAccount: View {
 }
 
 @Observable
+/// State shared between the manual setup screens.
 class LoginDetails {
+    /// Autoconfigured account the user chose to edit, if any.
     var inProgressAccount: Account?
+    /// Email address entered on ``AccountInformation``.
     var enteredEmail: String
+    /// Protocol chosen in ``EmailAccountTypeSelection``; `nil` when editing an autoconfigured account.
     var serverProtocol: ServerProtocol?
 
+    /// - Parameters:
+    ///   - inProgressAccount: Autoconfigured account being edited, if any.
+    ///   - enteredEmail: Email address entered so far.
+    ///   - serverProtocol: Protocol chosen for manual setup, if any.
     init(inProgressAccount: Account? = nil, enteredEmail: String = "", serverProtocol: ServerProtocol? = nil) {
         self.inProgressAccount = inProgressAccount
         self.enteredEmail = enteredEmail

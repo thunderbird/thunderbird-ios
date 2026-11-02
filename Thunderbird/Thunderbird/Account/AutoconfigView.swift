@@ -5,9 +5,16 @@
 import Autoconfiguration
 import SwiftUI
 
+/// Button that looks up an email address's autoconfig settings, then shows the provider and source found, or the error.
+///
+/// Not currently shown in the app; it's only referenced by its preview.
 struct AutoconfigView: View {
+    /// Email address to look up.
     let emailAddress: String
 
+    /// - Parameters:
+    ///   - config: Set to the configuration found.
+    ///   - emailAddress: Email address to look up. The button is disabled until it's a valid address.
     init(_ config: Binding<ClientConfig?>, for emailAddress: String) {
         self.emailAddress = emailAddress
         _config = config
@@ -18,8 +25,10 @@ struct AutoconfigView: View {
     @State private var error: Error?
     @State private var isSearching: Bool = false
 
+    /// Whether the search button is enabled: the address is valid and no search is running.
     private var isEnabled: Bool { emailAddress.isEmailAddress && !isSearching }
 
+    /// Look up the address with `URLSession.autoconfig(_:sources:queryMX:)`, storing the configuration and source, or the error.
     private func search() async {
         error = nil
         isSearching = true
@@ -97,6 +106,10 @@ struct AutoconfigView: View {
         .padding()
 }
 
+/// Extends `String` with validation for text typed into email address fields.
 extension String {
+    /// Whether the string has a local part and a valid host, like `user@example.com`.
+    ///
+    /// This only checks the address's shape; it doesn't check that the address exists.
     var isEmailAddress: Bool { (try? host) != nil && (try? local) != nil }
 }

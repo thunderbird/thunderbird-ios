@@ -7,7 +7,14 @@ import AuthenticationServices
 import Autoconfiguration
 import SwiftUI
 
+/// Shows an account's OAuth2 status, with a button to sign in through the provider's web page, or to sign out.
+///
+/// When it appears, it looks for a configuration matching the account's MX hosts; sign-in stays disabled if none matches. Signing in runs an authorization-code flow with PKCE and stores the tokens as the account's authorization.
 struct OAuthButton: View {
+    /// - Parameters:
+    ///   - account: Account to sign in; its authorization is replaced when sign-in succeeds or the user signs out.
+    ///   - error: Set to any configuration or sign-in error.
+    ///   - action: Called after the provider's sign-in page returns, even if the token exchange then fails.
     init(_ account: Binding<Account>, error: Binding<Error?> = .constant(nil), action: @escaping @MainActor () -> Void = {}) {
         self.action = action
         _account = account
@@ -20,6 +27,7 @@ struct OAuthButton: View {
     @State private var authConfig: OAuth2.Configuration?
     private let action: () -> Void
 
+    /// Find the OAuth2 configuration matching the account's email address.
     private func configure() async {
         error = nil
         do {
@@ -33,6 +41,9 @@ struct OAuthButton: View {
         }
     }
 
+    /// Present the provider's sign-in page, then exchange the returned code for tokens.
+    ///
+    /// - Note: Errors ``AccountError`` can't represent, such as the user cancelling, clear `error` rather than setting it.
     private func authenticate() async {
         error = nil
         do {
@@ -55,6 +66,11 @@ struct OAuthButton: View {
         }
     }
 
+    /// Exchange an authorization code for tokens and store them as the account's authorization.
+    ///
+    /// - Parameters:
+    ///   - code: Authorization code from the sign-in callback.
+    ///   - pkce: The PKCE pair whose challenge was sent with the sign-in request.
     private func getToken(code: String, pkce: OAuth2.PKCE) async {
         error = nil
         do {
@@ -115,12 +131,18 @@ struct OAuthButton: View {
     .padding()
 }
 
+/// Extends `Account` with OAuth2 sign-in state for ``OAuthButton``.
 private extension Account {
+    /// Whether the account has an OAuth2 token, and whether it has expired.
     enum OAuthStatus {
+        /// The account has an unexpired OAuth2 token.
         case validToken
+        /// The account's OAuth2 token has expired.
         case expiredToken
+        /// The account has no OAuth2 authorization.
         case emptyToken
 
+        /// Localization key describing the status.
         var localizedStringKey: LocalizedStringKey {
             switch self {
             case .validToken: "account_oauth_token_valid"
@@ -130,6 +152,7 @@ private extension Account {
         }
     }
 
+    /// The account's OAuth2 token status. Accounts with any other kind of authorization are `emptyToken`.
     var oauthStatus: OAuthStatus {
         switch authorization {
         case .oauth: authorization.isExpired ? .expiredToken : .validToken
@@ -138,9 +161,14 @@ private extension Account {
     }
 }
 
+/// Extends `URL` with OAuth2 help links and sign-in callback parsing.
 private extension URL {
+    /// Mozilla's OAuth2 support article. Not currently used.
     static let help: Self = Self(string: "https://support.mozilla.org/kb/tb-oauth")!
 
+    /// The `code` query item from an OAuth2 sign-in callback URL.
+    ///
+    /// - Throws: `URLError(.badServerResponse)` if the URL has no `code` query item.
     var code: String {
         get throws {
             guard let queryItems: [URLQueryItem] = URLComponents(string: absoluteString)?.queryItems,

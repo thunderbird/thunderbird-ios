@@ -5,10 +5,16 @@
 import Autoconfiguration
 import Foundation
 
-/// Thunderbird-specific OAuth2 configuration objects for expected email providers
+/// Extends `OAuth2.Configuration` with Thunderbird's client configurations for the email providers that support OAuth2 sign-in.
+///
+/// The app registers ``allCases`` as `OAuth2.configurations` at launch, so `OAuth2.configuration(_:)` can match an
+/// address's MX hosts against each configuration's `hosts`.
+///
+/// - Important: Each redirect URI is built from the app's first URL scheme, so these crash if the app declares none.
 extension OAuth2.Configuration: @retroactive CaseIterable {
 
     // MARK: AOL
+    /// AOL Mail, matching AOL's mail hosts and Yahoo's `yahoodns.net` MX hosts.
     static var aol: Self {
         try! Self(
             authURI: "https://api.login.aol.com/oauth2/request_auth",
@@ -28,6 +34,7 @@ extension OAuth2.Configuration: @retroactive CaseIterable {
     }
 
     // MARK: Fastmail
+    /// Fastmail, matching `fastmail.com` and its `messagingengine.com` MX hosts.
     static var fastmail: Self {
         try! Self(
             authURI: "https://api.fastmail.com/oauth/authorize",
@@ -47,6 +54,7 @@ extension OAuth2.Configuration: @retroactive CaseIterable {
     }
 
     // MARK: Google
+    /// Gmail and Google Workspace, matching `gmail.com`, `googlemail.com` and `google.com` hosts.
     static var google: Self {
         try! Self(
             authURI: "https://accounts.google.com/o/oauth2/v2/auth",
@@ -66,6 +74,7 @@ extension OAuth2.Configuration: @retroactive CaseIterable {
     }
 
     // MARK: Microsoft
+    /// Outlook and Microsoft 365, matching `outlook.com` and `office365.com` hosts.
     static var microsoft: Self {
         try! Self(
             authURI: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
@@ -89,6 +98,7 @@ extension OAuth2.Configuration: @retroactive CaseIterable {
     }
 
     // MARK: Thundermail
+    /// Thundermail, matching `thundermail.com` and `tb.pro` hosts.
     static var thundermail: Self {
         try! Self(
             authURI: "https://auth.tb.pro/realms/tbpro/protocol/openid-connect/auth",
@@ -110,6 +120,7 @@ extension OAuth2.Configuration: @retroactive CaseIterable {
     }
 
     // MARK: Yahoo
+    /// Yahoo Mail, matching Yahoo's mail hosts and its `yahoodns.net` MX hosts.
     static var yahoo: Self {
         try! Self(
             authURI: "https://api.login.yahoo.com/oauth2/request_auth",
@@ -129,6 +140,7 @@ extension OAuth2.Configuration: @retroactive CaseIterable {
     }
 
     // MARK: CaseIterable
+    /// Every provider configuration, in alphabetical order.
     public static var allCases: [Self] {
         [
             .aol,

@@ -8,7 +8,12 @@ import Autoconfiguration
 import BoltUI
 import SwiftUI
 
+/// Sign-in controls for an account: an authentication type picker, then an OAuth2 sign-in button or a password field.
 struct AuthorizationView: View {
+    /// - Parameters:
+    ///   - account: Account whose authentication type and credentials are edited.
+    ///   - error: Set to any sign-in error.
+    ///   - isEditable: Whether to show the authentication type picker.
     init(_ account: Binding<Account>, error: Binding<Error?> = .constant(nil), isEditable: Bool = true) {
         self.isEditable = isEditable
         _account = account
@@ -51,7 +56,9 @@ struct AuthorizationView: View {
         .padding()
 }
 
+/// Picker for an account's authentication type.
 struct AuthenticationTypeView: View {
+    /// - Parameter authenticationType: The selected authentication type.
     init(_ authenticationType: Binding<AuthenticationType>) {
         _authenticationType = authenticationType
     }
@@ -79,7 +86,9 @@ struct AuthenticationTypeView: View {
         .padding()
 }
 
+/// Extends `Account` with preview data and password access for ``AuthorizationView``.
 private extension Account {
+    /// Example account with an OAuth2 IMAP server, for previews.
     static var example: Self {
         Account(
             identities: [
@@ -91,6 +100,9 @@ private extension Account {
         )
     }
 
+    /// The password from the account's basic authorization, or an empty string.
+    ///
+    /// Setting it replaces the authorization with basic credentials for the primary email address. It does nothing when the account has no email address.
     var password: String {
         set {
             guard let emailAddress else { return }
