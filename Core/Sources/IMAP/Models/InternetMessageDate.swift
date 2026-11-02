@@ -44,11 +44,10 @@ extension RFC822DateFormatter {
 // MARK: TimzeZone Extension
 extension TimeZone {
 
-
-//    - Adds spaces before + and -, handling dates like 08:55:43-0500
-//    - Removes parentheses, then takes the last space-separated token—so +0000 (UTC) uses UTC
-//    - Converts numeric offsets into a TimeZone, or looks up abbreviations such as GMT and PDT
-//    - Throws MIMEError.dateNotDecoded if fails
+    //    - Adds spaces before + and -, handling dates like 08:55:43-0500
+    //    - Removes parentheses, then takes the last space-separated token—so +0000 (UTC) uses UTC
+    //    - Converts numeric offsets into a TimeZone, or looks up abbreviations such as GMT and PDT
+    //    - Throws MIMEError.dateNotDecoded if fails
 
     init(internetMessageDate string: String) throws {
         let string: String =
