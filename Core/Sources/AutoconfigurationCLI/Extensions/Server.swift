@@ -4,6 +4,7 @@
 
 import Autoconfiguration
 
+/// Formatting a server's authentication methods for printing.
 extension [EmailProvider.Server.Authentication] {
     /// Join the methods' human-readable descriptions, e.g. `OAuth2/clear-text password`.
     ///

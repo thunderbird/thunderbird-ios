@@ -5,6 +5,7 @@
 import Autoconfiguration
 import Foundation
 
+/// Saving autoconfig lookups to disk.
 extension FileManager {
     /// Save an autoconfig lookup's JSON and XML to `<url>/<emailAddress>/config.json` and `config.xml`.
     ///

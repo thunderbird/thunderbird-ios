@@ -7,6 +7,7 @@ import Cocoa
 #endif
 import Foundation
 
+/// Locating and revealing the folder that contains the running executable.
 // swift-format-ignore
 extension Bundle {
     /// Folder containing the running executable; where `autoconfig --save` writes its files.
