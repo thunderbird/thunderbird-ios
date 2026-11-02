@@ -94,7 +94,7 @@
           <p>The only runnable target. A pure-SwiftUI app entered at <code>App.swift</code> (<code>@main</code>), which holds the root state — an <code>Accounts</code> model and a <code>FeatureFlags</code> instance — and injects them through the SwiftUI environment. <code>ContentView</code> branches on whether any authorized account exists: if not, it shows onboarding; if so, the mailbox UI.</p>
           <h4>Responsibilities</h4>
           <ul>
-            <li>Onboarding &amp; account setup flow (<code>WelcomeScreen</code> → <code>ManualAccount</code> navigation stack)</li>
+            <li>Onboarding &amp; account setup flow (<code>WelcomeScreen</code> → <code>AccountView</code> sheet; manual setup through <code>ManualAccount</code> from General settings)</li>
             <li>Mailbox navigation (<code>DrawerView</code>) and the email list / reading screens</li>
             <li>OAuth2 and password credential capture</li>
             <li>Feature-flag gating &amp; debug tooling</li>
