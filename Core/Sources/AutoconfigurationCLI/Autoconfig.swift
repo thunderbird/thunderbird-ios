@@ -6,18 +6,44 @@ import ArgumentParser
 import Autoconfiguration
 import Foundation
 
+/// The `autoconfig` command-line tool: looks up and prints the mail server settings for an email address.
+///
+/// It follows the same path as `URLSession.autoconfig(_:sources:queryMX:)`, but expands it for debugging. Every
+/// `Source` is queried and printed, rather than stopping at the first one that succeeds. If none has a configuration,
+/// the domain of the first MX host is derived and every source is queried again for it.
+///
+/// ```
+/// autoconfig user@example.com [--save] [--open]
+/// ```
+///
+/// The command exits successfully even when no configuration is found; per-source errors are printed, not thrown.
 @main
 struct Autoconfig: AsyncParsableCommand {
+    /// Email address, or bare domain, to look up.
     @Argument(help: "Specify email address to query.")
     var emailAddress: String
 
+    /// Save each configuration found as `config.json` and `config.xml` in a folder named after ``emailAddress``.
+    ///
+    /// - Important: Files are saved next to the `autoconfig` executable, not in the working directory as the help
+    ///   text says. When more than one source has a configuration, each save replaces the previous one, so only the
+    ///   last source found (in `Source` order) is kept.
     @Flag(name: .shortAndLong, help: "Save config files to working directory.")
     var save: Bool = false
 
+    /// Open each configuration's web mail login page and documentation links in the default browser.
+    ///
+    /// Combined with ``save``, also shows the executable's folder in Finder once all lookups finish. Does nothing on
+    /// platforms without Cocoa.
     @Flag(name: .shortAndLong, help: "Open URLs; show saved files in Finder.")
     var open: Bool = false
 
     // MARK: AsyncParsableCommand
+    /// Query every source for ``emailAddress``, falling back to the domain of its first MX host if none has a
+    /// configuration.
+    ///
+    /// - Throws: `URLError(.unsupportedURL)` if the fallback finds no MX records, or a DNS or `URLSession.domain(host:)`
+    ///   error from the fallback.
     func run() async throws {
         // Routine explodes the paths that `URLSession.autoconfig(_ emailAddress:)` follows
         // All sources are queried for printing/debugging purposes
@@ -41,6 +67,17 @@ struct Autoconfig: AsyncParsableCommand {
         }
     }
 
+    /// Query every `Source` in order and print each configuration found, saving and opening it if requested.
+    ///
+    /// Errors from a source, including a failed save, are printed and the next source is tried.
+    ///
+    /// - Note: A failed save skips marking that source as found, so a save error alone can trigger the MX fallback.
+    ///
+    /// - Parameters:
+    ///   - emailAddress: Email address being looked up; also names the save folder.
+    ///   - domain: Domain to query in place of `emailAddress`, used for the MX fallback. When set, placeholders such
+    ///     as `%EMAILADDRESS%` in the printed configuration are substituted with this domain.
+    /// - Returns: `true` if at least one source returned a configuration (and saved it, when ``save`` is set).
     @discardableResult private func query(_ emailAddress: String, domain: String? = nil) async throws -> Bool {
         var found: Bool = false  // Keep track of findings while looping sources
         for source in Source.allCases {

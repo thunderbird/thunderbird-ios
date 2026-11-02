@@ -4,9 +4,13 @@
 
 import Foundation
 
+/// Short, readable descriptions for the errors `autoconfig` prints.
+///
+/// This is a retroactive conformance, so it applies to every `URLError` printed in the tool's process.
 extension URLError: @retroactive CustomStringConvertible {
 
-    // MARK:  CustomStringConvertible
+    // MARK: CustomStringConvertible
+    /// A short message for the errors autoconfig lookups commonly produce, otherwise `localizedDescription`.
     public var description: String {
         switch code {
         case .fileDoesNotExist: "File not found"
