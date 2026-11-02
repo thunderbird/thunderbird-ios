@@ -6,9 +6,14 @@ import Bolt
 import Core
 import SwiftUI
 
+/// Runs the account's connection tests and lists each result as it arrives.
+///
+/// Testing starts half a second after the view appears, with a short pause between tests.
 struct AccountTestView: View {
+    /// Account being tested.
     let account: Account
 
+    /// - Parameter account: Account to test.
     init(_ account: Account) {
         self.account = account
     }

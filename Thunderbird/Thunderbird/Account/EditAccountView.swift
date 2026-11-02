@@ -5,7 +5,11 @@
 import Account
 import SwiftUI
 
+/// Older account editor with separate incoming and outgoing server sections.
+///
+/// Not currently shown in the app; it's only referenced by its preview. The setup flow uses ``AccountEditView``.
 struct EditAccountView: View {
+    /// - Parameter account: Account to edit. Its incoming and outgoing servers are copied, so changes apply only when saved.
     init(_ account: Account) {
         self.account = account
         self.incomingServer = account.incomingServer?.clone() ?? Server(.imap)

@@ -6,7 +6,13 @@ import Account
 import Autoconfiguration
 import SwiftUI
 
+/// Manual setup step for entering server host names, ports, authentication and security, then saving the account.
+///
+/// JMAP takes one server; IMAP takes incoming and outgoing servers. The security toggle chooses between TLS and no security, and empty ports default to 443.
+///
+/// - Important: Nothing is validated before saving yet. For JMAP, the account is saved with the same server listed twice.
 struct ManualServerSetup: View {
+    /// - Parameter loginDetails: Shared setup state. Starts from its in-progress account if there is one, otherwise from a new account for the entered email address.
     init(_ loginDetails: LoginDetails) {
         let tempAccount = loginDetails.inProgressAccount ?? Account(loginDetails.enteredEmail)
         self.account = tempAccount
@@ -31,6 +37,7 @@ struct ManualServerSetup: View {
     @State private var outGoingPort: Int?
     @State private var inSelectedSecurity: Bool
     @State private var outSelectedSecurity: Bool
+    /// Whether an autoconfigured account is being edited. Set, but not currently read.
     @State private var manualConfig: Bool
     @State private var account: Account
     @State private var error: Error?
@@ -155,7 +162,9 @@ struct ManualServerSetup: View {
         .environment(loginDetails)
 }
 
+/// Extends `Server` with copying for editing.
 public extension Server {
+    /// A copy of the server with the same settings and a new `id`.
     func clone() -> Self {
         let server: Self = Server(
             serverProtocol,
@@ -169,7 +178,9 @@ public extension Server {
     }
 }
 
+/// Extends `AuthenticationType` with display names for pickers.
 private extension AuthenticationType {
+    /// The type's description, capitalized except for OAuth2.
     var text: String {
         switch self {
         case .oAuth2: description
