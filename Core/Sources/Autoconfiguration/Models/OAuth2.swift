@@ -217,7 +217,7 @@ public struct OAuth2: Decodable {
     }
 }
 
-/// Unpadded Base64URL encoding (RFC 4648 §5) for PKCE values.
+/// Extends `Data` with the Base64URL encoding that PKCE values use.
 private extension Data {
     /// Base64 with `+` and `/` replaced by `-` and `_`, and `=` padding removed.
     func base64URLEncodedString() -> String {

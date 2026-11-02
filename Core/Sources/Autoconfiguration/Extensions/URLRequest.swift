@@ -4,7 +4,7 @@
 
 import Foundation
 
-/// OAuth2 token requests, sent as POST requests with form-encoded bodies.
+/// Extends `URLRequest` with builders for OAuth2 token requests.
 extension URLRequest {
     /// POST request exchanging an authorization code for tokens.
     ///

@@ -8,7 +8,7 @@ import Foundation
 /// DNS resolver used for autoconfiguration lookups, re-exported from `AsyncDNSResolver`.
 public typealias DNSResolver = AsyncDNSResolver
 
-/// SRV and MX lookups for the host of an email address.
+/// Extends `DNSResolver` with mail-related DNS lookups for email addresses.
 extension DNSResolver {
     /// Query SRV records for several email services, concatenating the results in `services` order.
     ///

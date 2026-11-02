@@ -4,7 +4,7 @@
 
 import Foundation
 
-/// Autoconfig lookups across one or more sources, with an MX fallback.
+/// Extends `URLSession` with methods for discovering an email account's mail server settings through autoconfig.
 extension URLSession {
     /// Query multiple autoconfig sources for a given email address.
     ///
@@ -65,7 +65,7 @@ extension URLSession {
     }
 }
 
-/// Registrable-domain parsing using the downloaded Public Suffix List.
+/// Extends `URLSession` with domain name parsing based on the Public Suffix List.
 extension URLSession {
     /// Derive the registrable domain of a host name using the [Public Suffix List](https://publicsuffix.org).
     ///

@@ -5,7 +5,7 @@
 import AsyncDNSResolver
 import Foundation
 
-/// Decoding SRV records from the raw `rdata` that ``SRVResolver`` receives.
+/// Extends `SRVRecord` with decoding from raw DNS record data.
 extension SRVRecord {
     /// Decode an `AsyncDNSResolver` record from the raw SRV `rdata` delivered to ``SRVResolver``.
     ///
