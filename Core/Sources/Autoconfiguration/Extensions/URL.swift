@@ -4,6 +4,7 @@
 
 import Foundation
 
+/// Autoconfig document URLs for each ``Source``.
 extension URL {
     /// Generate the appropriate autoconfig URL for a given source and email address.
     ///
@@ -65,6 +66,7 @@ extension URL {
     }
 }
 
+/// Where the Public Suffix List is downloaded from.
 extension URL {
     /// Location of the Public Suffix List.
     static let suffixList: Self = Self(string: "https://publicsuffix.org/list/public_suffix_list.dat")!

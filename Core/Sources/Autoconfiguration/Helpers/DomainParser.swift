@@ -47,6 +47,8 @@ struct DomainParser {
     }
 }
 
+/// Splitting a host name into its dot-separated labels.
 private extension String {
+    /// The host's labels, in order, e.g. `["mail", "example", "com"]`.
     var segments: [Self] { components(separatedBy: ".") }
 }

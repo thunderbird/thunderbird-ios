@@ -187,6 +187,7 @@ class XMLToJSONParser: NSObject, XMLParserDelegate {
     func parserDidEndDocument(_ parser: XMLParser) {}
 }
 
+/// Substituting email address placeholders in autoconfig values.
 private extension String {
     /// Replace `%EMAILADDRESS%`, `%EMAILLOCALPART%` and `%EMAILDOMAIN%` with parts of `emailAddress`.
     ///

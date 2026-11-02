@@ -4,6 +4,7 @@
 
 import Foundation
 
+/// Reading the URL schemes an app declares in its Info.plist.
 extension Bundle {
     /// Custom URL schemes declared in the first `CFBundleURLTypes` entry of Info.plist.
     ///

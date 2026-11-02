@@ -4,6 +4,7 @@
 
 import Foundation
 
+/// Treating a string as an email address: its host, its local part, and its SRV query names.
 extension String {
     /// The validated host portion of an email address or bare host name.
     ///

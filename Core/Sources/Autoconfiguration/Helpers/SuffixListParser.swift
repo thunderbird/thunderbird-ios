@@ -35,7 +35,10 @@ struct SuffixListParser: CustomStringConvertible {
     let description: String
 }
 
+/// Filtering Public Suffix List text down to its suffix entries.
 private extension String {
+    /// The suffix entries, one per non-comment, non-blank line, in file order.
     var suffixList: [String] { components(separatedBy: "\n").filter { $0.isSuffix } }
+    /// Whether this line is a suffix entry rather than a `//` comment or a blank line.
     private var isSuffix: Bool { !hasPrefix("//") && !isEmpty }
 }
