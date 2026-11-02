@@ -11,8 +11,6 @@ import Testing
 struct InternetMessageDateTests {
     //Expect: Preserve the parsed instant and the numeric time zone offset.
     //Case: When the time and negative numeric offset are separated by a space.
-    // #expect(try InternetMessageDate(internetMessageDate: "Tue, 28 Nov 2023 08:55:43 -0800")
-    //     == InternetMessageDate(Date(timeIntervalSince1970: 1701190543.0), timeZone: TimeZone(secondsFromGMT: -8 * 3600)!))
     @Test func init_preservesDateAndTimeZone_whenDateHasSpacedNegativeOffset() throws {
         // Arrange
         let input: NIOIMAPCore.InternetMessageDate = "Tue, 28 Nov 2023 08:55:43 -0800"
