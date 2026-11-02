@@ -7,10 +7,31 @@ import Foundation
 import Testing
 
 struct SuffixListParserTests {
-    @Test func dataInit() throws {
-        let parser: SuffixListParser = try SuffixListParser(data: suffixList)
-        #expect(parser.suffixList.count > 9000)
-        #expect(parser.description.hasPrefix("// This Source Code Form") == true)
+    //Expect: Parse more than 9,000 suffix entries, skipping comments and blank lines.
+    //Case: When the data is a full copy of the Public Suffix List.
+    @Test func init_parsesMoreThan9000Suffixes_whenDataIsPublicSuffixList() throws {
+        // Arrange
+        let input = suffixList
+
+        // Act
+        let actual = try SuffixListParser(data: input).suffixList.count
+
+        // Assert
+        #expect(actual > 9000)
+    }
+
+    //Expect: Keep the original text, including its leading licence comment, as the description.
+    //Case: When the data is a full copy of the Public Suffix List.
+    @Test func init_keepsOriginalTextAsDescription_whenDataIsPublicSuffixList() throws {
+        // Arrange
+        let input = suffixList
+        let expected = "// This Source Code Form"
+
+        // Act
+        let actual = try SuffixListParser(data: input).description
+
+        // Assert
+        #expect(actual.hasPrefix(expected) == true)
     }
 }
 

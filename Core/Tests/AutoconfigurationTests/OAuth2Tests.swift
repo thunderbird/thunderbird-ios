@@ -7,44 +7,206 @@ import Foundation
 import Testing
 
 struct OAuth2Tests {
-    @Test func pkceGeneratesRFC7636Verifier() {
-        let pkce = OAuth2.PKCE()
+    //Expect: Generate a 43-character code verifier.
+    //Case: When a PKCE pair is created without a verifier.
+    @Test func pkceInit_generates43CharacterVerifier_whenCreatedWithoutVerifier() {
+        // Arrange
+        let expected = 43
+
+        // Act
+        let actual = OAuth2.PKCE().codeVerifier.count
+
+        // Assert
+        #expect(actual == expected)
+    }
+
+    //Expect: Use only the unreserved characters RFC 7636 allows in a code verifier.
+    //Case: When a PKCE pair is created without a verifier.
+    @Test func pkceInit_generatesUnreservedCharactersOnly_whenCreatedWithoutVerifier() {
+        // Arrange
         let allowedCharacters = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~")
 
-        #expect(pkce.codeVerifier.count == 43)
-        #expect(pkce.codeVerifier.unicodeScalars.allSatisfy { allowedCharacters.contains($0) })
+        // Act
+        let actual = OAuth2.PKCE().codeVerifier.unicodeScalars
+
+        // Assert
+        #expect(actual.allSatisfy { allowedCharacters.contains($0) })
     }
 
-    @Test func pkceRFC7636TestVector() {
-        let pkce = OAuth2.PKCE(codeVerifier: "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk")
+    //Expect: Derive the S256 code challenge given in RFC 7636 Appendix B.
+    //Case: When the verifier is the RFC 7636 test vector.
+    @Test func pkceInit_derivesRFC7636Challenge_whenVerifierIsTestVector() {
+        // Arrange
+        let input = Self.testVectorVerifier
+        let expected = "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
 
-        #expect(pkce.codeChallenge == "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM")
+        // Act
+        let actual = OAuth2.PKCE(codeVerifier: input).codeChallenge
+
+        // Assert
+        #expect(actual == expected)
     }
 
-    @Test func authURLIncludesPKCEChallenge() throws {
-        let configuration: OAuth2.Configuration = try OAuth2.Configuration(
-            authURI: "https://example.com/authorize",
-            tokenURI: "https://example.com/token",
-            redirectURI: "com.example:/oauth2redirect",
-            responseType: "code",
-            scope: [
-                "mail-w"
-            ],
-            clientID: "Cl13n+-ID"
-        )
-        let pkce = OAuth2.PKCE(codeVerifier: "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk")
-        let queryItems = URLComponents(
-            url: configuration.authURL(hint: "user@example.com", pkce: pkce),
-            resolvingAgainstBaseURL: false
-        )?.queryItems
+    //Expect: Include the PKCE code challenge as the `code_challenge` query item.
+    //Case: When the authorization URL is built with a PKCE pair.
+    @Test func authURL_includesCodeChallenge_whenPKCEIsProvided() throws {
+        // Arrange
+        let configuration = try Self.configuration()
+        let pkce = OAuth2.PKCE(codeVerifier: Self.testVectorVerifier)
+        let expected = pkce.codeChallenge
 
-        #expect(queryItems?.first(where: { $0.name == "code_challenge" })?.value == pkce.codeChallenge)
-        #expect(queryItems?.first(where: { $0.name == "code_challenge_method" })?.value == "S256")
-        #expect(queryItems?.first(where: { $0.name == "login_hint" })?.value == "user@example.com")
+        // Act
+        let actual = Self.queryItem("code_challenge", in: configuration.authURL(hint: "user@example.com", pkce: pkce))
+
+        // Assert
+        #expect(actual == expected)
     }
 
-    @Test func matches() throws {
-        let configuration: OAuth2.Configuration = try OAuth2.Configuration(
+    //Expect: Set the `code_challenge_method` query item to `S256`.
+    //Case: When the authorization URL is built with a PKCE pair.
+    @Test func authURL_usesS256ChallengeMethod_whenPKCEIsProvided() throws {
+        // Arrange
+        let configuration = try Self.configuration()
+        let pkce = OAuth2.PKCE(codeVerifier: Self.testVectorVerifier)
+        let expected = "S256"
+
+        // Act
+        let actual = Self.queryItem("code_challenge_method", in: configuration.authURL(hint: "user@example.com", pkce: pkce))
+
+        // Assert
+        #expect(actual == expected)
+    }
+
+    //Expect: Pass the hint through as the `login_hint` query item.
+    //Case: When the authorization URL is built with an email address hint.
+    @Test func authURL_includesLoginHint_whenHintIsProvided() throws {
+        // Arrange
+        let configuration = try Self.configuration()
+        let pkce = OAuth2.PKCE(codeVerifier: Self.testVectorVerifier)
+        let input = "user@example.com"
+        let expected = "user@example.com"
+
+        // Act
+        let actual = Self.queryItem("login_hint", in: configuration.authURL(hint: input, pkce: pkce))
+
+        // Assert
+        #expect(actual == expected)
+    }
+
+    //Expect: Return `false`.
+    //Case: When the host doesn't end with any configured host.
+    @Test func matches_returnsFalse_whenHostIsUnrelated() throws {
+        // Arrange
+        let configuration = try Self.configuration(hosts: ["example.com", "examplemail.com"])
+        let input = "google.com"
+
+        // Act
+        let actual = configuration.matches(input)
+
+        // Assert
+        #expect(actual == false)
+    }
+
+    //Expect: Return `true`.
+    //Case: When the host is a subdomain of a configured host.
+    @Test func matches_returnsTrue_whenHostIsSubdomainOfConfiguredHost() throws {
+        // Arrange
+        let configuration = try Self.configuration(hosts: ["example.com", "examplemail.com"])
+        let input = "mail.example.com"
+
+        // Act
+        let actual = configuration.matches(input)
+
+        // Assert
+        #expect(actual == true)
+    }
+
+    //Expect: Return `true`.
+    //Case: When the host is exactly a configured host.
+    @Test func matches_returnsTrue_whenHostEqualsConfiguredHost() throws {
+        // Arrange
+        let configuration = try Self.configuration(hosts: ["example.com", "examplemail.com"])
+        let input = "examplemail.com"
+
+        // Act
+        let actual = configuration.matches(input)
+
+        // Assert
+        #expect(actual == true)
+    }
+
+    //Expect: Return `false`.
+    //Case: When the host is only the end of a configured host (`mail.com` within `examplemail.com`).
+    @Test func matches_returnsFalse_whenHostIsSuffixOfConfiguredHost() throws {
+        // Arrange
+        let configuration = try Self.configuration(hosts: ["example.com", "examplemail.com"])
+        let input = "mail.com"
+
+        // Act
+        let actual = configuration.matches(input)
+
+        // Assert
+        #expect(actual == false)
+    }
+
+    //Expect: Decode the scope as a one-element array.
+    //Case: When the first provider (AOL) has a single scope.
+    @Test func decoderInit_decodesSingleScope_whenScopeHasOneValue() throws {
+        // Arrange
+        let input = data
+        let expected = [
+            "mail-w"
+        ]
+
+        // Act
+        let actual = try JSONDecoder().decode([OAuth2].self, from: input)[0].scope
+
+        // Assert
+        #expect(actual == expected)
+    }
+
+    //Expect: Split the space-separated scope string into separate scopes, in order.
+    //Case: When the second provider (Google) lists four scopes.
+    @Test func decoderInit_splitsScopesOnSpaces_whenScopeHasMultipleValues() throws {
+        // Arrange
+        let input = data
+        let expected = [
+            "https://mail.google.com/",
+            "https://www.googleapis.com/auth/contacts",
+            "https://www.googleapis.com/auth/calendar",
+            "https://www.googleapis.com/auth/carddav"
+        ]
+
+        // Act
+        let actual = try JSONDecoder().decode([OAuth2].self, from: input)[1].scope
+
+        // Assert
+        #expect(actual == expected)
+    }
+
+    //Expect: Decode the scope for the last entry as well as the first.
+    //Case: When the third provider (Yahoo) has a single scope.
+    @Test func decoderInit_decodesScopeForLastEntry_whenArrayHasThreeProviders() throws {
+        // Arrange
+        let input = data
+        let expected = [
+            "mail-w"
+        ]
+
+        // Act
+        let actual = try JSONDecoder().decode([OAuth2].self, from: input)[2].scope
+
+        // Assert
+        #expect(actual == expected)
+    }
+}
+
+extension OAuth2Tests {
+    /// Code verifier from RFC 7636 Appendix B.
+    static let testVectorVerifier: String = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
+
+    static func configuration(hosts: [String] = []) throws -> OAuth2.Configuration {
+        try OAuth2.Configuration(
             authURI: "https://example.com/authorize",
             tokenURI: "https://example.com/token",
             redirectURI: "com.example:/oauth2redirect",
@@ -53,33 +215,12 @@ struct OAuth2Tests {
                 "mail-w"
             ],
             clientID: "Cl13n+-ID",
-            hosts: [
-                "example.com",
-                "examplemail.com"
-            ]
+            hosts: hosts
         )
-        #expect(configuration.matches("google.com") == false)
-        #expect(configuration.matches("mail.example.com") == true)
-        #expect(configuration.matches("examplemail.com") == true)
-        #expect(configuration.matches("mail.com") == false)
     }
-    @Test func decoderInit() throws {
-        let oauth2: [OAuth2] = try JSONDecoder().decode([OAuth2].self, from: data)
-        #expect(
-            oauth2[0].scope == [
-                "mail-w"
-            ])
-        #expect(
-            oauth2[1].scope == [
-                "https://mail.google.com/",
-                "https://www.googleapis.com/auth/contacts",
-                "https://www.googleapis.com/auth/calendar",
-                "https://www.googleapis.com/auth/carddav"
-            ])
-        #expect(
-            oauth2[2].scope == [
-                "mail-w"
-            ])
+
+    static func queryItem(_ name: String, in url: URL) -> String? {
+        URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first(where: { $0.name == name })?.value
     }
 }
 
