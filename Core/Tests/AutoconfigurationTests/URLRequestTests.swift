@@ -23,6 +23,7 @@ struct URLRequestTests {
     }
 
     //Expect: Form-encode the client, redirect, grant type, code and verifier in the body, with an empty client secret and `+` percent-encoded.
+    //Example: The test client ID `Cl13n+-ID` must be sent as `Cl13n%2B-ID`. Sent as-is, the server reads `Cl13n -ID`.
     //Case: When exchanging an authorization code for tokens.
     @Test func token_encodesParametersInBody_whenExchangingAuthorizationCode() throws {
         // Arrange
@@ -69,6 +70,7 @@ struct URLRequestTests {
     }
 
     //Expect: Form-encode the client, redirect, grant type and refresh token in the body, with an empty client secret and `+` percent-encoded.
+    //Example: The test client ID `Cl13n+-ID` must be sent as `Cl13n%2B-ID`. Sent as-is, the server reads `Cl13n -ID`.
     //Case: When exchanging a refresh token for a new access token.
     @Test func refreshToken_encodesParametersInBody_whenExchangingRefreshToken() throws {
         // Arrange
@@ -100,6 +102,8 @@ struct URLRequestTests {
 
     //Expect: Percent-encode `+` in the form-encoded `code`, so the token endpoint doesn't decode it as a space.
     //Case: When the authorization code contains `+`.
+    //Example: Codes and tokens are opaque strings chosen by the provider and may contain `+`. Sent unencoded, the token
+    //  endpoint would read a different code than it issued and reject the sign-in.
     @Test func token_encodesPlusInCode_whenCodeContainsPlus() throws {
         // Arrange
         let configuration = try Self.configuration()
@@ -117,6 +121,8 @@ struct URLRequestTests {
 
     //Expect: Percent-encode `+` in the form-encoded `refresh_token`, so the token endpoint doesn't decode it as a space.
     //Case: When the refresh token contains `+`.
+    //Example: Sent unencoded, the token endpoint would read a different refresh token and refuse to renew access, so the
+    //  user would be signed out when their access token expired.
     @Test func refreshToken_encodesPlusInRefreshToken_whenTokenContainsPlus() throws {
         // Arrange
         let configuration = try Self.configuration()

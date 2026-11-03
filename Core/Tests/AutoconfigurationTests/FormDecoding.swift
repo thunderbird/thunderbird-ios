@@ -8,6 +8,13 @@ extension String {
     /// Decode a value from a percent-encoded query string or form body the way servers do
     /// (`application/x-www-form-urlencoded`), where `+` means a space.
     ///
+    /// Tests need this because Foundation doesn't decode that way: `URLComponents.queryItems` reads `user+tag` back
+    /// as `user+tag`, so a test using it can't see the bug. A server reads the same text as `user tag`. Decoding with
+    /// this helper shows what the server will actually receive.
+    ///
+    /// For example, `"code=0123+4567".formValue("code")` is `"0123 4567"`, and `"code=0123%2B4567".formValue("code")`
+    /// is `"0123+4567"`.
+    ///
     /// - Parameter name: Name of the parameter to read.
     /// - Returns: The first value for `name`, or `nil` if the string has no such parameter.
     func formValue(_ name: String) -> String? {

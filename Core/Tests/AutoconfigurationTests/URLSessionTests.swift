@@ -753,6 +753,10 @@ struct URLSessionTests {
 
     //Expect: Substitute the user's email address into the server username, not the domain of the MX host.
     //Case: When the address's domain only resolves through the MX fallback (thunderbird.net mail is hosted by Google).
+    //Example: thunderbird.net publishes no autoconfig of its own, so the lookup finds its mail servers (MX records,
+    //  `aspmx.l.google.com`) and retries for their domain, `google.com`. Google's config says the username is
+    //  `%EMAILADDRESS%`. Before the fix, that placeholder was filled with `google.com` instead of
+    //  `username@thunderbird.net`, so SMTP sign-in failed for custom domains whose mail is hosted elsewhere, like this one.
     @Test func autoconfigSources_substitutesEmailAddressInUsername_whenUsingMXFallback() async throws {
         // Arrange
         let input = "username@thunderbird.net"

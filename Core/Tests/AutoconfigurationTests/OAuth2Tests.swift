@@ -202,6 +202,8 @@ struct OAuth2Tests {
 
     //Expect: Percent-encode `+` in the `login_hint` query item, so the provider doesn't decode it as a space.
     //Case: When the hint uses plus addressing.
+    //Example: The hint prefills the provider's sign-in page. Sent unencoded, `user+tag@example.com` would be prefilled
+    //  as `user tag@example.com`, and the user would have to correct it.
     @Test func authURL_encodesPlusInLoginHint_whenHintUsesPlusAddressing() throws {
         // Arrange
         let configuration = try Self.configuration()

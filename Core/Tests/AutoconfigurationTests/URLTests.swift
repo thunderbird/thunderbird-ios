@@ -213,6 +213,8 @@ struct URLTests {
 
     //Expect: Percent-encode `+` in the `emailaddress` query item, so the provider doesn't decode it as a space.
     //Case: When the email address uses plus addressing.
+    //Example: Plus addressing (`name+tag@domain`) is common with Gmail and Fastmail. Sent unencoded, the provider would
+    //  look up `user tag@example.com` and could return settings for the wrong user, or none.
     @Test func provider_encodesPlusInEmailAddress_whenAddressUsesPlusAddressing() throws {
         // Arrange
         let input = "user+tag@example.com"
