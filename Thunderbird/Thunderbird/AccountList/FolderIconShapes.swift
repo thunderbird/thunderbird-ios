@@ -26,7 +26,7 @@ struct FolderIconShapes {
 
 }
 
-/// The icon for an inbox tray, drawn as two filled layers: an outline and a faint 20% opacity fill.
+/// The icon for an inbox tray, drawn as two stacked layers: a solid shape and a second shape at 20% opacity.
 struct InboxIcon: View {
     /// Whether to draw the icon in the accent color instead of black.
     var tinted: Bool = false
@@ -166,7 +166,7 @@ struct InboxIcon: View {
     }
 }
 
-/// The icon for a draft (pencil and page), drawn as two filled layers: an outline and a faint 20% opacity fill.
+/// The icon for a draft (pencil and page), drawn as two stacked layers: a solid shape and a second shape at 20% opacity.
 struct DraftIcon: View {
     /// Whether to draw the icon in the accent color instead of black.
     var tinted: Bool = false
@@ -279,7 +279,7 @@ struct DraftIcon: View {
     }
 }
 
-/// The icon for a sent message, drawn as two filled layers: an outline and a faint 20% opacity fill.
+/// The icon for a sent message, drawn as two stacked layers: a solid shape and a second shape at 20% opacity.
 struct SentIcon: View {
     /// Whether to draw the icon in the accent color instead of black.
     var tinted: Bool = false
@@ -373,7 +373,7 @@ struct SentIcon: View {
     }
 }
 
-/// The icon for an archive box, drawn as two filled layers: an outline and a faint 20% opacity fill.
+/// The icon for an archive box, drawn as two stacked layers: a solid shape and a second shape at 20% opacity.
 struct ArchiveIcon: View {
     /// Whether to draw the icon in the accent color instead of black.
     var tinted: Bool = false
@@ -539,7 +539,7 @@ struct ArchiveIcon: View {
     }
 }
 
-/// The icon for a trash can, drawn as two filled layers: an outline and a faint 20% opacity fill.
+/// The icon for a trash can, drawn as two stacked layers: a solid shape and a second shape at 20% opacity.
 struct TrashIcon: View {
     /// Whether to draw the icon in the accent color instead of black.
     var tinted: Bool = false
@@ -686,7 +686,7 @@ struct TrashIcon: View {
     }
 }
 
-/// The icon for a spam folder, drawn as two filled layers: an outline and a faint 20% opacity fill.
+/// The icon for a spam folder, drawn as two stacked layers: a solid shape and a second shape at 20% opacity.
 struct SpamIcon: View {
     /// Whether to draw the icon in the accent color instead of black.
     var tinted: Bool = false
@@ -766,7 +766,7 @@ struct SpamIcon: View {
     }
 }
 
-/// The icon for a generic folder, drawn as two filled layers: an outline and a faint 20% opacity fill.
+/// The icon for a generic folder, drawn as two stacked layers: a solid shape and a second shape at 20% opacity.
 struct FolderIcon: View {
     /// Whether to draw the icon in the accent color instead of black.
     var tinted: Bool = false
