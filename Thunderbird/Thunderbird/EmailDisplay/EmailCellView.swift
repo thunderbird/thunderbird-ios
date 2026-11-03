@@ -27,7 +27,6 @@ struct EmailCellView: View {
 
     // For alignment, bool check likely not final
 
-    /// Whether the email is unread, shown as a filled dot and a bolder subject.
     let unread: Bool
 
     /// Whether the email is new, shown as an open dot. Takes precedence over `unread`.
