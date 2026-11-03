@@ -750,6 +750,20 @@ struct URLSessionTests {
             try await URLSession.shared.autoconfig(input, source: .wellKnown)
         }
     }
+
+    //Expect: Substitute the user's email address into the server username, not the domain of the MX host.
+    //Case: When the address's domain only resolves through the MX fallback (thunderbird.net mail is hosted by Google).
+    @Test func autoconfigSources_substitutesEmailAddressInUsername_whenUsingMXFallback() async throws {
+        // Arrange
+        let input = "username@thunderbird.net"
+        let expected = "username@thunderbird.net"
+
+        // Act
+        let actual = try await URLSession.shared.autoconfig(input).config.emailProvider?.servers.first?.username
+
+        // Assert
+        #expect(actual == expected)
+    }
 }
 
 extension URLSessionTests {

@@ -210,4 +210,18 @@ struct URLTests {
             try URL.ispDB(input)
         }
     }
+
+    //Expect: Percent-encode `+` in the `emailaddress` query item, so the provider doesn't decode it as a space.
+    //Case: When the email address uses plus addressing.
+    @Test func provider_encodesPlusInEmailAddress_whenAddressUsesPlusAddressing() throws {
+        // Arrange
+        let input = "user+tag@example.com"
+        let expected = "user+tag@example.com"
+
+        // Act
+        let actual = try URL.provider(input).query(percentEncoded: true)?.formValue("emailaddress")
+
+        // Assert
+        #expect(actual == expected)
+    }
 }

@@ -199,6 +199,38 @@ struct OAuth2Tests {
         // Assert
         #expect(actual == expected)
     }
+
+    //Expect: Percent-encode `+` in the `login_hint` query item, so the provider doesn't decode it as a space.
+    //Case: When the hint uses plus addressing.
+    @Test func authURL_encodesPlusInLoginHint_whenHintUsesPlusAddressing() throws {
+        // Arrange
+        let configuration = try Self.configuration()
+        let pkce = OAuth2.PKCE(codeVerifier: Self.testVectorVerifier)
+        let input = "user+tag@example.com"
+        let expected = "user+tag@example.com"
+
+        // Act
+        let actual = configuration.authURL(hint: input, pkce: pkce).query(percentEncoded: true)?.formValue("login_hint")
+
+        // Assert
+        #expect(actual == expected)
+    }
+
+    //Expect: Return `false`.
+    //Case: When the host ends with a configured host's name but isn't that host or one of its subdomains (`notexample.com`).
+    //Example: With the app's provider configurations, an MX host of `mx.notoutlook.com` would match Microsoft's `outlook.com`
+    //  and `mail.evilgoogle.com` would match Google's `google.com`, giving an unrelated domain that provider's OAuth2 sign-in.
+    @Test func matches_returnsFalse_whenHostOnlyEndsWithConfiguredName() throws {
+        // Arrange
+        let configuration = try Self.configuration(hosts: ["example.com", "examplemail.com"])
+        let input = "notexample.com"
+
+        // Act
+        let actual = configuration.matches(input)
+
+        // Assert
+        #expect(actual == false)
+    }
 }
 
 extension OAuth2Tests {
