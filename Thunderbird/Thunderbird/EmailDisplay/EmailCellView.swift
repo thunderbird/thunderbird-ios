@@ -32,7 +32,6 @@ struct EmailCellView: View {
     /// Whether the email is new, shown as an open dot. Takes precedence over `unread`.
     let newEmail: Bool
 
-    /// Whether the email is pinned, shown as a pin in place of the leading indent.
     let pinned: Bool
 
     /// Whether the email has attachments, shown as a paperclip.
