@@ -20,7 +20,6 @@ struct EmailBodyView: View {
     @State private var selection = ""
     @State private var textAttributes = TextAttributes()
     @FocusState private var keyboardShown: Bool
-    /// The email whose body is shown, and whose headers appear above the editor when `editable`.
     @State var email: Email?
 
     /// Whether the user can edit the body. When `false`, the view is read-only and ignores focus changes.
