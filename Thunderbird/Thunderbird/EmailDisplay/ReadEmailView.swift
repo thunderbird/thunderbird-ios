@@ -278,11 +278,11 @@ struct WebView: UIViewRepresentable {
 /// Tapping the recipient line opens a sheet listing everyone on the email, grouped by from, sender, reply-to, to and
 /// cc. Of the menu's items, only "Edit as new" does anything; it opens `ComposeView`.
 ///
-/// - Important: The view reads `from[0]` and `to[0]` directly, so it crashes if either list is empty.
+/// - Note: With no `from` or `to` addresses, the sender or the recipient name is blank.
 struct SenderView: View {
     /// Create a header for a placeholder email.
     ///
-    /// - Parameter email: The email to show. It must have at least one `from` and one `to` address.
+    /// - Parameter email: The email to show.
     init(email: TempEmail) {
         from = email.from
         sender = email.sender
@@ -306,10 +306,10 @@ struct SenderView: View {
         HStack {
             VStack(alignment: .leading) {
                 HStack {
-                    Text(from[0].value).font(.title3)
+                    Text(from.first?.value ?? "").font(.title3)
                 }
                 HStack {
-                    Text("To: \(toText[0].label ?? toText[0].value)")
+                    Text("To: \(toText.first?.label ?? toText.first?.value ?? "")")
                     if recipients.count > 0 {
                         Text("+\(recipients.count)")
                     }

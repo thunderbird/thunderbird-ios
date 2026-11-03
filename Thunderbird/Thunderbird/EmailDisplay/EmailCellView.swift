@@ -48,10 +48,10 @@ struct EmailCellView: View {
 
     /// Create a row for a placeholder email.
     ///
-    /// - Parameter email: The placeholder to show. It must have at least one `from` address, which supplies the
-    ///   sender's label, or its value if there is no label.
+    /// - Parameter email: The placeholder to show. The sender is its first `from` address's label, or its value if
+    ///   there is no label, or empty if there are no `from` addresses.
     init(email: TempEmail) {
-        self.senderText = email.from[0].label ?? email.from[0].value
+        self.senderText = email.from.first?.label ?? email.from.first?.value ?? ""
         self.headerText = email.headerText
         self.bodyText = email.bodyText
         self.dateSent = email.dateSent
