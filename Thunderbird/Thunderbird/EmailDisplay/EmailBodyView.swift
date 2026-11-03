@@ -14,6 +14,7 @@ import Core
 /// - Important: The editor's content is replaced in `onAppear` with `email?.body?.html()`, or an empty string if
 ///   there is no email, so the initial `html` value is never displayed. `ReadEmailView` passes only `html`, so it
 ///   currently shows a blank body for sample emails.
+// TODO: Revise default value and update sample email bodies for preview purposes. Ticket #599
 struct EmailBodyView: View {
     @Environment(\.openURL) private var openURL: OpenURLAction
     @State var html = String.sampleHTML
