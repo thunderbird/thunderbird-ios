@@ -4,6 +4,10 @@
 
 import SwiftUI
 
+/// The folder icons, created once so views can pick one by name.
+///
+/// Each kind has a plain version and a `Tinted` version drawn in the accent color. `iconSwitcher(folderName:tinted:)`
+/// chooses among them.
 struct FolderIconShapes {
     public let inboxPath = InboxIcon()
     public let draftPath = DraftIcon()
@@ -22,7 +26,9 @@ struct FolderIconShapes {
 
 }
 
+/// The icon for an inbox tray, drawn as two stacked layers: a solid shape and a second shape at 20% opacity.
 struct InboxIcon: View {
+    /// Whether to draw the icon in the accent color instead of black.
     var tinted: Bool = false
     var body: some View {
         ZStack {
@@ -160,7 +166,9 @@ struct InboxIcon: View {
     }
 }
 
+/// The icon for a draft (pencil and page), drawn as two stacked layers: a solid shape and a second shape at 20% opacity.
 struct DraftIcon: View {
+    /// Whether to draw the icon in the accent color instead of black.
     var tinted: Bool = false
     var body: some View {
         ZStack {
@@ -271,7 +279,9 @@ struct DraftIcon: View {
     }
 }
 
+/// The icon for a sent message, drawn as two stacked layers: a solid shape and a second shape at 20% opacity.
 struct SentIcon: View {
+    /// Whether to draw the icon in the accent color instead of black.
     var tinted: Bool = false
     var body: some View {
         ZStack {
@@ -363,7 +373,9 @@ struct SentIcon: View {
     }
 }
 
+/// The icon for an archive box, drawn as two stacked layers: a solid shape and a second shape at 20% opacity.
 struct ArchiveIcon: View {
+    /// Whether to draw the icon in the accent color instead of black.
     var tinted: Bool = false
     var body: some View {
         ZStack {
@@ -527,7 +539,9 @@ struct ArchiveIcon: View {
     }
 }
 
+/// The icon for a trash can, drawn as two stacked layers: a solid shape and a second shape at 20% opacity.
 struct TrashIcon: View {
+    /// Whether to draw the icon in the accent color instead of black.
     var tinted: Bool = false
     var body: some View {
         ZStack {
@@ -672,7 +686,9 @@ struct TrashIcon: View {
     }
 }
 
+/// The icon for a spam folder, drawn as two stacked layers: a solid shape and a second shape at 20% opacity.
 struct SpamIcon: View {
+    /// Whether to draw the icon in the accent color instead of black.
     var tinted: Bool = false
     var body: some View {
         ZStack {
@@ -750,7 +766,9 @@ struct SpamIcon: View {
     }
 }
 
+/// The icon for a generic folder, drawn as two stacked layers: a solid shape and a second shape at 20% opacity.
 struct FolderIcon: View {
+    /// Whether to draw the icon in the accent color instead of black.
     var tinted: Bool = false
     var body: some View {
         ZStack {
