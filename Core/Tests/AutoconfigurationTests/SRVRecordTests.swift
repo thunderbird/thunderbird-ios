@@ -46,4 +46,47 @@ struct SRVRecordTests {
             try SRVRecord(input)
         }
     }
+
+    //Expect: Decode the target host with every label intact.
+    //Case: When a label after the first is 32 characters, so its length byte is a printable space.
+    @Test func init_decodesHost_whenLaterLabelIs32Characters() throws {
+        // Arrange
+        let label = String(repeating: "x", count: 32)
+        let input = Self.rdata(port: 443, labels: ["mail", label, "com"])
+        let expected = "mail.\(label).com"
+
+        // Act
+        let actual = try SRVRecord(input).host
+
+        // Assert
+        #expect(actual == expected)
+    }
+
+    //Expect: Decode the target host with every label intact.
+    //Case: When a label after the first is 63 characters, the longest DNS allows, so its length byte is a printable `?`.
+    @Test func init_decodesHost_whenLaterLabelIs63Characters() throws {
+        // Arrange
+        let label = String(repeating: "x", count: 63)
+        let input = Self.rdata(port: 443, labels: ["mail", label, "com"])
+        let expected = "mail.\(label).com"
+
+        // Act
+        let actual = try SRVRecord(input).host
+
+        // Assert
+        #expect(actual == expected)
+    }
+}
+
+extension SRVRecordTests {
+    /// Raw SRV `rdata`: priority 0, weight 1 and `port`, then the target host as length-prefixed labels (RFC 1035 §3.1).
+    static func rdata(port: UInt16, labels: [String]) -> Data {
+        var data = Data([0, 0, 0, 1, UInt8(port >> 8), UInt8(port & 0xFF)])
+        for label in labels {
+            data.append(UInt8(label.utf8.count))
+            data.append(contentsOf: label.utf8)
+        }
+        data.append(0)
+        return data
+    }
 }
