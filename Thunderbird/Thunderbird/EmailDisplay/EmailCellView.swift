@@ -34,7 +34,6 @@ struct EmailCellView: View {
 
     let pinned: Bool
 
-    /// Whether the email has attachments, shown as a paperclip.
     let hasAttachment: Bool
 
     /// Whether the email is part of a thread, shown as a badge.
