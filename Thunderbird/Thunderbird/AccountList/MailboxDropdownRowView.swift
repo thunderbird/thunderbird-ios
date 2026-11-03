@@ -15,8 +15,8 @@ private let iconShapes = FolderIconShapes()
 /// The count is the folder's `aggregatedUnreadCount()`, which includes its subfolders.
 ///
 /// - Important: Tapping a leaf row does nothing yet; loading the folder's email list is a `TODO`. The icon is chosen
-///   from the folder's name by `iconName(folderName:)`, and the folder's `name` and `unreadEmails` are force-unwrapped,
-///   so the view crashes if either is `nil`.
+///   from the folder's name by `iconName(folderName:)`. A folder with a `nil` `name` shows an empty name and the generic
+///   icon, and a `nil` `unreadEmails` counts as zero.
 struct MailboxDropdownRowView: View {
     @State private var isExpanded: Bool = false
 
@@ -34,11 +34,11 @@ struct MailboxDropdownRowView: View {
                 }
             } label: {
                 HStack {
-                    (iconSwitcher(folderName: folder.name!, tinted: tempHasNew)).frame(width: 24, height: 24)
-                    Text(folder.name!)
+                    (iconSwitcher(folderName: folder.name ?? "", tinted: tempHasNew)).frame(width: 24, height: 24)
+                    Text(folder.name ?? "")
                         .foregroundStyle(.black)
                     Spacer()
-                    if (!isExpanded && folder.unreadEmails! > 0) {
+                    if (!isExpanded && (folder.unreadEmails ?? 0) > 0) {
                         UnreadCounter(unreadCount: folder.aggregatedUnreadCount(), hasNew: false)
                     }
                 }
@@ -46,11 +46,11 @@ struct MailboxDropdownRowView: View {
                 .padding(.leading)
         } else {
             HStack {
-                (iconSwitcher(folderName: folder.name!, tinted: tempHasNew)).frame(width: 24, height: 24)
-                Text(folder.name!)
+                (iconSwitcher(folderName: folder.name ?? "", tinted: tempHasNew)).frame(width: 24, height: 24)
+                Text(folder.name ?? "")
                     .foregroundStyle(.black)
                 Spacer()
-                if folder.unreadEmails! > 0 {
+                if (folder.unreadEmails ?? 0) > 0 {
                     UnreadCounter(unreadCount: folder.aggregatedUnreadCount(), hasNew: false)
                 }
             }
