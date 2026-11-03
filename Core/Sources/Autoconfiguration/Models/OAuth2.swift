@@ -8,7 +8,7 @@ import CryptoKit
 /// OAuth2 endpoints advertised in an Autoconfig document, plus the application-specific configuration
 /// (client ID, redirect URI) needed to run an authorization-code flow with PKCE.
 public struct OAuth2: Decodable {
-    /// Proof Key for Code Exchange (RFC 7636) verifier and its S256 challenge.
+    /// Proof Key for Code Exchange ([RFC 7636](https://www.rfc-editor.org/rfc/rfc7636)) verifier and its S256 challenge.
     public struct PKCE: Equatable, Sendable {
         /// Random secret sent with the token request.
         public let codeVerifier: String
