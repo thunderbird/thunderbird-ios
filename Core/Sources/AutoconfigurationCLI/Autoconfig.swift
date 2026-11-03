@@ -75,15 +75,15 @@ struct Autoconfig: AsyncParsableCommand {
     ///
     /// - Parameters:
     ///   - emailAddress: Email address being looked up; also names the save folder.
-    ///   - domain: Domain to query in place of `emailAddress`, used for the MX fallback. When set, placeholders such
-    ///     as `%EMAILADDRESS%` in the printed configuration are substituted with this domain.
+    ///   - domain: Domain to query in place of `emailAddress`'s host, used for the MX fallback. Placeholders such as
+    ///     `%EMAILADDRESS%` are still filled from `emailAddress`.
     /// - Returns: `true` if at least one source returned a configuration (and saved it, when ``save`` is set).
     @discardableResult private func query(_ emailAddress: String, domain: String? = nil) async throws -> Bool {
         var found: Bool = false  // Keep track of findings while looping sources
         for source in Source.allCases {
             print("Querying the \(source) for \(domain ?? (try? emailAddress.host) ?? emailAddress)…")
             do {
-                let autoconfig: (config: ClientConfig, data: (Data, Data)) = try await URLSession.shared.autoconfig(domain ?? emailAddress, source: source)
+                let autoconfig: (config: ClientConfig, data: (Data, Data)) = try await URLSession.shared.autoconfig(emailAddress, source: source, domain: domain)
                 print("Configuration found for \(domain ?? emailAddress):")
                 print("")
                 if let emailProvider: EmailProvider = autoconfig.config.emailProvider {
