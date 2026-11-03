@@ -5,6 +5,17 @@
 import Account
 import SwiftUI
 
+/// A collapsible card in the drawer that shows one account and its folders.
+///
+/// The label shows the account's avatar, name, and (when the name isn't itself an email address) its first identity's
+/// address. Expanding the card lists the account's folders as `MailboxDropdownRowView`s. While collapsed, the label
+/// shows the total unread count for the account.
+///
+/// The account comes from the `FolderManager` in the environment, so callers must inject one for the account to show.
+///
+/// - Important: The collapsed unread count is computed once, when the view first appears, by adding up `unreadEmails`
+///   for the account's top-level folders. It doesn't include subfolders or refresh afterward, and it crashes if a folder
+///   has a `nil` `unreadEmails`.
 struct AccountFolderDisclosureView: View {
     @Environment(FolderManager.self) private var folderManager: FolderManager
     @State private var isExpanded: Bool = false

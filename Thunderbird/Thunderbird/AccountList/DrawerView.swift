@@ -5,6 +5,12 @@
 import Account
 import SwiftUI
 
+/// The slide-in navigation drawer, listing every account with its folders and linking to General settings.
+///
+/// While `showDrawer` is `true`, the drawer slides in from the leading edge over a dimmed backdrop, and the navigation
+/// bar is hidden. Tapping the backdrop sets `showDrawer` back to `false`. `EmailListView` presents it.
+///
+/// - Parameter showDrawer: Whether the drawer is visible. The view sets it to `false` when the backdrop is tapped.
 struct DrawerView: View {
     @Environment(AccountManager.self) private var accountManager: AccountManager
     @Binding var showDrawer: Bool
@@ -59,6 +65,11 @@ struct DrawerView: View {
         .environment(accountManager)
 }
 
+/// The scrollable contents of the drawer: one `AccountFolderDisclosureView` for each account in the `AccountManager`.
+///
+/// A new `FolderManager` is created for every account each time the body is evaluated.
+///
+/// - Parameter showDrawer: Whether the drawer is visible. The view doesn't read or change it.
 struct DrawerContent: View {
     @Environment(AccountManager.self) private var accountManager: AccountManager
     @Binding var showDrawer: Bool
@@ -74,7 +85,9 @@ struct DrawerContent: View {
     }
 }
 
+/// Extends `ToolbarPlacement` with platform-appropriate placements for the drawer's toolbars.
 private extension ToolbarPlacement {
+    /// The navigation bar on iOS; `.automatic` on other platforms.
     static var navigation: Self {
         #if os(iOS)
         .navigationBar
@@ -84,7 +97,9 @@ private extension ToolbarPlacement {
     }
 }
 
+/// Extends `ToolbarItemPlacement` with platform-appropriate placements for the drawer's toolbar items.
 private extension ToolbarItemPlacement {
+    /// The bottom bar on iOS; `.automatic` on other platforms.
     static var bottom: Self {
         #if os(iOS)
         .bottomBar
