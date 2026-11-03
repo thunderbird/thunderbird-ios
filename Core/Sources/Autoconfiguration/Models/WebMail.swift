@@ -4,6 +4,8 @@
 
 import Foundation
 
+/// Web mail details from the `webMail` element of an Autoconfig document.
 public struct WebMail: Decodable {
+    /// Web mail login page, with placeholders such as `%EMAILADDRESS%` already substituted.
     public let loginPage: URL
 }

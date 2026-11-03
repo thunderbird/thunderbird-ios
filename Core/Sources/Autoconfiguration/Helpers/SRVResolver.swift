@@ -5,11 +5,20 @@
 import Foundation
 import dnssd
 
-// Use Apple `dnssd` to resolve DNS service (SRV) records
-// Adapted from https://github.com/jamf/NoMAD-2/blob/main/NoMAD/SRVLookups/SRVResolver.swift
+/// Uses Apple `dnssd` to resolve DNS service (SRV) records.
+///
+/// Adapted from https://github.com/jamf/NoMAD-2/blob/main/NoMAD/SRVLookups/SRVResolver.swift
+///
+/// Single-use: create one resolver per query. Resolves with `URLError(.cannotFindHost)` on error or timeout.
 class SRVResolver {
+    /// Seconds to wait for an answer before failing.
     let timeoutInterval: TimeInterval
 
+    /// Query SRV records for a fully qualified name such as `_imaps._tcp.example.com`.
+    ///
+    /// - Parameter query: The fully qualified SRV query name.
+    /// - Returns: The records found, in the order DNS returned them; empty if the name has no SRV records.
+    /// - Throws: `URLError(.cannotFindHost)` on error or timeout.
     func query(_ query: String) async throws -> [SRVRecord] {
         try await withCheckedThrowingContinuation { continuation in
             self.query(query) { result in
@@ -23,6 +32,9 @@ class SRVResolver {
         }
     }
 
+    /// Create a resolver for a single query.
+    ///
+    /// - Parameter timeoutInterval: Seconds to wait for an answer before failing.
     init(timeoutInterval: TimeInterval = 1.0) {
         self.timeoutInterval = timeoutInterval
     }

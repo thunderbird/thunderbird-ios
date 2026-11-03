@@ -4,8 +4,11 @@
 
 import Foundation
 
+/// Extends `Bundle` with access to the app's declared configuration, such as URL schemes.
 extension Bundle {
-    /// Read custom URL schemes declared in Info.plist
+    /// Custom URL schemes declared in the first `CFBundleURLTypes` entry of Info.plist.
+    ///
+    /// Empty when no URL types or schemes are declared. Only the first URL type is consulted.
     public var schemes: [String] {
         guard let bundleURLType: [String: Any] = (object(forInfoDictionaryKey: "CFBundleURLTypes") as? [[String: Any]])?.first else {
             return []
