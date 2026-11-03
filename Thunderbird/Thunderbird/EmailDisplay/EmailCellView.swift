@@ -29,7 +29,6 @@ struct EmailCellView: View {
 
     let unread: Bool
 
-    /// Whether the email is new, shown as an open dot. Takes precedence over `unread`.
     let newEmail: Bool
 
     let pinned: Bool
