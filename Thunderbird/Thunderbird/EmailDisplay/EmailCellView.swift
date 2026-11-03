@@ -36,7 +36,6 @@ struct EmailCellView: View {
 
     let hasAttachment: Bool
 
-    /// Whether the email is part of a thread, shown as a badge.
     let isThread: Bool
 
     @Environment(FeatureFlags.self) private var flags: FeatureFlags
