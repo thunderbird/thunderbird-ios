@@ -7,12 +7,27 @@ import Core
 import SwiftUI
 import WebKit
 
+/// A full-screen reader for one email.
+///
+/// A real `Email` is shown as its HTML body in a `WebView`, and is reloaded from the first account when the view
+/// appears. A placeholder `TempEmail` is shown with the subject, a `SenderView`, an `EmailBodyView`, and any
+/// attachments, plus a toolbar of actions.
+///
+/// - Important: The toolbar and the menus in the `TempEmail` layout are mockups. Their buttons do nothing, or just
+///   show an alert titled with the action's name, except the reply, reply all, forward, and edit as new links, which
+///   open `ComposeView`. The `Email` layout has no toolbar.
 struct ReadEmailView: View {
+    /// Create a reader for a placeholder email.
+    ///
+    /// - Parameter temptEmail: The placeholder to show.
     init(_ temptEmail: TempEmail) {
         self.tempEmail = temptEmail
         email = nil
     }
 
+    /// Create a reader for a real email.
+    ///
+    /// - Parameter email: The email to show. The view refreshes it from the account when it appears.
     init(_ email: Email) {
         self.email = email
         tempEmail = nil
@@ -23,6 +38,7 @@ struct ReadEmailView: View {
     @State private var email: Email?
     private let tempEmail: TempEmail?
 
+    /// Reload the email from the first account, keeping the current copy if the reload fails or there is no account.
     private func refresh() async {
         guard let account: Account = accountManager.allAccounts.first,
             let email
@@ -174,7 +190,13 @@ struct ReadEmailView: View {
     }
 }
 
+/// A labeled list of an email's attachments.
+///
+/// - Important: Every attachment shows the same placeholder icon, file name, and size; nothing is read from the data.
 struct AttachmentBlockView: View {
+    /// Create an attachment list.
+    ///
+    /// - Parameter attachments: The attachments' data. Only the count is used.
     init(_ attachments: [Data]) {
         self.attachments = attachments
     }
@@ -192,7 +214,11 @@ struct AttachmentBlockView: View {
     }
 }
 
+/// A row for one attachment: an icon, a file name, and a size.
+///
+/// - Important: A placeholder. It always shows "rockFlying.png" and "1.78 MB".
 struct SingleAttachment: View {
+    /// Create an attachment row. It takes no input yet.
     init() {
         //Do Stuff
     }
@@ -212,7 +238,11 @@ struct SingleAttachment: View {
 }
 
 #if os(macOS)
+/// A web view that renders an HTML string, wrapping `WKWebView` for macOS.
+///
+/// The string reloads whenever the view updates, with no base URL.
 struct WebView: NSViewRepresentable {
+    /// The HTML to render.
     let htmlString: String
 
     // MARK: NSViewRepresentable
@@ -225,7 +255,11 @@ struct WebView: NSViewRepresentable {
     }
 }
 #elseif os(iOS)
+/// A web view that renders an HTML string, wrapping `WKWebView` for iOS.
+///
+/// The string reloads whenever the view updates, with no base URL.
 struct WebView: UIViewRepresentable {
+    /// The HTML to render.
     let htmlString: String
 
     // MARK: UIViewRepresentable
@@ -239,7 +273,16 @@ struct WebView: UIViewRepresentable {
 }
 #endif
 
+/// The header of a placeholder email: sender, primary recipient, date, and an actions menu.
+///
+/// Tapping the recipient line opens a sheet listing everyone on the email, grouped by from, sender, reply-to, to and
+/// cc. Of the menu's items, only "Edit as new" does anything; it opens `ComposeView`.
+///
+/// - Important: The view reads `from[0]` and `to[0]` directly, so it crashes if either list is empty.
 struct SenderView: View {
+    /// Create a header for a placeholder email.
+    ///
+    /// - Parameter email: The email to show. It must have at least one `from` and one `to` address.
     init(email: TempEmail) {
         from = email.from
         sender = email.sender
@@ -384,8 +427,14 @@ struct SenderView: View {
     }
 }
 
+/// A row showing one email address: its label, if it has one, above the address.
 struct ContactCellView: View {
+    /// The address to show.
     let contact: EmailAddress
+
+    /// Create a contact row.
+    ///
+    /// - Parameter contact: The address to show.
     init(contact: EmailAddress) {
         self.contact = contact
     }
@@ -663,7 +712,9 @@ struct ContactCellView: View {
     )
 }
 
+/// Extends `ToolbarItemPlacement` with platform-appropriate toolbar placements for the reader.
 private extension ToolbarItemPlacement {
+    /// The trailing edge of the navigation bar on iOS; `.automatic` on other platforms.
     static var trailing: Self {
         #if os(iOS)
         .topBarTrailing
@@ -672,6 +723,7 @@ private extension ToolbarItemPlacement {
         #endif
     }
 
+    /// The bottom bar on iOS; `.automatic` on other platforms.
     static var bottom: Self {
         #if os(iOS)
         .bottomBar

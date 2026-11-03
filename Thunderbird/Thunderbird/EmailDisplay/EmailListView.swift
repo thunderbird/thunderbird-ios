@@ -6,6 +6,15 @@ import Bolt
 import Core
 import SwiftUI
 
+/// The app's main screen: the list of emails, with a compose button and the account drawer.
+///
+/// The list shows the first account's emails, loaded when the view appears and again on pull-to-refresh. Selecting an
+/// email pushes `ReadEmailView`, and the compose button pushes `ComposeView`. The menu button in the toolbar opens
+/// `DrawerView`. `ContentView` presents this view once an account exists.
+///
+/// - Important: Until the account returns emails, the list shows `TempEmail.sampleData` placeholders. That includes
+///   when loading fails, because the error is dropped, and when the account has no emails. Only the first account
+///   in the `AccountManager` is shown.
 struct EmailListView: View {
     @Environment(AccountManager.self) private var accountManager: AccountManager
     @State private var emails: [Email] = []
@@ -17,6 +26,9 @@ struct EmailListView: View {
     @State private var editMode: EditMode = .inactive
     #endif
 
+    /// Load the first account's emails into the list.
+    ///
+    /// Does nothing if there are no accounts. If loading throws, the error is dropped and the current list is kept.
     private func refresh() async {
         guard let account: Account = accountManager.allAccounts.first else { return }
         isRefreshing = true
@@ -112,7 +124,9 @@ struct EmailListView: View {
         .environment(flags)
 }
 
+/// Extends `ToolbarItemPlacement` with platform-appropriate toolbar placements for the email list.
 private extension ToolbarItemPlacement {
+    /// The leading edge of the navigation bar on iOS; `.automatic` on other platforms.
     static var leading: Self {
         #if os(iOS)
         .topBarLeading
@@ -121,6 +135,7 @@ private extension ToolbarItemPlacement {
         #endif
     }
 
+    /// The trailing edge of the navigation bar on iOS; `.automatic` on other platforms. Nothing in this file uses it.
     static var trailing: Self {
         #if os(iOS)
         .topBarTrailing

@@ -6,23 +6,50 @@ import Bolt
 import Core
 import SwiftUI
 
+/// A row in the email list: sender, subject, a one-line body preview, date, and status indicators.
+///
+/// The row can be built from a real `Email` or from a placeholder `TempEmail`. Only `TempEmail` supplies the status
+/// indicators; the `Email` initializer fixes them all off.
+///
+/// - Important: The thread badge always reads "99+", whatever the thread's size.
 struct EmailCellView: View {
+    /// The sender shown in bold at the top of the row.
     let senderText: String
+
+    /// The subject line.
     let headerText: String
+
+    /// The preview text under the subject. It's the raw body, not stripped of HTML.
     let bodyText: String
+
+    /// When the email was sent, shown through `SmartDateFormatter`.
     let dateSent: Date
 
     // For alignment, bool check likely not final
+
+    /// Whether the email is unread, shown as a filled dot and a bolder subject.
     let unread: Bool
+
+    /// Whether the email is new, shown as an open dot. Takes precedence over `unread`.
     let newEmail: Bool
+
+    /// Whether the email is pinned, shown as a pin in place of the leading indent.
     let pinned: Bool
+
+    /// Whether the email has attachments, shown as a paperclip.
     let hasAttachment: Bool
+
+    /// Whether the email is part of a thread, shown as a badge.
     let isThread: Bool
 
     @Environment(FeatureFlags.self) private var flags: FeatureFlags
     private let tempEmail: TempEmail?
     private let email: Email?
 
+    /// Create a row for a placeholder email.
+    ///
+    /// - Parameter email: The placeholder to show. It must have at least one `from` address, which supplies the
+    ///   sender's label, or its value if there is no label.
     init(email: TempEmail) {
         self.senderText = email.from[0].label ?? email.from[0].value
         self.headerText = email.headerText
@@ -37,6 +64,12 @@ struct EmailCellView: View {
         self.email = nil
     }
 
+    /// Create a row for a real email.
+    ///
+    /// - Parameter email: The email to show. The sender is its first sender address, or empty if it has none; the
+    ///   subject falls back to "Untitled", and the date to now.
+    /// - Important: The preview text is the literal "Body text" and every indicator is off, because those aren't
+    ///   read from the email yet.
     init(email: Email) {
         self.senderText = email.sender.first?.addresses.first?.description ?? ""
         self.headerText = email.subject ?? "Untitled"
