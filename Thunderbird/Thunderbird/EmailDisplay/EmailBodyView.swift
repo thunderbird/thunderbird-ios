@@ -21,11 +21,9 @@ struct EmailBodyView: View {
     @State private var textAttributes = TextAttributes()
     @FocusState private var keyboardShown: Bool
     @State var email: Email?
-
-    /// Whether the user can edit the body. When `false`, the view is read-only and ignores focus changes.
     let editable: Bool
 
-    /// A binding to the keyboard focus that ignores changes when the view isn't `editable`.
+    /// Keyboard focus, which ignores changes when the view isn't `editable`.
     var focusBinding: Binding<Bool> {
         Binding(
             get: {

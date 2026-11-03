@@ -13,16 +13,11 @@ import SwiftUI
 ///
 /// - Important: The thread badge always reads "99+", whatever the thread's size.
 struct EmailCellView: View {
-    /// The sender shown in bold at the top of the row.
     let senderText: String
-
-    /// The subject line.
     let headerText: String
 
     /// The preview text under the subject. It's the raw body, not stripped of HTML.
     let bodyText: String
-
-    /// When the email was sent, shown through `SmartDateFormatter`.
     let dateSent: Date
 
     // For alignment, bool check likely not final
@@ -43,8 +38,8 @@ struct EmailCellView: View {
 
     /// Create a row for a placeholder email.
     ///
-    /// - Parameter email: The placeholder to show. The sender is its first `from` address's label, or its value if
-    ///   there is no label, or empty if there are no `from` addresses.
+    /// The sender is the first `from` address's label, or its value if there is no label, or empty if there are no
+    /// `from` addresses.
     init(email: TempEmail) {
         self.senderText = email.from.first?.label ?? email.from.first?.value ?? ""
         self.headerText = email.headerText
@@ -61,8 +56,9 @@ struct EmailCellView: View {
 
     /// Create a row for a real email.
     ///
-    /// - Parameter email: The email to show. The sender is its first sender address, or empty if it has none; the
-    ///   subject falls back to "Untitled", and the date to now.
+    /// The sender is the email's first sender address, or empty if it has none; the subject falls back to "Untitled",
+    /// and the date to now.
+    ///
     /// - Important: The preview text is the literal "Body text" and every indicator is off, because those aren't
     ///   read from the email yet.
     init(email: Email) {

@@ -17,17 +17,11 @@ import WebKit
 ///   show an alert titled with the action's name, except the reply, reply all, forward, and edit as new links, which
 ///   open `ComposeView`. The `Email` layout has no toolbar.
 struct ReadEmailView: View {
-    /// Create a reader for a placeholder email.
-    ///
-    /// - Parameter temptEmail: The placeholder to show.
     init(_ temptEmail: TempEmail) {
         self.tempEmail = temptEmail
         email = nil
     }
 
-    /// Create a reader for a real email.
-    ///
-    /// - Parameter email: The email to show. The view refreshes it from the account when it appears.
     init(_ email: Email) {
         self.email = email
         tempEmail = nil
@@ -194,9 +188,6 @@ struct ReadEmailView: View {
 ///
 /// - Important: Every attachment shows the same placeholder icon, file name, and size; nothing is read from the data.
 struct AttachmentBlockView: View {
-    /// Create an attachment list.
-    ///
-    /// - Parameter attachments: The attachments' data. Only the count is used.
     init(_ attachments: [Data]) {
         self.attachments = attachments
     }
@@ -218,7 +209,6 @@ struct AttachmentBlockView: View {
 ///
 /// - Important: A placeholder. It always shows "rockFlying.png" and "1.78 MB".
 struct SingleAttachment: View {
-    /// Create an attachment row. It takes no input yet.
     init() {
         //Do Stuff
     }
@@ -242,7 +232,6 @@ struct SingleAttachment: View {
 ///
 /// The string reloads whenever the view updates, with no base URL.
 struct WebView: NSViewRepresentable {
-    /// The HTML to render.
     let htmlString: String
 
     // MARK: NSViewRepresentable
@@ -259,7 +248,6 @@ struct WebView: NSViewRepresentable {
 ///
 /// The string reloads whenever the view updates, with no base URL.
 struct WebView: UIViewRepresentable {
-    /// The HTML to render.
     let htmlString: String
 
     // MARK: UIViewRepresentable
@@ -280,9 +268,6 @@ struct WebView: UIViewRepresentable {
 ///
 /// - Note: With no `from` or `to` addresses, the sender or the recipient name is blank.
 struct SenderView: View {
-    /// Create a header for a placeholder email.
-    ///
-    /// - Parameter email: The email to show.
     init(email: TempEmail) {
         from = email.from
         sender = email.sender
@@ -429,12 +414,7 @@ struct SenderView: View {
 
 /// A row showing one email address: its label, if it has one, above the address.
 struct ContactCellView: View {
-    /// The address to show.
     let contact: EmailAddress
-
-    /// Create a contact row.
-    ///
-    /// - Parameter contact: The address to show.
     init(contact: EmailAddress) {
         self.contact = contact
     }
@@ -714,7 +694,6 @@ struct ContactCellView: View {
 
 /// Extends `ToolbarItemPlacement` with platform-appropriate toolbar placements for the reader.
 private extension ToolbarItemPlacement {
-    /// The trailing edge of the navigation bar on iOS; `.automatic` on other platforms.
     static var trailing: Self {
         #if os(iOS)
         .topBarTrailing
@@ -723,7 +702,6 @@ private extension ToolbarItemPlacement {
         #endif
     }
 
-    /// The bottom bar on iOS; `.automatic` on other platforms.
     static var bottom: Self {
         #if os(iOS)
         .bottomBar

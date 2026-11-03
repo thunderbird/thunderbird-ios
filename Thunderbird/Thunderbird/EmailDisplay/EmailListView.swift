@@ -126,7 +126,6 @@ struct EmailListView: View {
 
 /// Extends `ToolbarItemPlacement` with platform-appropriate toolbar placements for the email list.
 private extension ToolbarItemPlacement {
-    /// The leading edge of the navigation bar on iOS; `.automatic` on other platforms.
     static var leading: Self {
         #if os(iOS)
         .topBarLeading
@@ -135,7 +134,6 @@ private extension ToolbarItemPlacement {
         #endif
     }
 
-    /// The trailing edge of the navigation bar on iOS; `.automatic` on other platforms. Nothing in this file uses it.
     static var trailing: Self {
         #if os(iOS)
         .topBarTrailing
