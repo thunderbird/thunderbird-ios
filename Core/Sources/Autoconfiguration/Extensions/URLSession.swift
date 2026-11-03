@@ -10,10 +10,8 @@ extension URLSession {
     ///
     /// Sources are tried in order and the first that succeeds wins; individual source failures are ignored. If all fail
     /// and `queryMX` is `true`, the domain of the first MX host is derived and the sources are retried once for it.
+    /// The retry looks up that domain, but placeholders such as `%EMAILADDRESS%` are still filled from `emailAddress`.
     ///
-    /// - Important: The MX retry queries with the derived domain in place of `emailAddress`, so the provider URL omits
-    ///   the `emailaddress` query item, and placeholders such as `%EMAILADDRESS%` in the returned configuration are
-    ///   substituted with that domain rather than the user's address.
     /// - Parameters:
     ///   - emailAddress: Email address to configure.
     ///   - sources: Sources to query, in order of trust. Defaults to all sources.
@@ -22,9 +20,8 @@ extension URLSession {
     /// - Throws: `URLError(.fileDoesNotExist)` if no source succeeds, including after the MX retry;
     ///   `URLError(.unsupportedURL)` if there are no MX records; or a DNS, network or ``domain(host:)`` error.
     public func autoconfig(_ emailAddress: String, sources: [Source] = Source.allCases, queryMX: Bool = true) async throws -> (config: ClientConfig, source: Source) {
-        for source in sources {
-            guard let config: ClientConfig = try? await autoconfig(emailAddress, source: source).config else { continue }
-            return (config, source)
+        if let autoconfig: (config: ClientConfig, source: Source) = await firstAutoconfig(emailAddress, sources: sources) {
+            return autoconfig
         }
         guard queryMX else {
             throw URLError(.fileDoesNotExist)
@@ -34,19 +31,24 @@ extension URLSession {
             throw URLError(.unsupportedURL)
         }
         let domain: String = try await domain(host: host)
-        return try await autoconfig(domain, sources: sources, queryMX: false)
+        guard let autoconfig: (config: ClientConfig, source: Source) = await firstAutoconfig(emailAddress, sources: sources, domain: domain) else {
+            throw URLError(.fileDoesNotExist)
+        }
+        return autoconfig
     }
 
     /// Query a single autoconfig source using a given email address.
     ///
     /// - Parameters:
-    ///   - emailAddress: Email address to configure.
+    ///   - emailAddress: Email address to configure; placeholders such as `%EMAILADDRESS%` are filled from it.
     ///   - source: The source to query.
+    ///   - domain: Domain to look up instead of `emailAddress`'s host, such as one derived from an MX host. Defaults to
+    ///     `nil`, which uses the address's host.
     /// - Returns: The decoded configuration and the data behind it: the translated JSON, then the original XML.
     /// - Throws: `URLError(.fileDoesNotExist)` on HTTP 404, `URLError(.unsupportedURL)` on any other non-200 response,
     ///   or a parsing, decoding or network error.
-    public func autoconfig(_ emailAddress: String, source: Source) async throws -> (config: ClientConfig, data: (Data, Data)) {
-        let url: URL = try .autoconfig(emailAddress, source: source)
+    public func autoconfig(_ emailAddress: String, source: Source, domain: String? = nil) async throws -> (config: ClientConfig, data: (Data, Data)) {
+        let url: URL = try .autoconfig(emailAddress, source: source, domain: domain)
         let data: (Data, URLResponse) = try await data(from: url)
         switch (data.1 as? HTTPURLResponse)?.statusCode {
         case 200:
@@ -58,6 +60,21 @@ extension URLSession {
         default:
             throw URLError(.unsupportedURL)
         }
+    }
+
+    /// The first source, in order, that has a configuration for `emailAddress`, ignoring individual source failures.
+    ///
+    /// - Parameters:
+    ///   - emailAddress: Email address to configure.
+    ///   - sources: Sources to query, in order of trust.
+    ///   - domain: Domain to look up instead of `emailAddress`'s host. Defaults to `nil`.
+    /// - Returns: The configuration and the source that provided it, or `nil` if no source has one.
+    private func firstAutoconfig(_ emailAddress: String, sources: [Source], domain: String? = nil) async -> (config: ClientConfig, source: Source)? {
+        for source in sources {
+            guard let config: ClientConfig = try? await autoconfig(emailAddress, source: source, domain: domain).config else { continue }
+            return (config, source)
+        }
+        return nil
     }
 
     private struct Container: Decodable {
