@@ -16,7 +16,6 @@ import Core
 ///   currently shows a blank body for sample emails.
 struct EmailBodyView: View {
     @Environment(\.openURL) private var openURL: OpenURLAction
-    /// The HTML in the editor. Starts as `String.sampleHTML`, and is overwritten from `email` when the view appears.
     @State var html = String.sampleHTML
     @State private var selection = ""
     @State private var textAttributes = TextAttributes()
