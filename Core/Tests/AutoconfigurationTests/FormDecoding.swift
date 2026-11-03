@@ -15,6 +15,9 @@ extension String {
     /// For example, `"code=0123+4567".formValue("code")` is `"0123 4567"`, and `"code=0123%2B4567".formValue("code")`
     /// is `"0123+4567"`.
     ///
+    /// Browsers apply the same rule: `URLSearchParams` reads `+` as a space, which corrupts Base64 values such as tokens,
+    /// while its `append()` encodes `+` as `%2B`. See [MDN: Preserving plus signs](https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams#preserving_plus_signs).
+    ///
     /// - Parameter name: Name of the parameter to read.
     /// - Returns: The first value for `name`, or `nil` if the string has no such parameter.
     func formValue(_ name: String) -> String? {
