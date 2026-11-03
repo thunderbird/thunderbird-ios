@@ -152,3 +152,19 @@ extension OAuth2.Configuration: @retroactive CaseIterable {
         ]
     }
 }
+
+/// Extends `OAuth2.Configuration` with the URL scheme the sign-in session listens for.
+extension OAuth2.Configuration {
+    /// The scheme of ``redirectURI``, which `OAuthButton` passes to `ASWebAuthenticationSession` as its callback.
+    ///
+    /// After the user signs in, the provider sends the browser to the redirect URI, e.g.
+    /// `net.thunderbird.ios:/oauth2redirect?code=…`. The sign-in session only hands that URL back to the app if its
+    /// scheme is the one the session was told to listen for, so the two must always match.
+    ///
+    /// Most providers' redirect URIs use the app's first URL scheme, `net.thunderbird.ios`. Microsoft requires its own
+    /// format for iOS apps, `msauth.<bundle ID>://auth`, so its scheme is `msauth.net.thunderbird.ios`. Listening for
+    /// the app's first scheme instead meant Microsoft's redirect was never caught and sign-in couldn't finish.
+    var callbackScheme: String {
+        URL(string: redirectURI)!.scheme!  // Every redirect URI above is built from one of the app's URL schemes
+    }
+}
