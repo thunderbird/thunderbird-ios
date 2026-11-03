@@ -88,7 +88,8 @@ extension SRVRecordTests {
     ///
     /// An SRV record's data (`rdata`) is six bytes of numbers followed by the target host name. The name isn't stored
     /// as text with dots; each part of it ("label") is stored as a length byte followed by that many characters, and
-    /// a zero byte ends the name (RFC 1035 §3.1). For example, `mail.thundermail.com` on port 443 is:
+    /// a zero byte ends the name ([RFC 1035 §3.1](https://www.rfc-editor.org/rfc/rfc1035#section-3.1)). For example, `mail.thundermail.com` on port 443
+    /// is:
     ///
     /// ```
     /// 00 00 | 00 01 | 01 BB | 04 m a i l | 0B t h u n d e r m a i l | 03 c o m | 00

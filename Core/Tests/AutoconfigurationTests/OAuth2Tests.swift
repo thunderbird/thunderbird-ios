@@ -20,7 +20,7 @@ struct OAuth2Tests {
         #expect(actual == expected)
     }
 
-    //Expect: Use only the unreserved characters RFC 7636 allows in a code verifier.
+    //Expect: Use only the unreserved characters RFC 7636 allows in a code verifier (https://www.rfc-editor.org/rfc/rfc7636#section-4.1).
     //Case: When a PKCE pair is created without a verifier.
     @Test func pkceInit_generatesUnreservedCharactersOnly_whenCreatedWithoutVerifier() {
         // Arrange
@@ -33,7 +33,7 @@ struct OAuth2Tests {
         #expect(actual.allSatisfy { allowedCharacters.contains($0) })
     }
 
-    //Expect: Derive the S256 code challenge given in RFC 7636 Appendix B.
+    //Expect: Derive the S256 code challenge given in RFC 7636 Appendix B (https://www.rfc-editor.org/rfc/rfc7636#appendix-B).
     //Case: When the verifier is the RFC 7636 test vector.
     @Test func pkceInit_derivesRFC7636Challenge_whenVerifierIsTestVector() {
         // Arrange
@@ -236,7 +236,7 @@ struct OAuth2Tests {
 }
 
 extension OAuth2Tests {
-    /// Code verifier from RFC 7636 Appendix B.
+    /// Code verifier from [RFC 7636 Appendix B](https://www.rfc-editor.org/rfc/rfc7636#appendix-B).
     static let testVectorVerifier: String = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
 
     static func configuration(hosts: [String] = []) throws -> OAuth2.Configuration {
