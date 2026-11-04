@@ -17,6 +17,6 @@ struct LoginCommand: IMAPCommand {
     var name: String { "login \"\(username)\"" }
 
     func tagged(_ tag: String) -> NIOIMAPCore.TaggedCommand {
-        TaggedCommand(tag: tag, command: .login(username: username, password: password))
+        TaggedCommand(tag: Command.Tag(stringLiteral: tag), command: .login(username: username, password: password))
     }
 }

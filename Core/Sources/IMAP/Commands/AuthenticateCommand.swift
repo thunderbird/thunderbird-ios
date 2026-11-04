@@ -20,7 +20,7 @@ struct AuthenticateCommand: IMAPCommand {
 
     func tagged(_ tag: String) -> NIOIMAPCore.TaggedCommand {
         TaggedCommand(
-            tag: tag,
+            tag: Command.Tag(stringLiteral: tag),
             command:
                 .authenticate(
                     mechanism: authentication.mechanism,

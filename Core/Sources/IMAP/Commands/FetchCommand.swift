@@ -23,7 +23,7 @@ struct FetchCommand: IMAPCommand {
     var name: String { "fetch" }
 
     func tagged(_ tag: String) -> NIOIMAPCore.TaggedCommand {
-        TaggedCommand(tag: tag, command: .fetch(.set(identifiers), attributes, []))
+        TaggedCommand(tag: Command.Tag(stringLiteral: tag), command: .fetch(.set(identifiers), attributes, []))
     }
 }
 
