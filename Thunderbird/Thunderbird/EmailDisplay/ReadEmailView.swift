@@ -7,6 +7,15 @@ import Core
 import SwiftUI
 import WebKit
 
+/// A full-screen reader for one email.
+///
+/// A real `Email` is shown as its HTML body in a `WebView`, and is reloaded from the first account when the view
+/// appears. A placeholder `TempEmail` is shown with the subject, a `SenderView`, an `EmailBodyView`, and any
+/// attachments, plus a toolbar of actions.
+///
+/// - Important: The toolbar and the menus in the `TempEmail` layout are mockups. Their buttons do nothing, or just
+///   show an alert titled with the action's name, except the reply, reply all, forward, and edit as new links, which
+///   open `ComposeView`. The `Email` layout has no toolbar.
 struct ReadEmailView: View {
     init(_ temptEmail: TempEmail) {
         self.tempEmail = temptEmail
@@ -23,6 +32,7 @@ struct ReadEmailView: View {
     @State private var email: Email?
     private let tempEmail: TempEmail?
 
+    /// Reload the email from the first account, keeping the current copy if the reload fails or there is no account.
     private func refresh() async {
         guard let account: Account = accountManager.allAccounts.first,
             let email
@@ -174,6 +184,9 @@ struct ReadEmailView: View {
     }
 }
 
+/// A labeled list of an email's attachments.
+///
+/// - Important: Every attachment shows the same placeholder icon, file name, and size; nothing is read from the data.
 struct AttachmentBlockView: View {
     init(_ attachments: [Data]) {
         self.attachments = attachments
@@ -192,6 +205,9 @@ struct AttachmentBlockView: View {
     }
 }
 
+/// A row for one attachment: an icon, a file name, and a size.
+///
+/// - Important: A placeholder. It always shows "rockFlying.png" and "1.78 MB".
 struct SingleAttachment: View {
     init() {
         //Do Stuff
@@ -212,6 +228,9 @@ struct SingleAttachment: View {
 }
 
 #if os(macOS)
+/// A web view that renders an HTML string, wrapping `WKWebView` for macOS.
+///
+/// The string reloads whenever the view updates, with no base URL.
 struct WebView: NSViewRepresentable {
     let htmlString: String
 
@@ -225,6 +244,9 @@ struct WebView: NSViewRepresentable {
     }
 }
 #elseif os(iOS)
+/// A web view that renders an HTML string, wrapping `WKWebView` for iOS.
+///
+/// The string reloads whenever the view updates, with no base URL.
 struct WebView: UIViewRepresentable {
     let htmlString: String
 
@@ -239,6 +261,12 @@ struct WebView: UIViewRepresentable {
 }
 #endif
 
+/// The header of a placeholder email: sender, primary recipient, date, and an actions menu.
+///
+/// Tapping the recipient line opens a sheet listing everyone on the email, grouped by from, sender, reply-to, to and
+/// cc. Of the menu's items, only "Edit as new" does anything; it opens `ComposeView`.
+///
+/// - Note: With no `from` or `to` addresses, the sender or the recipient name is blank.
 struct SenderView: View {
     init(email: TempEmail) {
         from = email.from
@@ -263,10 +291,10 @@ struct SenderView: View {
         HStack {
             VStack(alignment: .leading) {
                 HStack {
-                    Text(from[0].value).font(.title3)
+                    Text(from.first?.value ?? "").font(.title3)
                 }
                 HStack {
-                    Text("To: \(toText[0].label ?? toText[0].value)")
+                    Text("To: \(toText.first?.label ?? toText.first?.value ?? "")")
                     if recipients.count > 0 {
                         Text("+\(recipients.count)")
                     }
@@ -384,6 +412,7 @@ struct SenderView: View {
     }
 }
 
+/// A row showing one email address: its label, if it has one, above the address.
 struct ContactCellView: View {
     let contact: EmailAddress
     init(contact: EmailAddress) {
@@ -663,6 +692,7 @@ struct ContactCellView: View {
     )
 }
 
+/// Extends `ToolbarItemPlacement` with platform-appropriate toolbar placements for the reader.
 private extension ToolbarItemPlacement {
     static var trailing: Self {
         #if os(iOS)

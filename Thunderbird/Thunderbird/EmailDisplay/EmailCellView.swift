@@ -6,25 +6,42 @@ import Bolt
 import Core
 import SwiftUI
 
+/// A row in the email list: sender, subject, a one-line body preview, date, and status indicators.
+///
+/// The row can be built from a real `Email` or from a placeholder `TempEmail`. Only `TempEmail` supplies the status
+/// indicators; the `Email` initializer fixes them all off.
+///
+/// - Important: The thread badge always reads "99+", whatever the thread's size.
 struct EmailCellView: View {
     let senderText: String
     let headerText: String
+
+    /// The preview text under the subject. It's the raw body, not stripped of HTML.
     let bodyText: String
     let dateSent: Date
 
     // For alignment, bool check likely not final
+
     let unread: Bool
+
     let newEmail: Bool
+
     let pinned: Bool
+
     let hasAttachment: Bool
+
     let isThread: Bool
 
     @Environment(FeatureFlags.self) private var flags: FeatureFlags
     private let tempEmail: TempEmail?
     private let email: Email?
 
+    /// Create a row for a placeholder email.
+    ///
+    /// The sender is the first `from` address's label, or its value if there is no label, or empty if there are no
+    /// `from` addresses.
     init(email: TempEmail) {
-        self.senderText = email.from[0].label ?? email.from[0].value
+        self.senderText = email.from.first?.label ?? email.from.first?.value ?? ""
         self.headerText = email.headerText
         self.bodyText = email.bodyText
         self.dateSent = email.dateSent
@@ -37,6 +54,13 @@ struct EmailCellView: View {
         self.email = nil
     }
 
+    /// Create a row for a real email.
+    ///
+    /// The sender is the email's first sender address, or empty if it has none; the subject falls back to "Untitled",
+    /// and the date to now.
+    ///
+    /// - Important: The preview text is the literal "Body text" and every indicator is off, because those aren't
+    ///   read from the email yet.
     init(email: Email) {
         self.senderText = email.sender.first?.addresses.first?.description ?? ""
         self.headerText = email.subject ?? "Untitled"
