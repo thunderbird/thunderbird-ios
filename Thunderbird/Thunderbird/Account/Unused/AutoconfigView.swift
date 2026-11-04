@@ -8,7 +8,6 @@ import SwiftUI
 /// Button that looks up an email address's autoconfig settings, then shows the provider and source found, or the error.
 ///
 /// Not currently shown in the app; it's only referenced by its preview.
-// TODO: Delete this view, or show it in the app. Only its preview uses it.
 struct AutoconfigView: View {
     /// Email address to look up.
     let emailAddress: String
