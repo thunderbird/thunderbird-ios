@@ -196,22 +196,30 @@
         <button class="accordion-trigger"><span class="num">🚪</span><span>Entry &amp; root navigation<span class="tt-sub">App.swift · ContentView.swift</span></span><span class="chev">▾</span></button>
         <div class="accordion-content">
           <ul>
-            <li><code>App</code> (<code>@main</code>) — holds <code>@State accounts: Accounts</code> and <code>@State featureFlags: FeatureFlags(distribution:)</code>, injects both into the environment, and overlays a global <code>FeatureNotImplementedView</code> driven by <code>AlertManager.shared</code>.</li>
-            <li><code>ContentView</code> — computes <code>hasAuthorization</code> from <code>accounts.allAccounts</code> (both incoming &amp; outgoing servers authorized). True → <code>EmailListView</code>; false → a <code>NavigationStack</code> with <code>WelcomeScreen</code> presenting <code>ManualAccount</code> as a sheet.</li>
+            <li><code>App</code> (<code>@main</code>) — registers the OAuth2 configurations, holds <code>@State accountManager: AccountManager</code>, <code>mailboxManager: UnifiedMailboxManager</code> and <code>featureFlags: FeatureFlags(distribution:)</code>, injects them into the environment, and overlays a global <code>FeatureNotImplementedView</code> driven by <code>AlertManager.shared</code>.</li>
+            <li><code>ContentView</code> — shows <code>WelcomeScreen</code> while <code>accountManager.allAccounts</code> is empty, otherwise <code>EmailListView</code>. The welcome screen's start button presents <code>AccountView</code> as a sheet. At launch it also renews expired OAuth2 tokens.</li>
           </ul>
         </div>
       </div>
 
       <div class="accordion-item" id="a-setup">
-        <button class="accordion-trigger"><span class="num">🔑</span><span>Account setup (AccountAuth)<span class="tt-sub">WelcomeScreen → ManualAccount stack</span></span><span class="chev">▾</span></button>
+        <button class="accordion-trigger"><span class="num">🔑</span><span>Account setup (Account/)<span class="tt-sub">WelcomeScreen → AccountView; Settings → ManualAccount</span></span><span class="chev">▾</span></button>
         <div class="accordion-content">
-          <p>A string-path <code>NavigationStack</code> rooted at <code>ManualAccount</code>, threading a shared <code>@Observable LoginDetails</code> (in-progress account, entered email, chosen protocol):</p>
+          <p><code>AccountView</code> (<code>Account/</code>, presented from <code>WelcomeScreen</code>) is a <code>NavigationStack</code> driven by <code>AccountDestination</code>. New accounts start at step 1; accounts that already have servers open at step 3:</p>
           <ol>
-            <li><code>AccountInformation</code> — email entry; <code>AutoconfigView</code> attempts discovery; on success shows <code>AuthorizationView</code>, else offers manual setup.</li>
-            <li><code>EmailAccountTypeSelection</code> — JMAP vs IMAP toggle (custom <code>FullToggleStyle</code>).</li>
-            <li><code>ManualServerSetup</code> — incoming/outgoing host, port, security, auth; finalizes via <code>accounts.set(account)</code>.</li>
+            <li><code>AccountAddView</code> (<code>Setup/</code>) — email address and display name; <strong>Next</strong> runs autoconfiguration.</li>
+            <li><code>AccountAutoView</code> (<code>Setup/</code>) — review the configuration found (plus a JMAP option when available), sign in, then test or save.</li>
+            <li><code>AccountEditView</code> (<code>Setup/</code>) — edit the name, address, protocol, servers and sign-in by hand.</li>
           </ol>
-          <p>Authentication UI: <code>AuthorizationView</code> switches on <code>AuthenticationType</code> — password (<code>SecureField</code>) or OAuth2 (<code>OAuthButton</code> → <code>ASWebAuthenticationSession</code>). Provider configs live in <code>Account/OAuth2.swift</code>. <span class="badge primary">Detail</span> <a href="data-flows.html#oauth">Flows · OAuth2</a>.</p>
+          <p>Either screen can open <code>AccountTestView</code> to run connection tests before saving with <code>accountManager.set(account)</code>.</p>
+          <p>An older manual flow (<code>Manual/</code>), presented by <code>ManualAccount</code> from General settings, is a string-path <code>NavigationStack</code> threading a shared <code>@Observable LoginDetails</code> (in-progress account, entered email, chosen protocol):</p>
+          <ol>
+            <li><code>AccountInformation</code> — email entry; looks up settings itself and, on success, shows <code>AuthorizationView</code> and an edit link. The manual setup link is always shown.</li>
+            <li><code>EmailAccountTypeSelection</code> — JMAP vs IMAP toggle (custom <code>FullToggleStyle</code>).</li>
+            <li><code>ManualServerSetup</code> — incoming/outgoing host, port, security, auth; finalizes via <code>accountManager.set(account)</code>.</li>
+          </ol>
+          <p><code>Unused/</code> holds views that are only referenced by their previews: <code>AccountListView</code>, <code>AutoconfigView</code>, <code>EditAccountView</code> and <code>EditServerView</code>.</p>
+          <p>Authentication UI (<code>Authorization/</code>): <code>AuthorizationView</code> switches on <code>AuthenticationType</code> — password (BoltUI <code>PasswordField</code>) or OAuth2 (<code>OAuthButton</code> → <code>ASWebAuthenticationSession</code>). Provider configs live in <code>Account/Authorization/OAuth2.swift</code>. <span class="badge primary">Detail</span> <a href="data-flows.html#oauth">Flows · OAuth2</a>.</p>
         </div>
       </div>
 

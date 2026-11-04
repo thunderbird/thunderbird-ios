@@ -6,9 +6,17 @@ import Bolt
 import Core
 import SwiftUI
 
+/// Edit an account's name, email address, protocol, servers and sign-in, then test or save it.
+///
+/// Editing a server replaces the account's servers: IMAP and SMTP together, or the JMAP server alone, depending on which one changed.
 struct AccountEditView: View {
+    /// - Parameters:
+    ///   - account: Account to edit; updated as the fields change.
+    ///   - path: Navigation path. Accepted for consistency with the other setup screens; not used.
+    ///   - isPresented: Binding to the presenting sheet; set to `false` when the account is saved.
     init(
         _ account: Binding<Account>,
+        // TODO: Remove the unused `path` parameter and update the callers.
         path: Binding<NavigationPath> = .constant(NavigationPath()),
         isPresented: Binding<Bool> = .constant(false)
     ) {
@@ -30,15 +38,19 @@ struct AccountEditView: View {
     @State private var name: String = ""
     @State private var isTesting: Bool = false
 
+    /// Last sign-in error. Setting it also shows it on the account manager, but only errors ``AccountError`` can represent are shown; others are dropped.
+    // TODO: Show errors that `AccountError` cannot represent (network, decoding, OAuth2 session errors) instead of dropping them (#605).
     @State private var error: Error? = nil {
         didSet { accountManager.error = error != nil ? AccountError(error!) : nil }
     }
 
+    /// Save the account and dismiss the sheet.
     private func save() {
         accountManager.set(account)
         isPresented = false
     }
 
+    /// Show ``AccountTestView`` for the account.
     private func test() {
         isTesting = true
     }
@@ -98,6 +110,7 @@ struct AccountEditView: View {
             AccountTestView(account)
                 .presentationDragIndicator(.visible)
         }
+        // TODO: Verify on a device: each assignment below creates a new `Server` with a new `id`, so all three `onChange` handlers fire and the last one to run can replace the account's servers with blank ones.
         .onAppear {
             jmapServer = account.server(.jmap) ?? Server(.jmap)
             imapServer = account.server(.imap) ?? Server(.imap)
@@ -151,7 +164,9 @@ struct AccountEditView: View {
     }
 }
 
+/// Segmented picker for choosing between IMAP and JMAP.
 struct EmailProtocolPicker: View {
+    /// - Parameter emailProtocol: The selected protocol.
     init(_ emailProtocol: Binding<Account.EmailProtocol>) {
         _emailProtocol = emailProtocol
     }
@@ -176,13 +191,16 @@ struct EmailProtocolPicker: View {
         .padding()
 }
 
+/// Fields for a server's host name, port and connection security.
 struct ServerEditView: View {
+    /// - Parameter server: Server to edit.
     init(_ server: Binding<Server>) {
         _server = server
     }
 
     @Binding private var server: Server
 
+    /// Section heading: incoming for IMAP, outgoing for SMTP, or a generic server label otherwise.
     private var label: LocalizedStringKey {
         switch server.serverProtocol {
         case .imap: "account_incoming_server_label"
@@ -222,13 +240,17 @@ struct ServerEditView: View {
         .padding()
 }
 
+/// Extends `Server` with placeholder text for its edit fields.
 private extension Server {
+    /// Example host name for the server's protocol, like `imap.example.com`, used as the host field's placeholder.
     var titleKey: String {
         "\(serverProtocol.description.lowercased()).example.com"
     }
 }
 
+/// Picker for a server's connection security.
 struct ConnectionSecurityView: View {
+    /// - Parameter connectionSecurity: The selected connection security.
     init(_ connectionSecurity: Binding<Server.ConnectionSecurity>) {
         _connectionSecurity = connectionSecurity
     }

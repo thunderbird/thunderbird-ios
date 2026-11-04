@@ -6,7 +6,14 @@ import Bolt
 import Core
 import SwiftUI
 
+/// First step of adding an account: enter an email address and display name, then look up its settings.
+///
+/// **Next** runs autoconfiguration and continues to ``AccountAutoView``. The manual configuration link skips straight to ``AccountEditView``.
 struct AccountAddView: View {
+    /// - Parameters:
+    ///   - account: Account being set up. Its identity is replaced as the fields change, and the whole account is replaced by the autoconfigured one when the lookup succeeds.
+    ///   - path: Navigation path to push the next screen onto.
+    ///   - autofocus: Whether to focus the email address field when the view appears.
     init(
         _ account: Binding<Account>,
         path: Binding<NavigationPath> = .constant(NavigationPath()),
@@ -27,14 +34,18 @@ struct AccountAddView: View {
     @State private var isSearching: Bool = false
     private let autofocus: Bool
 
+    /// Whether **Next** is disabled: the address isn't valid, or a lookup is already running.
     private var isDisabled: Bool { !valueText.isEmailAddress || isSearching }
 
+    /// Replace the account's identities with the address and label currently entered.
+    // TODO: This drops any other identities the account has; update the first identity instead.
     private func refreshEmailAddress() {
         account.identities = [
             EmailAddress(valueText, label: labelText)
         ]
     }
 
+    /// Look up the account's settings and continue to ``AccountAutoView``, or show the error on the account manager.
     private func autoconfigure() async {
         accountManager.error = nil
         isSearching = true
@@ -69,6 +80,7 @@ struct AccountAddView: View {
             .submitLabel(.continue)
                 #endif
                 .focused($isLabelFocused, equals: true)
+                // TODO: Check `isDisabled` here, as the Next button does. Return currently starts a lookup for an invalid address, or a second lookup while one is running.
                 .onSubmit {
                     Task { await autoconfigure() }
                 }

@@ -6,7 +6,11 @@ import Account
 import BoltUI
 import SwiftUI
 
+/// Manual setup step for choosing JMAP or IMAP before entering server details.
+///
+/// If neither option is selected, **Next** continues with JMAP.
 struct EmailAccountTypeSelection: View {
+    /// - Parameter path: Navigation path to push ``ManualServerSetup`` onto.
     init(_ path: Binding<NavigationPath>) {
         _path = path
     }
@@ -65,6 +69,7 @@ struct EmailAccountTypeSelection: View {
         .safeAreaInset(edge: .bottom) {
             Button(
                 action: {
+                    // TODO: Disable Next until a protocol is chosen. With nothing selected this continues as JMAP.
                     loginDetails.serverProtocol = selectedIMAP ? .imap : .jmap
                     path.append("ManualAccountSetup")
 

@@ -6,7 +6,14 @@ import Bolt
 import Core
 import SwiftUI
 
+/// Review the settings autoconfiguration found, choose between them, sign in, then test or save the account.
+///
+/// When the provider also supports JMAP, both configurations are offered and only one can be selected; the autoconfigured one is selected by default. Pull to refresh repeats both lookups.
 struct AccountAutoView: View {
+    /// - Parameters:
+    ///   - account: Autoconfigured account. The lookup is repeated when the view appears, and the result replaces it.
+    ///   - path: Navigation path, used to open ``AccountEditView`` for either configuration.
+    ///   - isPresented: Binding to the presenting sheet; set to `false` when the account is saved.
     init(
         _ account: Binding<Account>,
         path: Binding<NavigationPath> = .constant(NavigationPath()),
@@ -26,10 +33,13 @@ struct AccountAutoView: View {
     @State private var isJMAPSelected: Bool = false
     @State private var isAutoSelected: Bool = true
     @State private var isTesting: Bool = false
+    /// Last sign-in error. Setting it also shows it on the account manager, but only errors ``AccountError`` can represent are shown; others are dropped.
+    // TODO: Show errors that `AccountError` cannot represent (network, decoding, OAuth2 session errors) instead of dropping them (#605).
     @State private var error: Error? = nil {
         didSet { accountManager.error = error != nil ? AccountError(error!) : nil }
     }
 
+    /// The JMAP configuration when it's available and selected, otherwise the autoconfigured account.
     private var selectedAccount: Account {
         if isJMAPSelected, let jmapAccount {
             return jmapAccount
@@ -37,6 +47,8 @@ struct AccountAutoView: View {
         return account
     }
 
+    /// Repeat the JMAP lookup and autoconfiguration. JMAP lookup errors are ignored; autoconfiguration errors are shown on the account manager.
+    // TODO: Surface JMAP lookup errors, or document why ignoring them is correct (#605).
     private func refresh() async {
         accountManager.error = nil
         isRefreshing = true
@@ -49,11 +61,13 @@ struct AccountAutoView: View {
         isRefreshing = false
     }
 
+    /// Save the selected configuration and dismiss the sheet.
     private func save() {
         accountManager.set(selectedAccount)
         isPresented = false
     }
 
+    /// Show ``AccountTestView`` for the selected configuration.
     private func test() {
         isTesting = true
     }
@@ -112,6 +126,8 @@ struct AccountAutoView: View {
             AccountTestView(selectedAccount)
                 .presentationDragIndicator(.visible)
         }
+        // TODO: Verify on a device: `.task` runs again when this screen reappears after `AccountEditView` is popped, and `refresh()` replaces the account, which would discard edits made there.
+        // TODO: Pull to refresh recreates the servers, which discards an authentication type the user changed.
         .refreshable(action: {
             await refresh()
         })
@@ -132,9 +148,14 @@ struct AccountAutoView: View {
     }
 }
 
+/// Summary of an account's protocol, servers and connection security, with a link to edit it.
 struct ConfigurationView: View {
+    /// Account whose configuration is shown.
     let account: Account
 
+    /// - Parameters:
+    ///   - account: Account to summarize.
+    ///   - action: Called when the edit link is tapped.
     init(_ account: Account, action: @escaping @MainActor () -> Void = {}) {
         self.account = account
         self.action = action
@@ -170,7 +191,9 @@ struct ConfigurationView: View {
         .padding()
 }
 
+/// Extends `Account.EmailProtocol` with localized titles for display.
 private extension Account.EmailProtocol {
+    /// Localization key for the protocol's name.
     var titleKey: LocalizedStringKey {
         switch self {
         case .imap: "imap"

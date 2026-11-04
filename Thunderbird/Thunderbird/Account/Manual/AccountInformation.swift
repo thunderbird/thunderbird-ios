@@ -6,15 +6,22 @@ import Account
 import Autoconfiguration
 import SwiftUI
 
+/// First screen of the manual setup flow: enter an email address, look up its settings, and sign in.
+///
+/// From here, the user can edit the configuration found in ``ManualServerSetup``, or choose a protocol and enter servers by hand starting with ``EmailAccountTypeSelection``. A temporary **Demo** button autoconfigures and saves `demoEmail@gmail.com`.
 struct AccountInformation: View {
+    /// - Parameter path: Navigation path to push the next screen onto.
     init(_ path: Binding<NavigationPath>) {
         _path = path
     }
 
+    /// Navigation path for the manual setup flow.
     @Binding var path: NavigationPath
     @Environment(AccountManager.self) private var accountManager: AccountManager
     @Environment(LoginDetails.self) private var loginDetails: LoginDetails
     @State private var account: Account = Account()
+    /// Whether to show the manual configuration link. Always `true`; nothing changes it.
+    // TODO: Remove this flag, or hide the link when manual setup should not be offered.
     @State private var showManual: Bool = true
     @State private var emailAddress: String = ""
     @State private var password: String = ""
@@ -22,6 +29,7 @@ struct AccountInformation: View {
     @State private var loginServer: Server = Server(.imap)
     @State private var loginAuth: Authorization = .none
 
+    /// Look up settings for the entered address, showing any error on the account manager.
     private func autoconfigure() async {
         accountManager.error = nil
         do {
@@ -111,6 +119,7 @@ struct AccountInformation: View {
                     .buttonStyle(.plain)
             }
             // TEMP DEMO BUTTON
+            // TODO: Remove the Demo button before release. It is shown in release builds.
             Button(action: {
                 Task {
                     guard let account: Account = try? await .autoconfigured("demoEmail@gmail.com") else {

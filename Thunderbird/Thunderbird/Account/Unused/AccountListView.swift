@@ -6,6 +6,9 @@ import Bolt
 import Core
 import SwiftUI
 
+/// List of saved accounts, with swipe actions to edit or delete each one and a toolbar button to add another.
+///
+/// Not currently shown in the app; it's only referenced by its preview.
 struct AccountListView: View {
     @Environment(AccountManager.self) private var accountManager: AccountManager
     @State private var account: Account? = nil

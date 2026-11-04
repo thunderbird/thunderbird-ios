@@ -6,7 +6,17 @@ import Account
 import Autoconfiguration
 import SwiftUI
 
+/// Manual setup step for entering server host names, ports, authentication and security, then saving the account.
+///
+/// JMAP takes one server; IMAP takes incoming and outgoing servers. The security toggle chooses between TLS and no security, and empty ports default to 443.
+///
+/// - Important: Nothing is validated before saving yet. For JMAP, the account is saved with the same server listed twice.
+// TODO: Validate the entered servers before saving (see #603).
+// TODO: For JMAP, save one server instead of the same server twice (#603).
+// TODO: Default empty ports from the server protocol instead of 443 (#603).
+// TODO: Offer STARTTLS as well as TLS and none, and keep an existing STARTTLS setting when editing (#604).
 struct ManualServerSetup: View {
+    /// - Parameter loginDetails: Shared setup state. Starts from its in-progress account if there is one, otherwise from a new account for the entered email address.
     init(_ loginDetails: LoginDetails) {
         let tempAccount = loginDetails.inProgressAccount ?? Account(loginDetails.enteredEmail)
         self.account = tempAccount
@@ -31,6 +41,8 @@ struct ManualServerSetup: View {
     @State private var outGoingPort: Int?
     @State private var inSelectedSecurity: Bool
     @State private var outSelectedSecurity: Bool
+    /// Whether an autoconfigured account is being edited. Set, but not currently read.
+    // TODO: Read this to change the screen for autoconfigured accounts, or remove it.
     @State private var manualConfig: Bool
     @State private var account: Account
     @State private var error: Error?
@@ -82,6 +94,7 @@ struct ManualServerSetup: View {
                                 .tag(authentication)
                         }
                     }
+                    // TODO: This watches the incoming server, not the outgoing one (copy-paste), and its body is empty. Watch `outgoingServer` or remove it.
                     .onChange(of: incomingServer.authenticationType, initial: true) {
 
                     }
@@ -129,6 +142,7 @@ struct ManualServerSetup: View {
                     }
                     accountManager.set(account)
                 }) {
+                    // TODO: This button saves the account but is labelled "Sign in"; use a "Save" label.
                     Text("account_oauth_sign_in_button")
                         .padding(5.5)
                         .frame(maxWidth: .infinity)
@@ -155,7 +169,9 @@ struct ManualServerSetup: View {
         .environment(loginDetails)
 }
 
+/// Extends `Server` with copying for editing.
 public extension Server {
+    /// A copy of the server with the same settings and a new `id`.
     func clone() -> Self {
         let server: Self = Server(
             serverProtocol,
@@ -169,7 +185,9 @@ public extension Server {
     }
 }
 
+/// Extends `AuthenticationType` with display names for pickers.
 private extension AuthenticationType {
+    /// The type's description, capitalized except for OAuth2.
     var text: String {
         switch self {
         case .oAuth2: description

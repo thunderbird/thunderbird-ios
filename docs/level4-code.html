@@ -173,7 +173,7 @@ let thread    = try await client.thread(for: email)          // Thread/get</code
       <div class="accordion-item" id="account">
         <button class="accordion-trigger"><span class="num">🗝</span><span>Account — unified Server &amp; keychain bridging<span class="tt-sub">Core/Sources/Account/Server.swift</span></span><span class="chev">▾</span></button>
         <div class="accordion-content">
-          <p>The <code>Account.Server</code> struct is protocol-agnostic and — crucially — its credentials never live in the struct's <code>Codable</code> form. The <code>authorization</code> property is a computed bridge to the keychain:</p>
+          <p>The <code>Account.Server</code> struct is protocol-agnostic and — crucially — its credentials never live in the struct's <code>Codable</code> form. Credentials live on <code>Account.authorization</code>, a computed bridge to the keychain:</p>
 <pre><code>public struct Server: Codable, Equatable, Hashable, Identifiable, Sendable {
     public var serverProtocol: ServerProtocol          // imap · jmap · smtp
     public var connectionSecurity: ConnectionSecurity  // == IMAP.ConnectionSecurity
@@ -181,25 +181,23 @@ let thread    = try await client.thread(for: email)          // Thread/get</code
     public var username: String
     public var hostname: String
     public var port: Int
+}
 
-    public var authorization: Authorization {
-        set { URLCredentialStorage.shared.set(authorization:
-                  Authorization(user: user, password: newValue.password),
-                  persistence: .permanent) }
-        get { … URLCredentialStorage.shared.authorization(for: user) … }
-    }
-
-    // keychain key = "user@example.com IMAP:E621E1F8"  (unique per account+protocol)
-    var user: String { … username + protocol + UUID suffix … }
+// Account.swift
+public var authorization: Authorization {
+    set { URLCredentialStorage.shared.set(authorization:
+              Authorization(user: user, password: newValue.password),
+              persistence: .permanent) }   // user = emailAddress.value
+    get { … URLCredentialStorage.shared.authorization(for: user) … }
 }</code></pre>
-          <p>So persisting an account writes only non-secret metadata to disk; the password/token round-trips through <code>URLCredentialStorage</code> keyed by a synthesized <code>user</code> that appends the protocol and a UUID suffix — letting the same address have distinct IMAP/SMTP/JMAP credentials.</p>
+          <p>So persisting an account writes only non-secret metadata to disk; the password/token round-trips through <code>URLCredentialStorage</code> keyed by the account's email address — one credential per account, shared by its servers.</p>
           <h4>Protocol bridging</h4>
           <p>Typed initializers convert the unified server into each protocol's own <code>Server</code>, enforcing capability rules along the way:</p>
-<pre><code>extension IMAP.Server { public init(_ server: Account.Server) throws { … } }
-extension JMAP.Server { public init(_ server: Account.Server) throws {
-    self.init(authorization: .bearer(server.authorization.rawValue),
+<pre><code>extension IMAP.Server { public init(_ server: Account.Server, authorization: Authorization) throws { … } }
+extension JMAP.Server { public init(_ server: Account.Server, authorization: Authorization) throws {
+    self.init(authorization: .bearer(authorization.rawValue),
               host: server.hostname, port: server.port) } }
-extension SMTP.Server { public init(_ server: Account.Server) throws { … } }
+extension SMTP.Server { public init(_ server: Account.Server, authorization: Authorization) throws { … } }
 
 // guards surface as protocol-specific errors:
 IMAPError.oAuth2NotSupported / .serverProtocolMismatch
@@ -218,7 +216,7 @@ JMAPError.oAuth2NotSupported / .serverProtocolMismatch / .sessionNotFound</code>
               <tr><td>Generic command/method protocols</td><td><code>IMAPCommand</code>, JMAP <code>Method</code></td><td>Flat client API; per-operation parsing isolated &amp; type-safe</td></tr>
               <tr><td>State-machine NIO handlers</td><td>SMTP <code>SendHandler</code>, IMAP fetch/idle</td><td>Model strict protocol choreography explicitly</td></tr>
               <tr><td>Unified-then-bridge models</td><td><code>Account.Server</code>/<code>Mailbox</code> → protocol types</td><td>UI stays protocol-agnostic; differences caught at the seam</td></tr>
-              <tr><td>Computed keychain properties</td><td><code>Server.authorization</code></td><td>Secrets never serialize; storage stays Codable-safe</td></tr>
+              <tr><td>Computed keychain properties</td><td><code>Account.authorization</code></td><td>Secrets never serialize; storage stays Codable-safe</td></tr>
               <tr><td>Error normalization</td><td><code>IMAPError(_:)</code>, <code>JMAPError</code>, <code>SMTPError</code></td><td>Transport faults become typed, user-presentable cases</td></tr>
               <tr><td><code>async/await</code> everywhere</td><td>~60 async funcs in Core</td><td>No callback pyramids; NIO futures bridged to async</td></tr>
               <tr><td><code>@Observable</code> stores</td><td><code>Accounts</code>, <code>FeatureFlags</code>, <code>AlertManager</code></td><td>SwiftUI-native state with minimal boilerplate</td></tr>

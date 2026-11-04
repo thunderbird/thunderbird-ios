@@ -112,7 +112,7 @@
         <button class="accordion-trigger"><span>🔐 OAuth2 identity providers</span><span class="chev">▾</span></button>
         <div class="accordion-content">
           <p>Token-based sign-in instead of passwords. The app ships pre-registered client configurations for <strong>AOL, Fastmail, Google, Microsoft, Thundermail (Keycloak), and Yahoo</strong>. The provider is chosen by matching the email domain's MX records, then an <code>ASWebAuthenticationSession</code> performs the browser-based flow.</p>
-          <p class="srcref"><span class="srcref-label">📄 Code</span> <code>Thunderbird/Thunderbird/Account/OAuth2.swift</code> · <code>Core/Sources/Autoconfiguration/OAuth2.swift</code></p>
+          <p class="srcref"><span class="srcref-label">📄 Code</span> <code>Thunderbird/Thunderbird/Account/Authorization/OAuth2.swift</code> · <code>Core/Sources/Autoconfiguration/OAuth2.swift</code></p>
         </div>
       </div>
       <div class="accordion-item">
@@ -156,7 +156,6 @@
         <ul>
           <li>No Thunderbird-operated sync backend</li>
           <li>Compose/send UI is present in the engine; app compose is still landing</li>
-          <li>OAuth2 token exchange in-app is partially stubbed (see Level 4)</li>
           <li>Push/IDLE wired in the engine; not yet surfaced as background refresh</li>
         </ul>
       </div>
