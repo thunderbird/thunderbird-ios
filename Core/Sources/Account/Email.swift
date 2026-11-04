@@ -8,7 +8,11 @@ import IMAP
 import JMAP
 import MIME
 
-/// Common `Email` model represents and losslessly converts to and from both ``IMAP.Message`` and ``JMAP.Email``
+/// A unified model representing an email message, providing a lossless mapping between IMAP and JMAP formats.
+/// This model supports conversions from both IMAP messages and JMAP emails, preserving all relevant data.
+///
+/// This struct acts as the central representation for emails within the system, ensuring consistency
+/// and interoperability between different email protocols and their respective data structures.
 public struct Email: CustomStringConvertible, Identifiable, Sendable {
     public var from: [EmailAddressProtocol]
     public var sender: [EmailAddressProtocol]
@@ -27,7 +31,32 @@ public struct Email: CustomStringConvertible, Identifiable, Sendable {
     public var labels: Set<GmailLabel>
     public let blobID: String?
     public let uid: UID?
+    public let id: String  // IMAP message ID
 
+    /// Creates a new Email instance with the specified properties.
+    ///
+    /// - Parameters:
+    ///   - from: Email addresses in the "from" field.
+    ///   - sender: Email addresses in the "sender" field.
+    ///   - replyTo: Email addresses in the "replyTo" field.
+    ///   - to: Email addresses in the "to" field.
+    ///   - bcc: Email addresses in the "bcc" field.
+    ///   - cc: Email addresses in the "cc" field.
+    ///   - received: The date the email was received.
+    ///   - sent: The date the email was sent.
+    ///   - messageID: The message id associated with the email. Used to link emails together in threads.
+    ///   - threadID: The id of the thread associated with the email.
+    ///   - inReplyTo: The id of the message this email is in response to.
+    ///   - subject: The email's subject.
+    ///   - body: The body content of the email.
+    ///   - flags: The set of flags associated with the email.
+    ///   - labels: The set of labels associated with the email.
+    ///   - blobid: The id of the blob associated with the email
+    ///   - uid: The id of the user associated with the email.
+    ///   - id: The unique identifier for the email. If none is provided, one will be generated.
+    ///
+    /// - Discussion:
+    /// The `id` uniquely identifies the email within the system. If not provided, it will be generated to ensure uniqueness.
     public init(
         from: [EmailAddressProtocol] = [],
         sender: [EmailAddressProtocol] = [],
@@ -68,15 +97,15 @@ public struct Email: CustomStringConvertible, Identifiable, Sendable {
         self.id = id ?? UUID().uuidString(1)
     }
 
-    // MARK: CustomStringConvertible
+    /// Required for `CustomStringConvertible` conformance.
     public var description: String { messageID.first ?? id }
-
-    // MARK: Identifiable
-    public let id: String  // IMAP message ID
 }
 
+/// Extends `Email` with computed properties for GMail id's.
 extension Email {
-    // Decode Gmail message ID, if present
+    /// Returns the Gmail message ID extracted from the email's last message id.
+    ///
+    /// - Returns: A UInt64 representing the Gmail message ID, or nil if not found.
     var gmailMessageID: UInt64? {
         guard let id: UInt64 = UInt64(messageID.last ?? ""), id > .gmailIDFloor else {
             return nil
@@ -84,15 +113,22 @@ extension Email {
         return id
     }
 
-    // Decode Gmail thread ID, if present
+    /// Returns the Gmail thread ID extracted from the email's last thread id.
+    ///
+    /// - Returns: A UInt64 representing the Gmail thread ID, or nil if not found.
     var gmailThreadID: UInt64? {
         guard let id: UInt64 = UInt64(threadID.last ?? ""), id > .gmailIDFloor else {
             return nil
         }
         return id
     }
+}
 
-    // Map from IMAP message
+/// Extends `Email` with convenience initializers from IMAP and JMAP.
+extension Email {
+    /// Initializes an Email instance from an IMAP message.
+    ///
+    /// - Parameter message: The IMAP message to convert.
     init(_ message: IMAP.Message) {
         self.init(
             from: message.envelope.from,
@@ -115,7 +151,9 @@ extension Email {
         )
     }
 
-    // Map from JMAP email
+    /// Initializes an Email instance from a JMAP email.
+    ///
+    /// - Parameter email: The JMAP email to convert.
     init(_ email: JMAP.Email) {
         self.init(
             from: email.from ?? [],
@@ -137,14 +175,20 @@ extension Email {
     }
 }
 
-// MARK: - EmailAddressProtocol array conversion methods
+/// Extends `Email` to assist with converting `EmailAddressProtocol` arrays for ease of display.
 extension Email {
-    // A convenience function that converts an array of `EmailAddressProtocol` to an array of strings.
+    /// Converts an array of `EmailAddressProtocol`s to an array of strings.
+    ///
+    /// - Parameter a: The array of `EmailAddressProtocol` to convert.
+    /// - Returns: an array of `String`.
     public func addressesStringArray(_ a: [EmailAddressProtocol]) -> [String] {
         a.flatMap { $0.addresses.map { $0.value } }
     }
 
-    // A convenience function that combines all of the addresses into a single comma separated string.
+    /// Converts an array of `EmailAddressProtocol`s to a comma separated string.
+    ///
+    /// - Parameter a: The array of `EmailAddressProtocol` to convert.
+    /// - Returns: a comma separated `String`.
     public func commaSeparatedAddresses(_ a: [EmailAddressProtocol]) -> String {
         a.flatMap { $0.addresses.map { $0.value } }.joined(separator: ", ")
     }
@@ -155,8 +199,12 @@ extension Email {
     public var bccStringArray: [String] { addressesStringArray(bcc) }
 }
 
-// MARK: - Convenience methods for reassigning senders/receivers
+/// Extends `Email` to support quickly configuring replies.
 extension Email {
+    /// Creates an email representing a reply to the current email.
+    ///
+    /// - Parameter all: If true, includes all recipients; otherwise includes necessary recipients only.
+    /// - Returns: A new `Email` instance configured as a reply.
     public func asReply(all: Bool) -> Email {
         var newEmail = self
         newEmail.to = from
@@ -172,8 +220,8 @@ extension Email {
 
 // MARK: - Flag recognition computed properties
 
-// Represents IMAP flags
-// https://datatracker.ietf.org/doc/html/rfc9051#name-flags-message-attribute
+/// Represents the types of IMAP flags that can be associated with an email.
+/// https://datatracker.ietf.org/doc/html/rfc9051#name-flags-message-attribute
 public enum FlagType: String, Sendable {
     case answered = "answered"
     case deleted = "deleted"
@@ -183,8 +231,8 @@ public enum FlagType: String, Sendable {
     case seen = "seen"
 }
 
-// Represents Gmail labels
-// https://developers.google.com/workspace/gmail/api/guides/labels
+/// Represents the types of GMail labels that can be associated with an email.
+/// https://developers.google.com/workspace/gmail/api/guides/labels
 public enum LabelType: String, Sendable {
     case inbox = "\\inbox"
     case spam = "\\spam"
@@ -202,7 +250,10 @@ public enum LabelType: String, Sendable {
 }
 
 extension Email {
-    /// Identifies if a given flag exists within the emails set of `Flag`s.
+    /// Returns whether the email has the specified flag.
+    ///
+    /// - Parameter flag: The flag to check.
+    /// - Returns: `true` if the email has the flag; otherwise, `false`.
     public func hasFlag(_ flag: FlagType) -> Bool {
         switch flag {
         case .answered:
@@ -220,7 +271,10 @@ extension Email {
         }
     }
 
-    /// Identifies if a given label exists within the emails set of `GmailLabel`s.
+    /// Returns whether the email has the specified label.
+    ///
+    /// - Parameter label: The label to check.
+    /// - Returns: `true` if the email has the label; otherwise, `false`.
     public func hasLabel(_ gmailLabel: LabelType) -> Bool {
         for label in labels {
             if label.description.lowercased() == gmailLabel.rawValue {
@@ -232,12 +286,17 @@ extension Email {
     }
 }
 
+/// Extends `IMAP.Message` with computed properties for parsing ID's from differing services.
 extension IMAP.Message {
-
-    // Use `gmailMessageID` as ID string, if present
+    /// Retrieves the Gmail message ID associated with the IMAP message.
+    ///
+    /// - Returns: A UInt64 representing the Gmail message ID, if available.
     var gmailID: String? { gmailMessageID != nil ? "\(gmailMessageID!)" : nil }
 
-    // Collect available message IDs, plain and/or Gmail flavored
+    /// Returns the list of message IDs associated with the IMAP message.
+    /// Can differ between providers.
+    ///
+    /// - Returns: An array of message IDs.
     var messageIDs: [String] {
         var ids: [String] = []
         if let id: String = envelope.messageID {
@@ -249,7 +308,10 @@ extension IMAP.Message {
         return ids
     }
 
-    // Collect available thread IDs, plain and/or Gmail flavored
+    /// Returns the list of thread IDs associated with the IMAP message.
+    /// /// Can differ between providers.
+    ///
+    /// - Returns: An array of thread IDs.
     var threadIDs: [String] {
         var ids: [String] = []
         if let id: String = threadID {
@@ -261,6 +323,9 @@ extension IMAP.Message {
         return ids
     }
 
+    /// Returns an array of message IDs that this IMAP message is in reply to.
+    ///
+    /// - Returns: An array of message IDs, if available.
     var inReplyTo: [String] {
         var ids: [String] = []
         if let id: String = envelope.inReplyTo {
@@ -268,8 +333,13 @@ extension IMAP.Message {
         }
         return ids
     }
+}
 
-    // Map back to IMAP message
+/// Extends `IMAP.Message` to enable converting from a generic local `Email` to an `IMAP` style `Message`.
+extension IMAP.Message {
+    /// Initializes an IMAP.Message from an Email instance.
+    ///
+    /// - Parameter email: The Email instance to convert.
     init(_ email: Email) {
         self.init(
             body: nil,  // email.body,
@@ -297,9 +367,11 @@ extension IMAP.Message {
     }
 }
 
+/// Extends `JMAP.Email` to enable converting from a generic local `Email` to an `JMAP` style `Email`.
 extension JMAP.Email {
-
-    // Map back to JMAP email
+    /// Initializes a JMAP.Email from an Email instance.
+    ///
+    /// - Parameter email: The Email instance to convert.
     init(_ email: Email) {
         self.init(
             blobID: email.blobID ?? "",
@@ -330,10 +402,16 @@ extension JMAP.Email {
     }
 }
 
+/// Extends `Date` with a convenience variable to reading internet message dates.
 extension Date {
+    /// Converts the date into an Internet Message date string format.
+    ///
+    /// - Returns: A formatted date string suitable for Internet Message headers.
     var internetMessageDate: InternetMessageDate { InternetMessageDate(self) }
 }
 
+/// Extends `UInt64` to assist with identifying GMail message ideas.
 private extension UInt64 {
+    /// The floor value for Gmail message IDs, representing a threshold for valid IDs.
     static let gmailIDFloor: Self = 1_000_000_000_000
 }

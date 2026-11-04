@@ -4,17 +4,24 @@
 
 import Foundation
 
-/// Common folder model representing a folder within a given mailbox.
+/// A model representing a mail folder within a mailbox, including subfolders and message counts.
 public struct Folder: CustomStringConvertible, Hashable, Identifiable {
+    /// The display name of the folder.
     public let name: String?
-    /// Path represents the full path of the folder including the parent mailbox
+    /// Full path including parent mailbox.
     public let path: String?
+    /// Number of unread emails in this folder.
     public let unreadEmails: Int?
+    /// Total emails in this folder.
     public let totalEmails: Int?
+    /// Unique identifier for the folder.
     public let id: String
+    /// The parent Mailbox this folder belongs to.
     public let mailbox: Mailbox
+    /// Immediate child folders.
     public var subfolders: [Folder] = []
 
+    /// Creates a Folder from explicit properties.
     public init(
         name: String?,
         path: String?,
@@ -33,6 +40,7 @@ public struct Folder: CustomStringConvertible, Hashable, Identifiable {
         self.subfolders = subfolders
     }
 
+    /// Creates a Folder from a Mailbox instance.
     init(from mailbox: Mailbox) {
         self.name = mailbox.name.components(separatedBy: "/").last
         self.path = mailbox.name
@@ -43,12 +51,14 @@ public struct Folder: CustomStringConvertible, Hashable, Identifiable {
     }
 
     // MARK: CustomStringConvertible
+    /// A string summary of this folder.
     public var description: String {
         return "\(unreadEmails ?? 0)/\(totalEmails ?? 0) | \(name ?? "unnamed folder") | Subfolders: \(subfolders.count)"
     }
 }
 
 public extension Folder {
+    /// Recursively counts unread emails in this folder and all subfolders.
     func aggregatedUnreadCount() -> Int {
         var total = unreadEmails ?? 0
         for subfolder in subfolders {

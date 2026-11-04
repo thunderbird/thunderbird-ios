@@ -4,11 +4,13 @@
 
 import Foundation
 
+/// Convenience helpers for working with secure realms tied to Thunderbird accounts.
 extension URLProtectionSpace {
 
-    // Named secure realm for Thunderbird app-owned accounts on the keychain
+    /// A secure realm for Thunderbird app-owned accounts in the keychain.
     static let account: URLProtectionSpace = URLProtectionSpace(host: "thunderbird.net")
 
+    /// Creates a protection space for a given host using HTTPS and default settings.
     convenience init(host: String) {
         self.init(host: host, port: 0, protocol: "https", realm: nil, authenticationMethod: nil)
     }

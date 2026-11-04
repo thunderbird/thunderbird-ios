@@ -4,13 +4,18 @@
 
 import Foundation
 
+/// A policy describing how messages should be deleted or retained.
+///
+/// Policies include deleting after a number of days, deleting upon user action, marking as read, or never deleting.
 public enum DeletePolicy: Codable, CustomStringConvertible, Equatable, Hashable, RawRepresentable, Sendable {
     case after(days: Int = 7), onDelete, markAsRead, never
 
     // MARK: CustomStringConvertible
+    /// A human-readable description of the policy.
     public var description: String { rawValue }
 
     // MARK: RawRepresentable
+    /// The string representation of the policy used for persistence.
     public var rawValue: String {
         switch self {
         case .after(let days): "after \(days) days"
@@ -20,6 +25,10 @@ public enum DeletePolicy: Codable, CustomStringConvertible, Equatable, Hashable,
         }
     }
 
+    /// Creates a delete policy from a raw string value.
+    ///
+    /// - Parameter rawValue: The string to parse. Supported values include `"on delete"`, `"mark as read"`, `"never"`, and the pattern `"after <days> days"`.
+    /// - Returns: An initialized `DeletePolicy` if parsing succeeds; otherwise `nil`.
     public init?(rawValue: String) {
         switch rawValue {
         case "on delete": self = .onDelete

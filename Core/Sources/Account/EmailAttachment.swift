@@ -5,6 +5,9 @@
 import Foundation
 import MIME
 
+/// A representation of an email attachment including disposition, ID, type, and data.
+///
+/// Provides convenience links for CID and content-disposition derived URLs.
 public struct EmailAttachment: Sendable {
     public typealias ContentDisposition = MIME.ContentDisposition
     public typealias ContentID = MIME.ContentID
@@ -14,6 +17,13 @@ public struct EmailAttachment: Sendable {
     public let contentType: ContentType
     public let data: Data
 
+    /// Creates an email attachment.
+    ///
+    /// - Parameters:
+    ///   - data: The raw attachment data.
+    ///   - contentType: The MIME content type of the attachment.
+    ///   - contentDisposition: The content disposition; defaults to `.attachment`.
+    ///   - contentID: An optional content ID for inline references.
     public init(
         data: Data,
         contentType: ContentType,
@@ -26,6 +36,9 @@ public struct EmailAttachment: Sendable {
         self.data = data
     }
 
+    /// Convenience links derived from the content ID and disposition.
+    ///
+    /// - Returns: An array of string URLs including CID and disposition URLs when available.
     var links: [String] {
         var links: [String] = []
         if let contentID {
@@ -41,7 +54,13 @@ public struct EmailAttachment: Sendable {
     }
 }
 
+/// Content-transfer decoding helpers.
 extension Data {
+    /// Decodes data using the provided content-transfer encoding.
+    ///
+    /// - Parameter contentTransferEncoding: The encoding used for transport.
+    /// - Returns: The decoded data.
+    /// - Throws: `MIMEError.dataNotDecoded` if decoding fails.
     func decoded(from contentTransferEncoding: MIME.ContentTransferEncoding?) throws -> Self {
         switch contentTransferEncoding {
         case .base64:
@@ -55,7 +74,11 @@ extension Data {
     }
 }
 
+/// Convenience URL initializers for attachments.
 extension URL {
+    /// Creates a data URL for the given attachment using base64 encoding.
+    ///
+    /// - Parameter attachment: The attachment to represent as a URL.
     init(attachment: EmailAttachment) {
         self.init(string: "data:\(attachment.contentType);base64,\(attachment.data.base64EncodedString())")!
     }

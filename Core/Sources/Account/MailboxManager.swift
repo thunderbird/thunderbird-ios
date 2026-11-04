@@ -4,27 +4,35 @@
 
 import Foundation
 
-/// Manage and display mailboxes for a given ``Account``.
+/// Manages mailboxes and mailbox operations for a given Account.
 @Observable
 public final class MailboxManager {
+    /// The Account whose mailboxes are managed.
     public let account: Account
+    /// List of mailboxes for the account.
     public private(set) var mailboxes: [Mailbox] = []
+    /// Most recent error encountered, if any.
     public var error: AccountError?
+    /// Manages folders corresponding to mailboxes.
     public let folderManager: FolderManager
 
+    /// Initialize with an Account.
     public init(account: Account) {
         self.account = account
         self.folderManager = FolderManager(account: account)
     }
 
+    /// Find a mailbox by name.
     public func mailbox(_ name: String) -> Mailbox? {
         mailboxes.filter({ $0.name == name }).first
     }
 
+    /// Find a mailbox by identifier.
     public func mailbox(for id: String) -> Mailbox? {
         mailboxes.filter({ $0.id == id }).first
     }
 
+    /// Fetch all emails in the specified mailbox.
     public func emails(in mailbox: Mailbox) async -> [Email] {
         do {
             switch account.emailProtocol {
@@ -44,6 +52,7 @@ public final class MailboxManager {
         }
     }
 
+    /// Create a new mailbox with the given name.
     public func createMailbox(_ name: String) async {
         do {
             switch account.emailProtocol {
@@ -61,6 +70,7 @@ public final class MailboxManager {
         }
     }
 
+    /// Rename the specified mailbox.
     public func rename(_ mailbox: Mailbox, to name: String) async {
         do {
             switch account.emailProtocol {
@@ -77,6 +87,7 @@ public final class MailboxManager {
         }
     }
 
+    /// Delete the specified mailbox.
     public func delete(_ mailbox: Mailbox) async {
         do {
             switch account.emailProtocol {
@@ -93,6 +104,7 @@ public final class MailboxManager {
         }
     }
 
+    /// Subscribe to the specified mailbox.
     public func subscribe(_ mailbox: Mailbox) async {
         do {
             switch account.emailProtocol {
@@ -109,6 +121,7 @@ public final class MailboxManager {
         }
     }
 
+    /// Unsubscribe from the specified mailbox.
     public func unsubscribe(_ mailbox: Mailbox) async {
         do {
             switch account.emailProtocol {
@@ -125,6 +138,7 @@ public final class MailboxManager {
         }
     }
 
+    /// Refresh the list of mailboxes from the server.
     public func refreshMailboxes() async {
         do {
             switch account.emailProtocol {

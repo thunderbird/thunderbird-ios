@@ -4,12 +4,17 @@
 
 import Foundation
 
+/// Represents the result of a test, including success and error cases.
 public enum TestResult: CustomStringConvertible, Identifiable, Sendable {
+    /// A test failure with a description and error.
     case failure(String, error: Error)
+    /// A successful test with a descriptive message.
     case success(String)
 
+    /// True if the result represents a failure.
     public var isFailure: Bool { error != nil }
 
+    /// Associated error if the result is a failure.
     public var error: Error? {
         switch self {
         case .failure(_, let error): error
@@ -18,6 +23,7 @@ public enum TestResult: CustomStringConvertible, Identifiable, Sendable {
     }
 
     // MARK: CustomStringConvertible
+    /// String description of the test result.
     public var description: String {
         switch self {
         case .failure(let description, _), .success(let description): description
@@ -25,6 +31,7 @@ public enum TestResult: CustomStringConvertible, Identifiable, Sendable {
     }
 
     // MARK: Identifiable
+    /// Unique string identifier for the test result.
     public var id: String {
         switch self {
         case .failure(let string, _): "\(string):x"
@@ -34,7 +41,7 @@ public enum TestResult: CustomStringConvertible, Identifiable, Sendable {
 }
 
 extension Account {
-    /// Run basic validations for both IMAP/SMTP and JMAP `Account` configurations.
+    /// Runs basic validations for both IMAP/SMTP and JMAP account configurations asynchronously.
     @MainActor
     public func test(sleep duration: Duration = .milliseconds(100)) -> AsyncStream<TestResult> {
         let account: Self = self
