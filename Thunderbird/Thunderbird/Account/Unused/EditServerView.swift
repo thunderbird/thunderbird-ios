@@ -8,7 +8,6 @@ import SwiftUI
 /// Older server editor with protocol, host, port, username, security and authentication fields.
 ///
 /// Only used by ``EditAccountView``, which isn't currently shown in the app.
-// TODO: Delete this view together with `EditAccountView`, or wire both back into the app.
 struct EditServerView: View {
     /// - Parameters:
     ///   - server: Server to edit.
