@@ -164,6 +164,7 @@ private extension Account {
 /// Extends `URL` with OAuth2 help links and sign-in callback parsing.
 private extension URL {
     /// Mozilla's OAuth2 support article. Not currently used.
+    // TODO: Link to this article from the OAuth2 sign-in error, or remove it.
     static let help: Self = Self(string: "https://support.mozilla.org/kb/tb-oauth")!
 
     /// The `code` query item from an OAuth2 sign-in callback URL.

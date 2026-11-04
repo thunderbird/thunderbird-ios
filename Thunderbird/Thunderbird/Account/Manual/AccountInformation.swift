@@ -21,6 +21,7 @@ struct AccountInformation: View {
     @Environment(LoginDetails.self) private var loginDetails: LoginDetails
     @State private var account: Account = Account()
     /// Whether to show the manual configuration link. Always `true`; nothing changes it.
+    // TODO: Remove this flag, or hide the link when manual setup should not be offered.
     @State private var showManual: Bool = true
     @State private var emailAddress: String = ""
     @State private var password: String = ""
@@ -118,6 +119,7 @@ struct AccountInformation: View {
                     .buttonStyle(.plain)
             }
             // TEMP DEMO BUTTON
+            // TODO: Remove the Demo button before release. It is shown in release builds.
             Button(action: {
                 Task {
                     guard let account: Account = try? await .autoconfigured("demoEmail@gmail.com") else {

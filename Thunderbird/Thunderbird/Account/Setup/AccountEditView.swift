@@ -16,6 +16,7 @@ struct AccountEditView: View {
     ///   - isPresented: Binding to the presenting sheet; set to `false` when the account is saved.
     init(
         _ account: Binding<Account>,
+        // TODO: Remove the unused `path` parameter and update the callers.
         path: Binding<NavigationPath> = .constant(NavigationPath()),
         isPresented: Binding<Bool> = .constant(false)
     ) {
@@ -38,6 +39,7 @@ struct AccountEditView: View {
     @State private var isTesting: Bool = false
 
     /// Last sign-in error. Setting it also shows it on the account manager, but only errors ``AccountError`` can represent are shown; others are dropped.
+    // TODO: Show errors that `AccountError` cannot represent (network, decoding, OAuth2 session errors) instead of dropping them.
     @State private var error: Error? = nil {
         didSet { accountManager.error = error != nil ? AccountError(error!) : nil }
     }
