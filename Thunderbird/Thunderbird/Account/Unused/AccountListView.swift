@@ -9,7 +9,6 @@ import SwiftUI
 /// List of saved accounts, with swipe actions to edit or delete each one and a toolbar button to add another.
 ///
 /// Not currently shown in the app; it's only referenced by its preview.
-// TODO: Delete this view, or show it in the app. Accounts are currently listed in `GeneralSettingsView` instead.
 struct AccountListView: View {
     @Environment(AccountManager.self) private var accountManager: AccountManager
     @State private var account: Account? = nil
