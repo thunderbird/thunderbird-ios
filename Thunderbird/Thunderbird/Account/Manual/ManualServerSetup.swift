@@ -11,6 +11,9 @@ import SwiftUI
 /// JMAP takes one server; IMAP takes incoming and outgoing servers. The security toggle chooses between TLS and no security, and empty ports default to 443.
 ///
 /// - Important: Nothing is validated before saving yet. For JMAP, the account is saved with the same server listed twice.
+// TODO: Validate the entered servers before saving.
+// TODO: For JMAP, save one server instead of the same server twice.
+// TODO: Default empty ports from the server protocol instead of 443.
 struct ManualServerSetup: View {
     /// - Parameter loginDetails: Shared setup state. Starts from its in-progress account if there is one, otherwise from a new account for the entered email address.
     init(_ loginDetails: LoginDetails) {
@@ -38,6 +41,7 @@ struct ManualServerSetup: View {
     @State private var inSelectedSecurity: Bool
     @State private var outSelectedSecurity: Bool
     /// Whether an autoconfigured account is being edited. Set, but not currently read.
+    // TODO: Read this to change the screen for autoconfigured accounts, or remove it.
     @State private var manualConfig: Bool
     @State private var account: Account
     @State private var error: Error?

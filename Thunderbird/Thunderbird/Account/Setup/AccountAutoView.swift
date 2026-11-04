@@ -34,6 +34,7 @@ struct AccountAutoView: View {
     @State private var isAutoSelected: Bool = true
     @State private var isTesting: Bool = false
     /// Last sign-in error. Setting it also shows it on the account manager, but only errors ``AccountError`` can represent are shown; others are dropped.
+    // TODO: Show errors that `AccountError` cannot represent (network, decoding, OAuth2 session errors) instead of dropping them.
     @State private var error: Error? = nil {
         didSet { accountManager.error = error != nil ? AccountError(error!) : nil }
     }
@@ -47,6 +48,7 @@ struct AccountAutoView: View {
     }
 
     /// Repeat the JMAP lookup and autoconfiguration. JMAP lookup errors are ignored; autoconfiguration errors are shown on the account manager.
+    // TODO: Surface JMAP lookup errors, or document why ignoring them is correct.
     private func refresh() async {
         accountManager.error = nil
         isRefreshing = true
