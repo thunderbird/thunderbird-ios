@@ -22,7 +22,7 @@ struct StatusCommand: IMAPCommand {
     var name: String { "status \"\(mailboxName)\"" }
 
     func tagged(_ tag: String) -> NIOIMAPCore.TaggedCommand {
-        TaggedCommand(tag: tag, command: .status(mailboxName, attributes))
+        TaggedCommand(tag: Command.Tag(stringLiteral: tag), command: .status(mailboxName, attributes))
     }
 }
 

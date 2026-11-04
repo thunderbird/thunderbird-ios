@@ -22,6 +22,6 @@ struct RenameCommand: IMAPCommand {
     var name: String { "rename \"\(mailboxName)\" to \"\(targetName)\"" }
 
     func tagged(_ tag: String) -> NIOIMAPCore.TaggedCommand {
-        TaggedCommand(tag: tag, command: .rename(from: mailboxName, to: targetName, parameters: [:]))
+        TaggedCommand(tag: Command.Tag(stringLiteral: tag), command: .rename(from: mailboxName, to: targetName, parameters: [:]))
     }
 }

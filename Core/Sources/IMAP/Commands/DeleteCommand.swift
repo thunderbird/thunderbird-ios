@@ -20,6 +20,6 @@ struct DeleteCommand: IMAPCommand {
     var name: String { "delete \"\(mailboxName)\"" }
 
     func tagged(_ tag: String) -> NIOIMAPCore.TaggedCommand {
-        TaggedCommand(tag: tag, command: .delete(mailboxName))
+        TaggedCommand(tag: Command.Tag(stringLiteral: tag), command: .delete(mailboxName))
     }
 }

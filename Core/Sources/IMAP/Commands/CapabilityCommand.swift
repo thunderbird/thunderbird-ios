@@ -16,7 +16,7 @@ struct CapabilityCommand: IMAPCommand {
     var name: String { "capability" }
 
     func tagged(_ tag: String) -> NIOIMAPCore.TaggedCommand {
-        TaggedCommand(tag: tag, command: .capability)
+        TaggedCommand(tag: Command.Tag(stringLiteral: tag), command: .capability)
     }
 }
 

@@ -22,6 +22,6 @@ struct UIDCopyCommand: IMAPCommand {
     var name: String { "copy" }
 
     func tagged(_ tag: String) -> NIOIMAPCore.TaggedCommand {
-        TaggedCommand(tag: tag, command: .uidCopy(.set(identifiers), mailboxName))
+        TaggedCommand(tag: Command.Tag(stringLiteral: tag), command: .uidCopy(.set(identifiers), mailboxName))
     }
 }

@@ -88,7 +88,7 @@ public struct Capability: CustomStringConvertible, Equatable, Hashable, RawRepre
 
     /// Creates a status capability token, for example `STATUS=SIZE`.
     public static func status(_ status: Status) -> Self {
-        Capability(.status(NIOIMAPCore.Capability.StatusKind(status.rawValue)))
+        Capability(.status(NIOIMAPCore.Capability.StatusKind(stringLiteral: status.rawValue)))
     }
 
     /// Creates a supported authentication token, for example `AUTH=PLAIN`.

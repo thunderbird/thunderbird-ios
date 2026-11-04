@@ -20,7 +20,7 @@ struct SelectCommand: IMAPCommand {
     var name: String { "select \"\(mailboxName)\"" }
 
     func tagged(_ tag: String) -> NIOIMAPCore.TaggedCommand {
-        TaggedCommand(tag: tag, command: .select(mailboxName))
+        TaggedCommand(tag: Command.Tag(stringLiteral: tag), command: .select(mailboxName))
     }
 }
 

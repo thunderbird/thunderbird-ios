@@ -297,7 +297,7 @@ public class IMAPClient {
         defer { task.cancel() }
         do {
             try await channel.pipeline.addHandler(idleHandler!).get()
-            let command: TaggedCommand = TaggedCommand(tag: tag, command: .idleStart)
+            let command: TaggedCommand = TaggedCommand(tag: Command.Tag(stringLiteral: tag), command: .idleStart)
             let message: IMAPClientHandler.Message = IMAPClientHandler.OutboundIn.part(.tagged(command))
             try await channel.writeAndFlush(message).get()
             return idleEvents

@@ -22,6 +22,6 @@ struct CreateCommand: IMAPCommand {
     var name: String { "create \"\(mailboxName)\"" }
 
     func tagged(_ tag: String) -> NIOIMAPCore.TaggedCommand {
-        TaggedCommand(tag: tag, command: .create(mailboxName, parameters))
+        TaggedCommand(tag: Command.Tag(stringLiteral: tag), command: .create(mailboxName, parameters))
     }
 }

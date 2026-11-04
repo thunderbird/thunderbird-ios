@@ -20,7 +20,7 @@ struct VoidCommand: IMAPCommand {
     var name: String { command.debugDescription.lowercased() }
 
     func tagged(_ tag: String) -> NIOIMAPCore.TaggedCommand {
-        TaggedCommand(tag: tag, command: command)
+        TaggedCommand(tag: Command.Tag(stringLiteral: tag), command: command)
     }
 }
 

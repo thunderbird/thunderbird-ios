@@ -20,6 +20,6 @@ struct SubscribeCommand: IMAPCommand {
     var name: String { "subscribe \"\(mailboxName)\"" }
 
     func tagged(_ tag: String) -> NIOIMAPCore.TaggedCommand {
-        TaggedCommand(tag: tag, command: .subscribe(mailboxName))
+        TaggedCommand(tag: Command.Tag(stringLiteral: tag), command: .subscribe(mailboxName))
     }
 }
