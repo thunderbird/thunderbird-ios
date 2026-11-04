@@ -36,6 +36,7 @@ struct AuthorizationView: View {
                 OAuthButton($account, error: $error)
             case .password:
                 PasswordField("account_server_settings_authentication_password_cleartext", text: $password)
+                    // TODO: Store the password when the account is saved, not on every keystroke, and skip an empty password (#606).
                     .onChange(of: password) { account.password = password }
                     .onAppear { password = account.password }
             case .none:

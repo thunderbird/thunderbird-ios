@@ -11,9 +11,10 @@ import SwiftUI
 /// JMAP takes one server; IMAP takes incoming and outgoing servers. The security toggle chooses between TLS and no security, and empty ports default to 443.
 ///
 /// - Important: Nothing is validated before saving yet. For JMAP, the account is saved with the same server listed twice.
-// TODO: Validate the entered servers before saving.
-// TODO: For JMAP, save one server instead of the same server twice.
-// TODO: Default empty ports from the server protocol instead of 443.
+// TODO: Validate the entered servers before saving (see #603).
+// TODO: For JMAP, save one server instead of the same server twice (#603).
+// TODO: Default empty ports from the server protocol instead of 443 (#603).
+// TODO: Offer STARTTLS as well as TLS and none, and keep an existing STARTTLS setting when editing (#604).
 struct ManualServerSetup: View {
     /// - Parameter loginDetails: Shared setup state. Starts from its in-progress account if there is one, otherwise from a new account for the entered email address.
     init(_ loginDetails: LoginDetails) {
@@ -93,6 +94,7 @@ struct ManualServerSetup: View {
                                 .tag(authentication)
                         }
                     }
+                    // TODO: This watches the incoming server, not the outgoing one (copy-paste), and its body is empty. Watch `outgoingServer` or remove it.
                     .onChange(of: incomingServer.authenticationType, initial: true) {
 
                     }
@@ -140,6 +142,7 @@ struct ManualServerSetup: View {
                     }
                     accountManager.set(account)
                 }) {
+                    // TODO: This button saves the account but is labelled "Sign in"; use a "Save" label.
                     Text("account_oauth_sign_in_button")
                         .padding(5.5)
                         .frame(maxWidth: .infinity)

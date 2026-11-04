@@ -38,6 +38,7 @@ struct AccountAddView: View {
     private var isDisabled: Bool { !valueText.isEmailAddress || isSearching }
 
     /// Replace the account's identities with the address and label currently entered.
+    // TODO: This drops any other identities the account has; update the first identity instead.
     private func refreshEmailAddress() {
         account.identities = [
             EmailAddress(valueText, label: labelText)
@@ -79,6 +80,7 @@ struct AccountAddView: View {
             .submitLabel(.continue)
                 #endif
                 .focused($isLabelFocused, equals: true)
+                // TODO: Check `isDisabled` here, as the Next button does. Return currently starts a lookup for an invalid address, or a second lookup while one is running.
                 .onSubmit {
                     Task { await autoconfigure() }
                 }

@@ -39,7 +39,7 @@ struct AccountEditView: View {
     @State private var isTesting: Bool = false
 
     /// Last sign-in error. Setting it also shows it on the account manager, but only errors ``AccountError`` can represent are shown; others are dropped.
-    // TODO: Show errors that `AccountError` cannot represent (network, decoding, OAuth2 session errors) instead of dropping them.
+    // TODO: Show errors that `AccountError` cannot represent (network, decoding, OAuth2 session errors) instead of dropping them (#605).
     @State private var error: Error? = nil {
         didSet { accountManager.error = error != nil ? AccountError(error!) : nil }
     }
@@ -110,6 +110,7 @@ struct AccountEditView: View {
             AccountTestView(account)
                 .presentationDragIndicator(.visible)
         }
+        // TODO: Verify on a device: each assignment below creates a new `Server` with a new `id`, so all three `onChange` handlers fire and the last one to run can replace the account's servers with blank ones.
         .onAppear {
             jmapServer = account.server(.jmap) ?? Server(.jmap)
             imapServer = account.server(.imap) ?? Server(.imap)

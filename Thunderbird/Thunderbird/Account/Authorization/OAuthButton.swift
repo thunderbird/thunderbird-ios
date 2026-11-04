@@ -44,6 +44,7 @@ struct OAuthButton: View {
     /// Present the provider's sign-in page, then exchange the returned code for tokens.
     ///
     /// - Note: Errors ``AccountError`` can't represent, such as the user cancelling, clear `error` rather than setting it.
+    // TODO: Tell user cancellation apart from real failures, and show the failures (#605).
     private func authenticate() async {
         error = nil
         do {
@@ -53,6 +54,7 @@ struct OAuthButton: View {
             guard let authConfig else {
                 throw AccountError.emailAddressNotSupported
             }
+            // TODO: Send an OAuth2 `state` parameter and check it on the callback. PKCE covers most of the risk.
             let pkce: OAuth2.PKCE = OAuth2.PKCE()
             let authURL: URL = try await webAuthenticationSession.authenticate(
                 using: authConfig.authURL(hint: emailAddress.value, pkce: pkce),

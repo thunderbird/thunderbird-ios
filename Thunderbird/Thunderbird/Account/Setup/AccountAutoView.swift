@@ -34,7 +34,7 @@ struct AccountAutoView: View {
     @State private var isAutoSelected: Bool = true
     @State private var isTesting: Bool = false
     /// Last sign-in error. Setting it also shows it on the account manager, but only errors ``AccountError`` can represent are shown; others are dropped.
-    // TODO: Show errors that `AccountError` cannot represent (network, decoding, OAuth2 session errors) instead of dropping them.
+    // TODO: Show errors that `AccountError` cannot represent (network, decoding, OAuth2 session errors) instead of dropping them (#605).
     @State private var error: Error? = nil {
         didSet { accountManager.error = error != nil ? AccountError(error!) : nil }
     }
@@ -48,7 +48,7 @@ struct AccountAutoView: View {
     }
 
     /// Repeat the JMAP lookup and autoconfiguration. JMAP lookup errors are ignored; autoconfiguration errors are shown on the account manager.
-    // TODO: Surface JMAP lookup errors, or document why ignoring them is correct.
+    // TODO: Surface JMAP lookup errors, or document why ignoring them is correct (#605).
     private func refresh() async {
         accountManager.error = nil
         isRefreshing = true
@@ -126,6 +126,8 @@ struct AccountAutoView: View {
             AccountTestView(selectedAccount)
                 .presentationDragIndicator(.visible)
         }
+        // TODO: Verify on a device: `.task` runs again when this screen reappears after `AccountEditView` is popped, and `refresh()` replaces the account, which would discard edits made there.
+        // TODO: Pull to refresh recreates the servers, which discards an authentication type the user changed.
         .refreshable(action: {
             await refresh()
         })
