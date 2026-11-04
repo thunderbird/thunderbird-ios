@@ -4,25 +4,41 @@
 
 import Foundation
 
-/// Convenience methods for storing and retrieving Authorization credentials in credential storage.
+/// Extends `URLCredentialStorage` with convenience methods for storing and retrieving Authorization credentials in storage.
 extension URLCredentialStorage {
     /// Returns the Authorization for the specified user and protection space, if found.
+    ///
+    /// - Parameters:
+    ///   - user: The specified user for the authorization request.
+    ///   - space: The protection space for the authorization request.
+    /// - Returns: The `Authorization` credential for the user.
     func authorization(for user: String, space: URLProtectionSpace = .account) -> Authorization? {
         credentials(for: space)?[user]?.authorization
     }
 
     /// Stores an Authorization credential with the given persistence and protection space.
+    ///
+    /// - Parameters:
+    ///   - authorization: The authorization to store.
+    ///   - persistence: The persistence duration for the authorization storage. Defaults to `.permanent`.
+    ///   - space: The protection space for the authorization to store.
     func set(authorization: Authorization, persistence: URLCredential.Persistence = .permanent, space: URLProtectionSpace = .account) {
         set(URLCredential(authorization: authorization, persistence: persistence), for: space)
     }
 
     /// Deletes the Authorization for a specific user within the specified protection space.
+    ///
+    /// - Parameters:
+    ///   - user: The specified user for the deletion request.
+    ///   - space: The protection space for the authorization to be deleted.
     func deleteAuthorization(for user: String, space: URLProtectionSpace = .account) {
         guard let credential: URLCredential = credentials(for: space)?[user] else { return }
         remove(credential, for: space)
     }
 
     /// Deletes all Authorization credentials for the given protection space.
+    ///
+    /// - Parameter space: The protection space targeted for bulk deletion.
     func deleteAuthorizations(space: URLProtectionSpace = .account) {
         for credential in (credentials(for: space) ?? [:]).values {
             remove(credential, for: space)
@@ -30,7 +46,7 @@ extension URLCredentialStorage {
     }
 }
 
-/// Convenience initializers and computed properties for working with Authorization.
+/// Extends `URLCredential` with convenience initializers and computed properties for working with Authorization.
 extension URLCredential {
     /// Creates an Authorization instance from the credential’s user and password, if possible.
     var authorization: Authorization? {
@@ -39,6 +55,10 @@ extension URLCredential {
     }
 
     /// Creates a URLCredential from an Authorization and persistence setting.
+    ///
+    /// - Parameters:
+    ///   - authorization: The authorization to store.
+    ///   - persistence: The persistence duration for the authorization storage. Defaults to `.permanent`.
     convenience init(authorization: Authorization, persistence: Persistence = .permanent) {
         self.init(user: authorization.user, password: authorization.password, persistence: persistence)
     }
