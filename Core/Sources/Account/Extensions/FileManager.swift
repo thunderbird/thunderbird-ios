@@ -4,7 +4,7 @@
 
 import Foundation
 
-/// Utilities for persisting accounts to disk as JSON.
+/// Extends `FileManager` with utilities for persisting accounts to disk as JSON.
 ///
 /// These helpers provide a lightweight, file-based store suitable for development and testing.
 extension FileManager {

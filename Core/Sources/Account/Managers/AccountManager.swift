@@ -127,6 +127,17 @@ public final class AccountManager {
         }
     }
 
+    /// Deletes the specified account, removing associated authorizations and updating persistent storage.
+    ///
+    /// Errors encountered during deletion are recorded in the `error` property.
+    ///
+    /// - Parameters:
+    ///   - authConfig: The authorization configuration for the account.
+    ///   - refreshToken: The current refresh token stored for the account.
+    ///   - user: The username of the account that is renewing it's token.
+    ///   - retry: The number of times to retry the call if an error is returned. Defaults to 2.
+    /// - Throws: Returns an error if the number of retry attempts are exhausted.
+    /// - Returns: An Authorization with an updated token.
     private func renewExpiredToken(authConfig: OAuth2.Configuration, refreshToken: String, user: String, retry attempts: Int = 2) async throws -> Authorization {
         do {
             let tokenRequest: URLRequest = try .refreshToken(
