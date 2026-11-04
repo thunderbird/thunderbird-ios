@@ -164,7 +164,14 @@ extension OAuth2.Configuration {
     /// Most providers' redirect URIs use the app's first URL scheme, `net.thunderbird.ios`. Microsoft requires its own
     /// format for iOS apps, `msauth.<bundle ID>://auth`, so its scheme is `msauth.net.thunderbird.ios`. Listening for
     /// the app's first scheme instead meant Microsoft's redirect was never caught and sign-in couldn't finish.
+    ///
+    /// - Throws: `URLError(.badURL)` if ``redirectURI`` has no scheme.
     var callbackScheme: String {
-        URL(string: redirectURI)!.scheme!  // Every redirect URI above is built from one of the app's URL schemes
+        get throws {
+            guard let scheme: String = URL(string: redirectURI)?.scheme else {
+                throw URLError(.badURL)
+            }
+            return scheme
+        }
     }
 }
