@@ -44,7 +44,6 @@ public enum Token: CustomStringConvertible, Equatable {
         self = .refresh(value)
     }
 
-    // MARK: CustomStringConvertible
-    /// String representation of the token.
+    /// Required for `CustomStringConvertible` conformance.
     public var description: String { value }
 }

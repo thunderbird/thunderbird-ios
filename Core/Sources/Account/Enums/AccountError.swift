@@ -43,8 +43,7 @@ public enum AccountError: CustomStringConvertible, Error, Equatable {
         }
     }
 
-    // MARK: CustomStringConvertible
-    /// A string describing the error for display or debugging.
+    /// Required for `CustomStringConvertible` conformance.
     public var description: String {
         switch self {
         case .authorization(let error): "Authorization: \(error)"
@@ -59,8 +58,7 @@ public enum AccountError: CustomStringConvertible, Error, Equatable {
         }
     }
 
-    // MARK: Equatable
-    /// AccountErrors are equal if their descriptions are equal.
+    /// Required for `Equatable` conformance.
     public static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.description == rhs.description
     }

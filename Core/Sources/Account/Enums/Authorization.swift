@@ -62,6 +62,10 @@ public enum Authorization: CustomStringConvertible, Equatable {
     }
 
     /// Initializes an Authorization from a username and password string, decoding as needed.
+    ///
+    /// - Parameters:
+    ///   - user: The username used for authorization.
+    ///   - password: The password used for authorization.
     init(user: String, password: String?) {
         let password: String = password ?? ""
         if !user.isEmpty,
@@ -82,7 +86,6 @@ public enum Authorization: CustomStringConvertible, Equatable {
         }
     }
 
-    // MARK: CustomStringConvertible
-    /// A string representation suitable for debugging or headers.
+    /// Required for `CustomStringConvertible` conformance.
     public var description: String { value }
 }

@@ -10,12 +10,10 @@ import Foundation
 public enum DeletePolicy: Codable, CustomStringConvertible, Equatable, Hashable, RawRepresentable, Sendable {
     case after(days: Int = 7), onDelete, markAsRead, never
 
-    // MARK: CustomStringConvertible
-    /// A human-readable description of the policy.
+    /// Required for `CustomStringConvertible` conformance.
     public var description: String { rawValue }
 
-    // MARK: RawRepresentable
-    /// The string representation of the policy used for persistence.
+    /// Required for `RawRepresentable` conformance.
     public var rawValue: String {
         switch self {
         case .after(let days): "after \(days) days"

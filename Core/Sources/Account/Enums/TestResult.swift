@@ -22,16 +22,14 @@ public enum TestResult: CustomStringConvertible, Identifiable, Sendable {
         }
     }
 
-    // MARK: CustomStringConvertible
-    /// String description of the test result.
+    /// Required for `CustomStringConvertible` conformance.
     public var description: String {
         switch self {
         case .failure(let description, _), .success(let description): description
         }
     }
 
-    // MARK: Identifiable
-    /// Unique string identifier for the test result.
+    /// Required for `Identifiable` conformance.
     public var id: String {
         switch self {
         case .failure(let string, _): "\(string):x"
@@ -40,8 +38,12 @@ public enum TestResult: CustomStringConvertible, Identifiable, Sendable {
     }
 }
 
+/// Extends `Account` with custom validation functions.
 extension Account {
     /// Runs basic validations for both IMAP/SMTP and JMAP account configurations asynchronously.
+    ///
+    /// - Parameters:
+    ///  - duration: The duration to sleep the Task before resuming operations. Currently used for effect. Defaults to 1 second.
     @MainActor
     public func test(sleep duration: Duration = .milliseconds(100)) -> AsyncStream<TestResult> {
         let account: Self = self

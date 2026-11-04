@@ -12,15 +12,13 @@ public enum AuthenticationType: String, Codable, CaseIterable, CustomStringConve
     case oAuth2 = "OAuth2"
     case none
 
-    // MARK: CustomStringConvertible
-    /// A human-readable description of the authentication type.
-    public var description: String { rawValue }
-
-    // MARK: Identifiable
-    /// The stable identifier for the authentication type.
     public var id: String { rawValue }
+
+    /// Required for `CustomStringConvertible` conformance.
+    public var description: String { rawValue }
 }
 
+/// Extends `AuthenticationType` with convenience initializers for autoconfiguration types.
 extension AuthenticationType {
     /// Convenience initializer for mapping autoconfiguration results to an authentication type.
     ///
