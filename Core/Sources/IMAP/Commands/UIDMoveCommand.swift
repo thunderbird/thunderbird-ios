@@ -22,6 +22,6 @@ struct UIDMoveCommand: IMAPCommand {
     var name: String { "move" }
 
     func tagged(_ tag: String) -> NIOIMAPCore.TaggedCommand {
-        TaggedCommand(tag: tag, command: .uidMove(.set(identifiers), mailboxName))
+        TaggedCommand(tag: Command.Tag(stringLiteral: tag), command: .uidMove(.set(identifiers), mailboxName))
     }
 }

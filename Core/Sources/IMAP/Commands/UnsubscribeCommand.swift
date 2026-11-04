@@ -20,6 +20,6 @@ struct UnsubscribeCommand: IMAPCommand {
     var name: String { "unsubscribe \"\(mailboxName)\"" }
 
     func tagged(_ tag: String) -> NIOIMAPCore.TaggedCommand {
-        TaggedCommand(tag: tag, command: .unsubscribe(mailboxName))
+        TaggedCommand(tag: Command.Tag(stringLiteral: tag), command: .unsubscribe(mailboxName))
     }
 }

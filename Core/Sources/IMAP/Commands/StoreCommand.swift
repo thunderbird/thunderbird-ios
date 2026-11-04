@@ -22,6 +22,6 @@ struct StoreCommand: IMAPCommand {
     var name: String { "store" }
 
     func tagged(_ tag: String) -> NIOIMAPCore.TaggedCommand {
-        TaggedCommand(tag: tag, command: .store(.set(identifiers), [], data))
+        TaggedCommand(tag: Command.Tag(stringLiteral: tag), command: .store(.set(identifiers), [], data))
     }
 }
