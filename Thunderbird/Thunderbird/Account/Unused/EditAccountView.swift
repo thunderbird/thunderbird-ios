@@ -8,7 +8,6 @@ import SwiftUI
 /// Older account editor with separate incoming and outgoing server sections.
 ///
 /// Not currently shown in the app; it's only referenced by its preview. The setup flow uses ``AccountEditView``.
-// TODO: Delete this view, or wire it back into the app. It is dead code while the setup flow uses `AccountEditView`.
 struct EditAccountView: View {
     /// - Parameter account: Account to edit. Its incoming and outgoing servers are copied, so changes apply only when saved.
     init(_ account: Account) {
