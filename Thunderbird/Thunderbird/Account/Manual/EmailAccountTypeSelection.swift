@@ -69,6 +69,7 @@ struct EmailAccountTypeSelection: View {
         .safeAreaInset(edge: .bottom) {
             Button(
                 action: {
+                    // TODO: Disable Next until a protocol is chosen. With nothing selected this continues as JMAP.
                     loginDetails.serverProtocol = selectedIMAP ? .imap : .jmap
                     path.append("ManualAccountSetup")
 
