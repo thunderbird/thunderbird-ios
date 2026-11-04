@@ -7,19 +7,88 @@ import Foundation
 import Testing
 
 struct XMLToJSONParserTests {
-    @Test func dictionary() {
-        let fastmail: [String: Any] = XMLToJSONParser("user@fastmail.com", data: fastmail).dictionary
-        #expect((fastmail["clientConfig"] as? [String: Any])?.keys.count == 2)
-        let freenet: [String: Any] = XMLToJSONParser("user@freenet.de", data: freenet).dictionary
-        #expect((freenet["clientConfig"] as? [String: Any])?.keys.count == 1)
-        let gmail: [String: Any] = XMLToJSONParser("user.name@gmail.com", data: gmail).dictionary
-        #expect((gmail["clientConfig"] as? [String: Any])?.keys.count == 3)
+    //Expect: Produce a `clientConfig` with 2 top-level sections (`emailProvider`, `webMail`).
+    //Case: When the Fastmail config has an email provider and web mail login.
+    @Test func dictionary_hasTwoClientConfigSections_whenConfigHasProviderAndWebMail() {
+        // Arrange
+        let input = fastmail
+        let expected = 2
+
+        // Act
+        let actual = (XMLToJSONParser("user@fastmail.com", data: input).dictionary["clientConfig"] as? [String: Any])?.keys.count
+
+        // Assert
+        #expect(actual == expected)
     }
 
-    @Test func data() throws {
-        #expect(try XMLToJSONParser("user@fastmail.com", data: fastmail).data.count == 1246)
-        #expect(try XMLToJSONParser("user@freenet.de", data: freenet).data.count == 2059)
-        #expect(try XMLToJSONParser("user.name@gmail.com", data: gmail).data.count == 1874)
+    //Expect: Produce a `clientConfig` with 1 top-level section (`emailProvider`).
+    //Case: When the Freenet config has only an email provider.
+    @Test func dictionary_hasOneClientConfigSection_whenConfigHasProviderOnly() {
+        // Arrange
+        let input = freenet
+        let expected = 1
+
+        // Act
+        let actual = (XMLToJSONParser("user@freenet.de", data: input).dictionary["clientConfig"] as? [String: Any])?.keys.count
+
+        // Assert
+        #expect(actual == expected)
+    }
+
+    //Expect: Produce a `clientConfig` with 3 top-level sections (`emailProvider`, `oAuth2`, `webMail`).
+    //Case: When the Gmail config has an email provider, OAuth2 and web mail login.
+    @Test func dictionary_hasThreeClientConfigSections_whenConfigHasProviderOAuth2AndWebMail() {
+        // Arrange
+        let input = gmail
+        let expected = 3
+
+        // Act
+        let actual = (XMLToJSONParser("user.name@gmail.com", data: input).dictionary["clientConfig"] as? [String: Any])?.keys.count
+
+        // Assert
+        #expect(actual == expected)
+    }
+
+    //Expect: Serialize the translated configuration to 1,246 bytes of JSON.
+    //Case: When the Fastmail config has an email provider and web mail login.
+    @Test func data_serializes1246Bytes_whenConfigHasProviderAndWebMail() throws {
+        // Arrange
+        let input = fastmail
+        let expected = 1246
+
+        // Act
+        let actual = try XMLToJSONParser("user@fastmail.com", data: input).data.count
+
+        // Assert
+        #expect(actual == expected)
+    }
+
+    //Expect: Serialize the translated configuration to 2,059 bytes of JSON.
+    //Case: When the Freenet config has only an email provider.
+    @Test func data_serializes2059Bytes_whenConfigHasProviderOnly() throws {
+        // Arrange
+        let input = freenet
+        let expected = 2059
+
+        // Act
+        let actual = try XMLToJSONParser("user@freenet.de", data: input).data.count
+
+        // Assert
+        #expect(actual == expected)
+    }
+
+    //Expect: Serialize the translated configuration to 1,874 bytes of JSON.
+    //Case: When the Gmail config has an email provider, OAuth2 and web mail login.
+    @Test func data_serializes1874Bytes_whenConfigHasProviderOAuth2AndWebMail() throws {
+        // Arrange
+        let input = gmail
+        let expected = 1874
+
+        // Act
+        let actual = try XMLToJSONParser("user.name@gmail.com", data: input).data.count
+
+        // Assert
+        #expect(actual == expected)
     }
 }
 

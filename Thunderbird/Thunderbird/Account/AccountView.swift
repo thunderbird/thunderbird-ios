@@ -6,18 +6,31 @@ import Bolt
 import Core
 import SwiftUI
 
+/// Screens the account setup flow can push onto its navigation stack.
 enum AccountDestination: String, CaseIterable, CustomStringConvertible {
+    /// `add` enters an email address, `auto` reviews autoconfigured settings, and `edit` sets up servers by hand.
     case add, auto, edit
 
     // MARK: CustomStringConvertible
     var description: String { rawValue }
 }
 
+/// Root of the account setup flow, presented as a sheet to add a new account or edit an existing one.
+///
+/// New accounts (with no servers yet) start at ``AccountAddView`` and continue to ``AccountAutoView`` or ``AccountEditView``. Accounts that already have servers open directly in ``AccountEditView``.
 struct AccountView: View {
+    /// Start adding an account for an email address.
+    ///
+    /// - Parameter emailAddress: Address to prefill in ``AccountAddView``.
     init(_ emailAddress: EmailAddress) {
         self.init(Account(emailAddress))
     }
 
+    /// Add a new account, or edit an existing one.
+    ///
+    /// - Parameters:
+    ///   - account: Account to edit. When `nil`, or when the account has no servers, the flow starts at ``AccountAddView``.
+    ///   - isPresented: Binding to the presenting sheet; set to `false` when the account is saved.
     init(_ account: Account? = nil, isPresented: Binding<Bool> = .constant(false)) {
         _isPresented = isPresented
         let account: Account = account ?? Account()
@@ -64,7 +77,9 @@ struct AccountView: View {
         .environment(accountManager)
 }
 
+/// Save button for the account setup screens.
 struct AccountSaveButton: View {
+    /// - Parameter action: Called when the button is tapped.
     init(action: @escaping () -> Void) {
         self.action = action
     }
@@ -86,7 +101,9 @@ struct AccountSaveButton: View {
     .padding()
 }
 
+/// Button that starts a connection test for the account being set up.
 struct AccountTestButton: View {
+    /// - Parameter action: Called when the button is tapped.
     init(action: @escaping () -> Void) {
         self.action = action
     }

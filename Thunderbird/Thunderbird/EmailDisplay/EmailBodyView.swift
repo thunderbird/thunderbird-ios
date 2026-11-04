@@ -6,6 +6,15 @@ import InfomaniakRichHTMLEditor
 import SwiftUI
 import Core
 
+/// A scrolling rich-text view of an email's body, either read-only or editable for composing.
+///
+/// When `editable` is `true`, the view shows a `ComposeHeaderView` above the editor and a formatting toolbar above the
+/// keyboard. Tapped links open through the environment's `openURL`.
+///
+/// - Important: The editor's content is replaced in `onAppear` with `email?.body?.html()`, or an empty string if
+///   there is no email, so the initial `html` value is never displayed. `ReadEmailView` passes only `html`, so it
+///   currently shows a blank body for sample emails.
+// TODO: Revise default value and update sample email bodies for preview purposes. Ticket #599
 struct EmailBodyView: View {
     @Environment(\.openURL) private var openURL: OpenURLAction
     @State var html = String.sampleHTML
@@ -15,6 +24,7 @@ struct EmailBodyView: View {
     @State var email: Email?
     let editable: Bool
 
+    /// Keyboard focus, which ignores changes when the view isn't `editable`.
     var focusBinding: Binding<Bool> {
         Binding(
             get: {
@@ -62,7 +72,9 @@ struct EmailBodyView: View {
     EmailBodyView(editable: false)
 }
 
+/// Extends `String` with sample content for previews and placeholders.
 extension String {
+    /// A page that exercises most HTML5 tags, used as the editor's initial content and in previews.
     static let sampleHTML = """
         <!DOCTYPE html>
         <html>
