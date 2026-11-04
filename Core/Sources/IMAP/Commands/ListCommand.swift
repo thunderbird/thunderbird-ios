@@ -32,7 +32,7 @@ struct ListCommand: IMAPCommand {
     var name: String { "list" }
 
     func tagged(_ tag: String) -> NIOIMAPCore.TaggedCommand {
-        TaggedCommand(tag: tag, command: .list(nil, reference: .reference, .mailbox(wildcard), options))
+        TaggedCommand(tag: Command.Tag(stringLiteral: tag), command: .list(nil, reference: .reference, .mailbox(wildcard), options))
     }
 }
 
