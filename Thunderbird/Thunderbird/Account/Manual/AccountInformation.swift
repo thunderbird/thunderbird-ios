@@ -105,6 +105,7 @@ struct AccountInformation: View {
                 Button(
                     action: {
                         loginDetails.inProgressAccount = nil
+                        loginDetails.enteredEmail = emailAddress
                         path.append("EmailAccountTypeSelection")
 
                     }) {
