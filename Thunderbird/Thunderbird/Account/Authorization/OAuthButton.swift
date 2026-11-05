@@ -56,9 +56,11 @@ struct OAuthButton: View {
             }
             // TODO: Send an OAuth2 `state` parameter and check it on the callback. PKCE covers most of the risk.
             let pkce: OAuth2.PKCE = OAuth2.PKCE()
+            // Listen for the provider's own redirect scheme. Microsoft's (`msauth.net.thunderbird.ios`) differs from
+            // the app's first URL scheme and therefore would not trigger the callback.
             let authURL: URL = try await webAuthenticationSession.authenticate(
                 using: authConfig.authURL(hint: emailAddress.value, pkce: pkce),
-                callback: .customScheme("\(Bundle.main.schemes.first!)"), additionalHeaderFields: [:]
+                callback: .customScheme(authConfig.callbackScheme), additionalHeaderFields: [:]
             )
             let code: String = try authURL.code
             await getToken(code: code, pkce: pkce)
