@@ -8,7 +8,7 @@ import CryptoKit
 /// OAuth2 endpoints advertised in an Autoconfig document, plus the application-specific configuration
 /// (client ID, redirect URI) needed to run an authorization-code flow with PKCE.
 public struct OAuth2: Decodable {
-    /// Proof Key for Code Exchange (RFC 7636) verifier and its S256 challenge.
+    /// Proof Key for Code Exchange ([RFC 7636](https://www.rfc-editor.org/rfc/rfc7636)) verifier and its S256 challenge.
     public struct PKCE: Equatable, Sendable {
         /// Random secret sent with the token request.
         public let codeVerifier: String
@@ -42,12 +42,14 @@ public struct OAuth2: Decodable {
         public let responseType: String
         /// Requested scopes.
         public let scope: [String]
-        /// Host-name suffixes matched against a provider's MX hosts; see ``matches(_:)``.
+        /// Host names matched, with their subdomains, against a provider's MX hosts; see ``matches(_:)``.
         public let hosts: [String]
         /// Client identifier registered with the provider.
         public let clientID: String
 
         /// Authorization URL to present to the user, including the PKCE challenge.
+        ///
+        /// Query values are percent-encoded, including `+`, so a plus-addressed `hint` reaches the provider intact.
         ///
         /// - Parameters:
         ///   - hint: Email address to prepopulate as `login_hint`. Omitted when `nil` or empty.
@@ -55,7 +57,7 @@ public struct OAuth2: Decodable {
         /// - Returns: The authorization endpoint URL with the request parameters as query items.
         public func authURL(hint: String? = nil, pkce: PKCE) -> URL {
             var components: URLComponents = URLComponents(string: authURI)!  // Validated during init
-            components.queryItems = [
+            var queryItems: [URLQueryItem] = [
                 URLQueryItem(name: "client_id", value: clientID),
                 URLQueryItem(name: "redirect_uri", value: redirectURI),
                 URLQueryItem(name: "response_type", value: responseType),
@@ -64,15 +66,16 @@ public struct OAuth2: Decodable {
                 URLQueryItem(name: "code_challenge_method", value: "S256")
             ]
             if let hint, !hint.isEmpty {  // Prepopulate email address for specific user
-                components.queryItems?.append(URLQueryItem(name: "login_hint", value: hint))
+                queryItems.append(URLQueryItem(name: "login_hint", value: hint))
             }
+            components.setQueryItemsEncodingPlus(queryItems)
             return components.url!
         }
 
         /// Token endpoint URL, with parameters as query items, to exchange an authorization code for tokens.
         ///
-        /// Includes an empty `client_secret`, as for a public client. Use `URLRequest.token(_:code:pkce:)` to move
-        /// the query into a POST body.
+        /// Includes an empty `client_secret`, as for a public client. Values are percent-encoded, including `+`. Use
+        /// `URLRequest.token(_:code:pkce:)` to move the query into a POST body.
         ///
         /// - Parameters:
         ///   - code: Authorization code returned to the redirect URI.
@@ -80,45 +83,45 @@ public struct OAuth2: Decodable {
         /// - Returns: The token endpoint URL with the request parameters as query items.
         public func tokenURL(_ code: String, pkce: PKCE) -> URL {
             var components: URLComponents = URLComponents(string: tokenURI)!  // Validated during init
-            components.queryItems = [
+            components.setQueryItemsEncodingPlus([
                 URLQueryItem(name: "client_id", value: clientID),
                 URLQueryItem(name: "client_secret", value: ""),
                 URLQueryItem(name: "redirect_uri", value: redirectURI),
                 URLQueryItem(name: "grant_type", value: "authorization_code"),
                 URLQueryItem(name: "code", value: code),
                 URLQueryItem(name: "code_verifier", value: pkce.codeVerifier)
-            ]
+            ])
             return components.url!
         }
 
         /// Token endpoint URL, with parameters as query items, to exchange a refresh token for a new access token.
         ///
-        /// Includes an empty `client_secret`, as for a public client. Use `URLRequest.refreshToken(_:refreshToken:)`
-        /// to move the query into a POST body.
+        /// Includes an empty `client_secret`, as for a public client. Values are percent-encoded, including `+`. Use
+        /// `URLRequest.refreshToken(_:refreshToken:)` to move the query into a POST body.
         ///
         /// - Parameter refreshToken: Refresh token from a previous ``TokenResponse``.
         /// - Returns: The token endpoint URL with the request parameters as query items.
         public func refreshTokenURL(_ refreshToken: String) -> URL {
             var components: URLComponents = URLComponents(string: tokenURI)!  // Validated during init
-            components.queryItems = [
+            components.setQueryItemsEncodingPlus([
                 URLQueryItem(name: "client_id", value: clientID),
                 URLQueryItem(name: "client_secret", value: ""),
                 URLQueryItem(name: "redirect_uri", value: redirectURI),
                 URLQueryItem(name: "grant_type", value: "refresh_token"),
                 URLQueryItem(name: "refresh_token", value: refreshToken)
-            ]
+            ])
             return components.url!
         }
 
-        /// Whether `host` ends with any entry in ``hosts``.
+        /// Whether `host` is one of ``hosts``, or a subdomain of one.
         ///
-        /// This is a plain suffix comparison, so entries should include a leading dot when a label boundary matters.
+        /// Matching respects label boundaries: `mail.example.com` matches `example.com`, but `notexample.com` doesn't.
         ///
         /// - Parameter host: Host name to test, such as an MX record host.
-        /// - Returns: `true` if `host` has any entry in ``hosts`` as a suffix.
+        /// - Returns: `true` if `host` equals an entry in ``hosts`` or ends with `.` followed by one.
         public func matches(_ host: String) -> Bool {
             for _host in hosts {
-                guard host.hasSuffix(_host) else { continue }
+                guard host == _host || host.hasSuffix(".\(_host)") else { continue }
                 return true
             }
             return false
@@ -133,7 +136,7 @@ public struct OAuth2: Decodable {
         ///   - responseType: OAuth2 `response_type`, e.g. `code`.
         ///   - scope: Requested scopes; must not be empty, and the first must not be empty.
         ///   - clientID: Client identifier registered with the provider; must not be empty.
-        ///   - hosts: Host-name suffixes matched against MX hosts. Defaults to none, which never matches.
+        ///   - hosts: Host names matched, with their subdomains, against MX hosts. Defaults to none, which never matches.
         /// - Throws: `URLError(.badURL)` if any validation fails. `responseType` isn't validated.
         public init(authURI: String, tokenURI: String, redirectURI: String, responseType: String, scope: [String], clientID: String, hosts: [String] = []) throws {
             guard URL(string: authURI) != nil,

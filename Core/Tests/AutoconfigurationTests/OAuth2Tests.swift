@@ -20,7 +20,7 @@ struct OAuth2Tests {
         #expect(actual == expected)
     }
 
-    //Expect: Use only the unreserved characters RFC 7636 allows in a code verifier.
+    //Expect: Use only the unreserved characters RFC 7636 allows in a code verifier (https://www.rfc-editor.org/rfc/rfc7636#section-4.1).
     //Case: When a PKCE pair is created without a verifier.
     @Test func pkceInit_generatesUnreservedCharactersOnly_whenCreatedWithoutVerifier() {
         // Arrange
@@ -33,7 +33,7 @@ struct OAuth2Tests {
         #expect(actual.allSatisfy { allowedCharacters.contains($0) })
     }
 
-    //Expect: Derive the S256 code challenge given in RFC 7636 Appendix B.
+    //Expect: Derive the S256 code challenge given in RFC 7636 Appendix B (https://www.rfc-editor.org/rfc/rfc7636#appendix-B).
     //Case: When the verifier is the RFC 7636 test vector.
     @Test func pkceInit_derivesRFC7636Challenge_whenVerifierIsTestVector() {
         // Arrange
@@ -199,10 +199,44 @@ struct OAuth2Tests {
         // Assert
         #expect(actual == expected)
     }
+
+    //Expect: Percent-encode `+` in the `login_hint` query item, so the provider doesn't decode it as a space.
+    //Case: When the hint uses plus addressing.
+    //Example: The hint prefills the provider's sign-in page. Sent unencoded, `user+tag@example.com` would be prefilled
+    //  as `user tag@example.com`, and the user would have to correct it.
+    @Test func authURL_encodesPlusInLoginHint_whenHintUsesPlusAddressing() throws {
+        // Arrange
+        let configuration = try Self.configuration()
+        let pkce = OAuth2.PKCE(codeVerifier: Self.testVectorVerifier)
+        let input = "user+tag@example.com"
+        let expected = "user+tag@example.com"
+
+        // Act
+        let actual = configuration.authURL(hint: input, pkce: pkce).query(percentEncoded: true)?.formValue("login_hint")
+
+        // Assert
+        #expect(actual == expected)
+    }
+
+    //Expect: Return `false`.
+    //Case: When the host ends with a configured host's name but isn't that host or one of its subdomains (`notexample.com`).
+    //Example: With the app's provider configurations, an MX host of `mx.notoutlook.com` would match Microsoft's `outlook.com`
+    //  and `mail.evilgoogle.com` would match Google's `google.com`, giving an unrelated domain that provider's OAuth2 sign-in.
+    @Test func matches_returnsFalse_whenHostOnlyEndsWithConfiguredName() throws {
+        // Arrange
+        let configuration = try Self.configuration(hosts: ["example.com", "examplemail.com"])
+        let input = "notexample.com"
+
+        // Act
+        let actual = configuration.matches(input)
+
+        // Assert
+        #expect(actual == false)
+    }
 }
 
 extension OAuth2Tests {
-    /// Code verifier from RFC 7636 Appendix B.
+    /// Code verifier from [RFC 7636 Appendix B](https://www.rfc-editor.org/rfc/rfc7636#appendix-B).
     static let testVectorVerifier: String = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
 
     static func configuration(hosts: [String] = []) throws -> OAuth2.Configuration {
