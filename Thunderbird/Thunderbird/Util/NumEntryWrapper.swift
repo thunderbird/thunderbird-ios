@@ -4,12 +4,15 @@
 
 import SwiftUI
 
+/// A labeled form field for entering a whole number, such as a port, with a number pad on iOS.
+///
+/// The binding is `nil` while the field is empty.
 struct NumEntryWrapper: View {
 
     /// - Parameters:
-    ///  - header: The name attached to the entry box
-    ///  - suggestionText: The placeholder value for the entry box to give context to the entry field
-    ///  - entryText: Binding Int to pass data outside wrapper
+    ///   - header: The label shown with the field.
+    ///   - suggestion: The placeholder, such as an example value, that gives the field context.
+    ///   - entryText: The number entered, or `nil` if the field is empty.
     init(
         _ header: LocalizedStringKey,
         _ suggestion: String,

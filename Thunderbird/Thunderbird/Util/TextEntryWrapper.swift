@@ -5,12 +5,13 @@
 import Bolt
 import SwiftUI
 
+/// A labeled form field for entering text, with automatic formatting such as capitalization turned off.
 struct TextEntryWrapper: View {
 
     /// - Parameters:
-    ///  - header: The name attached to the entry box
-    ///  - suggestionText: The placeholder value for the entry box to give context to the entry field
-    ///  - entryText: Binding string to pass data outside wrapper
+    ///   - header: The label shown with the field. Empty by default.
+    ///   - suggestion: The placeholder, such as an example value, that gives the field context. Empty by default.
+    ///   - entryText: The text entered. Defaults to a constant empty string, so the field can't be edited.
     init(
         _ header: LocalizedStringKey = "",
         _ suggestion: String = "",

@@ -4,10 +4,15 @@
 
 import SwiftUI
 
-///- Parameters:
-///  - unreadCount: number of unread messages
-///  - hasNew: do any of the unread messages qualify as 'new'
+/// A small badge showing how many messages are unread, drawn in the accent color or inverted when some are new.
+///
+/// - Important: Both values are copied into `@State` when the badge is created, so a badge that stays on screen may not
+///   follow later changes to the count.
+// TODO: Verify on a device, and store `unreadCount` and `hasNew` as plain properties if the badge doesn't update.
 struct UnreadCounter: View {
+    /// - Parameters:
+    ///   - unreadCount: The number of unread messages.
+    ///   - hasNew: Whether any of the unread messages count as new. Defaults to `false`.
     init(unreadCount: Int, hasNew: Bool = false) {
         self.unreadCount = unreadCount
         self.hasNew = hasNew

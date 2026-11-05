@@ -4,14 +4,25 @@
 
 import Foundation
 
-///While Alerts may have different UIs we will most likely not want more than one appearing at a time
-///A single manager across the app prevents overlap or hidden alerts and allows for a unified format
+/// The app's single shared state for an alert.
+///
+/// While alerts may have different UIs, we most likely won't want more than one on screen at a time. One manager for
+/// the whole app prevents overlapping or hidden alerts and allows a unified format.
+///
+/// To raise an alert, set ``alertTitle`` and then set ``showAlert`` to `true`. `App` watches ``showAlert`` and shows
+/// ``FeatureNotImplementedView``, so today every alert is a "not implemented yet" notice.
+// TODO: Remove this manager together with `FeatureNotImplementedView` once the actions that raise it are implemented.
 @MainActor
 @Observable class AlertManager {
+    /// The one instance. The initializer is private, so no other instance can exist.
     static let shared = AlertManager()
 
+    /// Whether the alert is showing. Setting it back to `false` dismisses the alert.
     var showAlert: Bool = false
+    /// The alert's title. ``FeatureNotImplementedView`` shows it as the name of the unfinished feature.
     var alertTitle: String?
+    /// Intended body text for the alert. Nothing reads it yet.
+    // TODO: Show this message in the alert, or remove it.
     var alertMessage: String?
 
     private init() {}  // Prevent creating multiple instances

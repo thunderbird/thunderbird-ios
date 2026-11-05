@@ -4,16 +4,20 @@
 
 import SwiftUI
 
-///Wrapping horizontal views do not exist in SwiftUI. This fills the gap
-///- Parameters:
-///  - horizontalSpacing: defaults to 6 pixels but customizeable
-///  - verticalSpacing: defaults to 5 pixels but customizeable
-///- Returns:
-///Layout for subviews based on the spacing and size limitations
+/// A layout that places its subviews left to right and starts a new row when the next one doesn't fit.
+///
+/// SwiftUI has no wrapping horizontal stack, so this fills the gap. Each subview keeps its own ideal size, and a row
+/// wraps when adding the next subview would pass the available width.
+// TODO: Verify with rows of different heights. `placeSubviews(in:proposal:subviews:cache:)` moves down by the height of
+// the view that starts the next row, while `sizeThatFits(proposal:subviews:cache:)` uses the tallest view in each row.
+// Also check a first subview that is wider than the container, which looks like it's pushed down a row.
 struct HStackWrap: Layout {
     private let horizontalSpacing: CGFloat
     private let verticalSpacing: CGFloat
 
+    /// - Parameters:
+    ///   - horizontalSpacing: Space between subviews in a row, in points. Defaults to 6.
+    ///   - verticalSpacing: Space between rows, in points. Defaults to 5.
     public init(
         horizontalSpacing: CGFloat = 6,
         verticalSpacing: CGFloat = 5

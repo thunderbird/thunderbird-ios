@@ -7,16 +7,22 @@ import Foundation
 import SwiftData
 import Core
 
-/// Prior to connecting the UI/UX with actual email storage it was necessary to prototype what form the data woud take
+/// A placeholder email used to prototype the email list and the reader before they were connected to real mail.
+///
+/// Prior to connecting the UI/UX with actual email storage it was necessary to prototype what form the data would take
 /// in order to test displays and develop what would be needed from the database. As the backend and UI expectations
 /// evolved, so did the model. The final data model will be adjacent to this in order to make connecting the data layer
-/// and UI seamless
-
+/// and UI seamless.
+///
+/// The list and reader still show ``sampleData`` until accounts return real emails. The class is a SwiftData `@Model`,
+/// but nothing in the app creates a model container, so these emails are never stored.
+// TODO: Remove `TempEmail` once the email list and the reader use `Email` throughout.
 @Model
 class TempEmail: Identifiable {
     var headerText: String
     var bodyText: String
     var dateSent: Date
+    /// A new identifier for every instance, so it isn't stable across launches.
     var uuid: UUID
 
     var from: [EmailAddress]
@@ -25,10 +31,12 @@ class TempEmail: Identifiable {
     var to: [EmailAddress]
     var cc: [EmailAddress]
     var bcc: [EmailAddress]
+    /// The raw attachment data, or `nil` for an email with none.
     var attachments: [Data]!
 
     // For alignment, bool check likely not final
     var unread: Bool
+    /// Whether the email counts as new. The list shows it as an open dot, which takes precedence over `unread`.
     var newEmail: Bool
     var isThread: Bool
     var pinned: Bool
@@ -66,6 +74,10 @@ class TempEmail: Identifiable {
         self.pinned = pinned
     }
 
+    /// The placeholder emails the list and reader show until accounts return real ones.
+    ///
+    /// They cover the display cases: new, unread and read emails, a pinned email, an emoji in the sender label or the
+    /// subject, Japanese text, a subject too long to fit, an HTML body, an attachment, and right-to-left text.
     @MainActor static let sampleData = [
         // New Unread Email
         TempEmail(
@@ -332,7 +344,13 @@ class TempEmail: Identifiable {
     ]
 }
 
+/// Extends `TempEmail` with conversion to the app's real `Email` type.
 extension TempEmail {
+    /// Convert to an `Email`, so the reader's reply, forward and compose actions can use the placeholder.
+    ///
+    /// - Returns: An `Email` with the same addresses, subject and sent date. The body is `bodyText` treated as HTML.
+    /// - Important: `received` is set to the current time, not to `dateSent`, and the attachments and the flags
+    ///   (`unread`, `newEmail`, `isThread` and `pinned`) aren't carried over.
     public func asEmail() -> Email {
         let email = Email(
             from: from,
