@@ -4,12 +4,17 @@
 
 import Foundation
 
+/// Represents the result of a test, including success and error cases.
 public enum TestResult: CustomStringConvertible, Identifiable, Sendable {
+    /// A test failure with a description and error.
     case failure(String, error: Error)
+    /// A successful test with a descriptive message.
     case success(String)
 
+    /// True if the result represents a failure.
     public var isFailure: Bool { error != nil }
 
+    /// Associated error if the result is a failure.
     public var error: Error? {
         switch self {
         case .failure(_, let error): error
@@ -17,14 +22,14 @@ public enum TestResult: CustomStringConvertible, Identifiable, Sendable {
         }
     }
 
-    // MARK: CustomStringConvertible
+    /// Required for `CustomStringConvertible` conformance.
     public var description: String {
         switch self {
         case .failure(let description, _), .success(let description): description
         }
     }
 
-    // MARK: Identifiable
+    /// Required for `Identifiable` conformance.
     public var id: String {
         switch self {
         case .failure(let string, _): "\(string):x"
@@ -33,8 +38,12 @@ public enum TestResult: CustomStringConvertible, Identifiable, Sendable {
     }
 }
 
+/// Extends `Account` with custom validation functions.
 extension Account {
-    /// Run basic validations for both IMAP/SMTP and JMAP `Account` configurations.
+    /// Runs basic validations for both IMAP/SMTP and JMAP account configurations asynchronously.
+    ///
+    /// - Parameters:
+    ///  - duration: The duration to sleep the Task before resuming operations. Currently used for effect. Defaults to 1 second.
     @MainActor
     public func test(sleep duration: Duration = .milliseconds(100)) -> AsyncStream<TestResult> {
         let account: Self = self

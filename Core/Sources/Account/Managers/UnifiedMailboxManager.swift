@@ -4,10 +4,12 @@
 
 import Foundation
 
-/// Manage each ``MailboxManager`` for every ``Account``.
+/// Manages mailbox managers for all user accounts, providing unified access to mailboxes.
 @Observable
 public final class UnifiedMailboxManager {
+    /// A collection of MailboxManager instances for each account.
     public var mailboxManagers: [MailboxManager] = []
 
+    /// Initializes an empty unified mailbox manager.
     public init() {}
 }

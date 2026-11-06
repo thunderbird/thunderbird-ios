@@ -4,18 +4,30 @@
 
 import Foundation
 
-/// Manage and display a single ``Email`` message for a given ``Account``.
+/// Manages and displays a single email message for a given account.
+///
+/// The manager owns the current `Email` and can refresh it from the server using the account's configured protocol.
 @Observable
 public final class EmailManager {
     public let account: Account
     public private(set) var email: Email?
     public var error: AccountError?
 
+    /// Creates a manager for an email within an account.
+    ///
+    /// - Parameters:
+    ///   - email: The initial email to manage, if any.
+    ///   - account: The account used to fetch and refresh the email.
     public init(_ email: Email?, account: Account) {
         self.account = account
         self.email = email
     }
 
+    /// Refreshes the current email from the server.
+    ///
+    /// Uses IMAP when the account protocol is IMAP and JMAP otherwise. Any encountered error is captured in `error`.
+    ///
+    /// - Returns: An asynchronous operation that completes when the refresh finishes.
     public func refreshEmail() async {
         guard let email else { return }
         do {
