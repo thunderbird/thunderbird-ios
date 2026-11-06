@@ -11,7 +11,6 @@ import Foundation
 ///
 /// To raise an alert, set ``alertTitle`` and then set ``showAlert`` to `true`. 
 /// This currently only triggers ``FeatureNotImplementedView`` alerts.
-// TODO: Remove this manager together with `FeatureNotImplementedView` once the actions that raise it are implemented.
 @MainActor
 @Observable class AlertManager {
     /// The one instance. The initializer is private, so no other instance can exist.
