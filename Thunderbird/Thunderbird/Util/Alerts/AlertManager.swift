@@ -9,8 +9,8 @@ import Foundation
 /// While alerts may have different UIs, we most likely won't want more than one on screen at a time. One manager for
 /// the whole app prevents overlapping or hidden alerts and allows a unified format.
 ///
-/// To raise an alert, set ``alertTitle`` and then set ``showAlert`` to `true`. `App` watches ``showAlert`` and shows
-/// ``FeatureNotImplementedView``, so today every alert is a "not implemented yet" notice.
+/// To raise an alert, set ``alertTitle`` and then set ``showAlert`` to `true`. 
+/// This currently only triggers ``FeatureNotImplementedView`` alerts.
 // TODO: Remove this manager together with `FeatureNotImplementedView` once the actions that raise it are implemented.
 @MainActor
 @Observable class AlertManager {
