@@ -4,9 +4,15 @@
 
 import Foundation
 
+/// Extends `Character` with decoding of named HTML character entities.
 extension Character {
 
     /// Decode [HTML entity](https://en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references) to represented `Character`.
+    ///
+    /// - Parameter entity: A named entity such as `&amp;` or `&eacute;`. The closing semicolon is optional.
+    /// - Returns: The character, or `nil` if the entity isn't one of the 68 common ones in the library's table. Numeric
+    ///   entities such as `&#64;` aren't handled here; `String.htmlEntitiesDecoded()` decodes those.
+    /// - Note: `&ensp;` and `&emsp;` decode to an ordinary space, not to the wider en and em space characters.
     public init?(entity: String) {
         let entity: String = "\(entity);".replacingOccurrences(of: ";;", with: ";")  // Force closing semicolon
         guard let character: Self = entities[entity] else {
