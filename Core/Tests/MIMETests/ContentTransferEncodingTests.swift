@@ -18,3 +18,9 @@ struct ContentTransferEncodingTests {
         #expect(ContentTransferEncoding(rawValue: "16bit") == nil)
     }
 }
+
+extension ContentTransferEncodingTests {
+    @Test func defaultEncoding() {
+        #expect(ContentTransferEncoding.default == .ascii)
+    }
+}

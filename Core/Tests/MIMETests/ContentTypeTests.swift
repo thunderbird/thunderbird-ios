@@ -69,3 +69,30 @@ struct ContentTypeTests {
         #expect(ContentType.text("html").rawValue == "text/html")
     }
 }
+
+extension ContentTypeTests {
+    @Test(arguments: [
+        ("application/pdf", ContentType.application("pdf")),
+        ("audio/mpeg", .audio("mpeg")),
+        ("example/test", .example("test")),
+        ("font/woff2", .font("woff2")),
+        ("haptics/ivs", .haptics("ivs")),
+        ("image/gif", .image("gif")),
+        ("message/rfc822", .message("rfc822")),
+        ("model/gltf+json", .model("gltf+json")),
+        ("video/mp4", .video("mp4"))
+    ])
+    func descriptionInitBaseTypes(_ description: String, _ contentType: ContentType) throws {
+        #expect(try ContentType(description) == contentType)
+        #expect(try ContentType(contentType.rawValue) == contentType)
+    }
+
+    @Test func descriptionInitUnknownType() {
+        #expect(throws: MIMEError.contentTypeNotFound) {
+            try ContentType("chemical/x-pdb")
+        }
+        #expect(throws: MIMEError.contentTypeNotFound) {
+            try ContentType("text")
+        }
+    }
+}
