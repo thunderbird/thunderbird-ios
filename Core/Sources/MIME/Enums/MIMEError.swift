@@ -27,11 +27,11 @@ public enum MIMEError: Error, CustomStringConvertible, Equatable {
     case dataNotFound
     /// Data has an `=` that isn't followed by two hexadecimal digits, so it isn't valid quoted-printable.
     case dataNotQuotedPrintable
-    /// A date string couldn't be read as an RFC 822 date.
+    /// A date string couldn't be read as an [RFC 822](https://www.rfc-editor.org/rfc/rfc822) date.
     case dateNotDecoded(String)
     /// Not thrown by the library today.
     case headerNameNotFound
-    /// A header, such as an RFC 2047 encoded word, couldn't be decoded.
+    /// A header, such as an [RFC 2047](https://www.rfc-editor.org/rfc/rfc2047) encoded word, couldn't be decoded.
     case headerNotDecoded(String)
     /// A header value or a URI built from an ID isn't ASCII, or isn't a valid URL.
     case headerValueNotASCII

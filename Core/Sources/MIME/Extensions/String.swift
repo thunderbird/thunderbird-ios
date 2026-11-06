@@ -4,8 +4,9 @@
 
 import Foundation
 
-/// Extends `String` with the helpers MIME needs: line endings, ASCII checks, header parameters, RFC 2047 encoded words,
-/// HTML entities, and base64 and quoted-printable decoding.
+/// Extends `String` with the helpers MIME needs: line endings, ASCII checks, header parameters,
+/// [RFC 2047](https://www.rfc-editor.org/rfc/rfc2047) encoded words, HTML entities, and base64 and quoted-printable
+/// decoding.
 extension String {
 
     /// Line is defined as a sequence of octets separated by a [CRLF](https://developer.mozilla.org/en-US/docs/Glossary/CRLF)
@@ -123,7 +124,7 @@ extension String {
     ///   change a multipart boundary containing one), and spaces around `=` leave the `=` in the value
     ///   (`filename = x.txt` gives `= x.txt`).
     // TODO: Parse quoted strings and escapes (RFC 2045), allow spaces around `=`, and support RFC 2231 extended
-    // values (#629).
+    // values (#629). See https://www.rfc-editor.org/rfc/rfc2045 and https://www.rfc-editor.org/rfc/rfc2231.
     public var parameters: [Self: Self] {
         var parameters: [Self: Self] = [:]
         for parameter in components(separatedBy: ";") {
@@ -148,7 +149,7 @@ extension String {
     ///   `Re: =?UTF-8?B?w6l0w6k=?=` come back unchanged. In `Q` words, `_` should mean a space but stays an underscore
     ///   (`Hello_World`). Common charsets such as `windows-1252` throw.
     // TODO: Find encoded words inside any header text (RFC 2047 section 6), turn `_` into a space in `Q` words, and
-    // support more charsets (#630).
+    // support more charsets (#630). See https://www.rfc-editor.org/rfc/rfc2047#section-6.
     public func headerDecoded() throws -> Self {
 
         // Because encoding creates significantly longer strings, headers can be encoded in multiple segments
@@ -356,7 +357,8 @@ extension [Character] {
     static var quotes: Self { ["\"", "'"] }
 }
 
-/// Extends `ContentTransferEncoding` with the one-letter names RFC 2047 uses in encoded words.
+/// Extends `ContentTransferEncoding` with the one-letter names [RFC 2047](https://www.rfc-editor.org/rfc/rfc2047) uses
+/// in encoded words.
 extension ContentTransferEncoding {
     /// Read the `B` or `Q` of an encoded word.
     ///

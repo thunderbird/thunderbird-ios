@@ -19,7 +19,7 @@ public struct RFC822DateFormatter {
     /// The date format string the formatter uses.
     public var dateFormat: String { formatter.dateFormat }
 
-    /// Format a date as RFC 822 text.
+    /// Format a date as [RFC 822](https://www.rfc-editor.org/rfc/rfc822) text.
     ///
     /// - Parameters:
     ///   - date: The date to format.
@@ -30,7 +30,7 @@ public struct RFC822DateFormatter {
         return formatter.string(from: date)
     }
 
-    /// Read RFC 822 text as a date.
+    /// Read [RFC 822](https://www.rfc-editor.org/rfc/rfc822) text as a date.
     ///
     /// Spaces are added before `+` and `-` so offsets like `-0500` parse, and a trailing comment in parentheses, such
     /// as `(CET)`, is ignored.
@@ -62,10 +62,9 @@ public struct RFC822DateFormatter {
     private let formatter: DateFormatter
 }
 
-/// Extends `Date` with RFC 822 "date-time" text, described in [RFC
-/// 822](https://www.rfc-editor.org/rfc/rfc822#section-5.1)
+/// Extends `Date` with "date-time" text, described in [RFC 822](https://www.rfc-editor.org/rfc/rfc822#section-5.1).
 extension Date {
-    /// The date as RFC 822 text, such as the value of a `Date` header.
+    /// The date as [RFC 822](https://www.rfc-editor.org/rfc/rfc822) text, such as the value of a `Date` header.
     ///
     /// - Parameter timeZone: The time zone to write the date in. Defaults to GMT.
     /// - Returns: The date as text, which follows the device's locale and calendar as ``RFC822DateFormatter``
@@ -74,7 +73,7 @@ extension Date {
         RFC822DateFormatter().string(from: self, timeZone)
     }
 
-    /// Read RFC 822 text as a date.
+    /// Read [RFC 822](https://www.rfc-editor.org/rfc/rfc822) text as a date.
     ///
     /// - Parameter string: The date text.
     /// - Throws: `MIMEError.dateNotDecoded` if the text doesn't match the format.

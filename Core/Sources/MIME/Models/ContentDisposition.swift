@@ -10,12 +10,12 @@ import Foundation
 /// Instruct mail client to display decoded body part inline, in message, or link as an attachment. Optionally include
 /// metadata for source file.
 ///
-/// - Important: The parameters are read with `String.parameters`, which has limits. An
-///   apostrophe is removed from a value (`Bob's report.pdf` becomes `Bobs report.pdf`), a `;` inside a quoted file name
-///   cuts the name short, spaces around `=` break the value, and RFC 2231 extended names (`filename*=UTF-8''...`) are
-///   ignored, so a non-ASCII file name is lost.
+/// - Important: The parameters are read with `String.parameters`, which has limits. An apostrophe is removed from a
+///   value (`Bob's report.pdf` becomes `Bobs report.pdf`), a `;` inside a quoted file name cuts the name short, spaces
+///   around `=` break the value, and [RFC 2231](https://www.rfc-editor.org/rfc/rfc2231) extended names
+///   (`filename*=UTF-8''...`) are ignored, so a non-ASCII file name is lost.
 // TODO: Parse parameters as quoted strings (RFC 2045 and RFC 2231) instead of removing quotes and splitting on
-// `;` (#629).
+// `;` (#629). See https://www.rfc-editor.org/rfc/rfc2045 and https://www.rfc-editor.org/rfc/rfc2231.
 public enum ContentDisposition: CustomStringConvertible, Equatable, RawRepresentable, Sendable {
     /// Metadata about the file a part came from: its name, dates and size.
     public struct File: CustomStringConvertible, RawRepresentable, Sendable {
@@ -35,7 +35,8 @@ public enum ContentDisposition: CustomStringConvertible, Equatable, RawRepresent
         /// Decode `File`from `ContentDisposition` parameter string.
         ///
         /// - Parameter description: The header value, such as `attachment; filename="a.pdf"; size=1024`. Parameters
-        ///   that are missing or can't be read, including dates that aren't RFC 822, leave that property `nil`.
+        ///   that are missing or can't be read, including dates that aren't
+        ///   [RFC 822](https://www.rfc-editor.org/rfc/rfc822), leave that property `nil`.
         public init(_ description: String) {
             lazy var formatter: RFC822DateFormatter = RFC822DateFormatter()
             let parameters: [String: String] = description.parameters
@@ -75,7 +76,7 @@ public enum ContentDisposition: CustomStringConvertible, Equatable, RawRepresent
 
         // MARK: RawRepresentable
         /// The parameters as header text, such as `filename="a.pdf"; size="1024"`, separated by `; `, with dates in
-        /// RFC 822 format. Empty if no parameter is set.
+        /// [RFC 822](https://www.rfc-editor.org/rfc/rfc822) format. Empty if no parameter is set.
         public var rawValue: String {
             lazy var formatter: RFC822DateFormatter = RFC822DateFormatter()
             var rawValue: [String] = []
@@ -109,8 +110,9 @@ public enum ContentDisposition: CustomStringConvertible, Equatable, RawRepresent
     case inline(File)
     /// The literal disposition type `extension-token`.
     ///
-    /// - Important: RFC 2183 allows any other extension token as a disposition type, such as `form-data`, but only the
-    ///   exact text `extension-token` is recognized, so other values throw `MIMEError.contentDispositionNotFound`.
+    /// - Important: [RFC 2183](https://www.rfc-editor.org/rfc/rfc2183) allows any other extension token as a
+    ///   disposition type, such as `form-data`, but only the exact text `extension-token` is recognized, so other
+    ///   values throw `MIMEError.contentDispositionNotFound`.
     // TODO: Accept other extension tokens, or rename this case so it isn't mistaken for the RFC's placeholder (#631).
     case extensionToken
 
