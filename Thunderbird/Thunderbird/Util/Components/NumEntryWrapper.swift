@@ -7,6 +7,8 @@ import SwiftUI
 /// A labeled form field for entering a whole number, such as a port, with a number pad on iOS.
 ///
 /// The binding is `nil` while the field is empty.
+// TODO: Accept only whole numbers from 1 to 65535 for ports, and commit the pending edit before the form is saved
+// (#622).
 struct NumEntryWrapper: View {
 
     /// - Parameters:

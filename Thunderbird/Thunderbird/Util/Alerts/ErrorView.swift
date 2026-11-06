@@ -13,7 +13,7 @@ extension View {
     /// `error`.
     ///
     /// - Important: No view applies this modifier, so errors set on the account manager are never shown.
-    // TODO: Apply `.error()` to the app's root view, so the errors the account screens report reach the user.
+    // TODO: Apply `.error()` to the app's root view, so the errors the account screens report reach the user (#619).
     func error() -> some View {
         modifier(ErrorView())
     }

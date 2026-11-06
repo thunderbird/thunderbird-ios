@@ -15,6 +15,8 @@ import SwiftUI
 /// | Yesterday | A relative phrase, such as "1 day ago" |
 /// | Earlier this year | Month and day, such as "Nov 1" |
 /// | A previous year | Month, day and year, such as "Aug 20, 2002" |
+// TODO: "Yesterday" is a relative phrase, so a message from late yesterday can read "40 minutes ago" or "12 hours ago";
+// make every message from yesterday read the same way (#621).
 @MainActor
 public struct SmartDateFormatter {
     /// Format a date for display.

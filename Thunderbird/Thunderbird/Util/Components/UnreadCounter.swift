@@ -8,7 +8,9 @@ import SwiftUI
 ///
 /// - Important: Both values are copied into `@State` when the badge is created, so a badge that stays on screen may not
 ///   follow later changes to the count.
-// TODO: Verify on a device, and store `unreadCount` and `hasNew` as plain properties if the badge doesn't update.
+// TODO: Verify on a device, and store `unreadCount` and `hasNew` as plain properties if the badge doesn't update
+// (#623).
+// TODO: Size the badge from its text; two or more digits overflow the fixed 20 x 17 background (#623).
 struct UnreadCounter: View {
     /// - Parameters:
     ///   - unreadCount: The number of unread messages.

@@ -10,7 +10,7 @@ import SwiftUI
 /// wraps when adding the next subview would pass the available width.
 // TODO: Verify with rows of different heights. `placeSubviews(in:proposal:subviews:cache:)` moves down by the height of
 // the view that starts the next row, while `sizeThatFits(proposal:subviews:cache:)` uses the tallest view in each row.
-// Also check a first subview that is wider than the container, which looks like it's pushed down a row.
+// Also check a first subview that is wider than the container, which looks like it's pushed down a row (#620).
 struct HStackWrap: Layout {
     private let horizontalSpacing: CGFloat
     private let verticalSpacing: CGFloat
