@@ -13,7 +13,8 @@ import Foundation
 ///   is 0007, and with Arabic digits the digits change. Those aren't valid RFC 822 dates, and the same device can't
 ///   read English dates in a header. It wraps a `DateFormatter`, whose time zone ``string(from:_:)`` changes on every
 ///   call, so one instance isn't safe to share between threads.
-// TODO: Set `locale` to `en_US_POSIX` and `calendar` to Gregorian on the formatter, and create a formatter per call.
+// TODO: Set `locale` to `en_US_POSIX` and `calendar` to Gregorian on the formatter, and create a formatter per
+// call (#626).
 public struct RFC822DateFormatter {
     /// The date format string the formatter uses.
     public var dateFormat: String { formatter.dateFormat }

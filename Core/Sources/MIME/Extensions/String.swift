@@ -53,7 +53,7 @@ extension String {
     /// - Important: A string with an `&` that has no `;` anywhere after it never finishes: the loop doesn't move past
     ///   that `&`. `"AT&T rocks".htmlEntitiesDecoded()` hangs, and the email preview text goes through this function.
     // TODO: Fix the infinite loop: stop (`break`) instead of `continue` when no `;` follows an `&`. This hangs the app
-    // on an email whose text has an `&` after its last `;`.
+    // on an email whose text has an `&` after its last `;` (#625).
     public func htmlEntitiesDecoded() -> Self {
 
         // Source - https://stackoverflow.com/a/30141700
@@ -122,7 +122,8 @@ extension String {
     ///   (`filename="a;b.pdf"` gives `a`), an apostrophe in a value is removed (`Bob's` gives `Bobs`, which would also
     ///   change a multipart boundary containing one), and spaces around `=` leave the `=` in the value
     ///   (`filename = x.txt` gives `= x.txt`).
-    // TODO: Parse quoted strings and escapes (RFC 2045), allow spaces around `=`, and support RFC 2231 extended values.
+    // TODO: Parse quoted strings and escapes (RFC 2045), allow spaces around `=`, and support RFC 2231 extended
+    // values (#629).
     public var parameters: [Self: Self] {
         var parameters: [Self: Self] = [:]
         for parameter in components(separatedBy: ";") {
@@ -147,7 +148,7 @@ extension String {
     ///   `Re: =?UTF-8?B?w6l0w6k=?=` come back unchanged. In `Q` words, `_` should mean a space but stays an underscore
     ///   (`Hello_World`). Common charsets such as `windows-1252` throw.
     // TODO: Find encoded words inside any header text (RFC 2047 section 6), turn `_` into a space in `Q` words, and
-    // support more charsets.
+    // support more charsets (#630).
     public func headerDecoded() throws -> Self {
 
         // Because encoding creates significantly longer strings, headers can be encoded in multiple segments

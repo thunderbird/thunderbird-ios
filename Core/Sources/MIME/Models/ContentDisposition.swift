@@ -14,7 +14,8 @@ import Foundation
 ///   apostrophe is removed from a value (`Bob's report.pdf` becomes `Bobs report.pdf`), a `;` inside a quoted file name
 ///   cuts the name short, spaces around `=` break the value, and RFC 2231 extended names (`filename*=UTF-8''...`) are
 ///   ignored, so a non-ASCII file name is lost.
-// TODO: Parse parameters as quoted strings (RFC 2045 and RFC 2231) instead of removing quotes and splitting on `;`.
+// TODO: Parse parameters as quoted strings (RFC 2045 and RFC 2231) instead of removing quotes and splitting on
+// `;` (#629).
 public enum ContentDisposition: CustomStringConvertible, Equatable, RawRepresentable, Sendable {
     /// Metadata about the file a part came from: its name, dates and size.
     public struct File: CustomStringConvertible, RawRepresentable, Sendable {
@@ -110,7 +111,7 @@ public enum ContentDisposition: CustomStringConvertible, Equatable, RawRepresent
     ///
     /// - Important: RFC 2183 allows any other extension token as a disposition type, such as `form-data`, but only the
     ///   exact text `extension-token` is recognized, so other values throw `MIMEError.contentDispositionNotFound`.
-    // TODO: Accept other extension tokens, or rename this case so it isn't mistaken for the RFC's placeholder.
+    // TODO: Accept other extension tokens, or rename this case so it isn't mistaken for the RFC's placeholder (#631).
     case extensionToken
 
     /// An attachment with no file metadata.

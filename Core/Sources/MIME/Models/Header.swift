@@ -7,7 +7,7 @@
 /// Only the four standard MIME headers have a ``Name``. Content-ID, which ``Part`` reads, isn't one of them, so it
 /// isn't written back out with a part's other headers.
 // TODO: Add Content-ID to `Header.Name` and to `Part.headers`, so a part keeps its `cid:` identifier when it is
-// written.
+// written (#631).
 public struct Header: CustomStringConvertible, Equatable, RawRepresentable, Sendable {
     /// The `MIME-Version: 1.0` header that a multipart message carries.
     public static let mimeVersion: Self = try! Self(.mimeVersion, "1.0")
@@ -53,7 +53,7 @@ public struct Header: CustomStringConvertible, Equatable, RawRepresentable, Send
     ///   ASCII, or the line doesn't split into exactly two parts at `: `.
     /// - Important: A value that itself contains `: `, such as `attachment; filename="a: b.pdf"`, makes the line split
     ///   into three parts, so the header is not read.
-    // TODO: Split only at the first `: ` so values containing it are kept.
+    // TODO: Split only at the first `: ` so values containing it are kept (#628).
     public init?(rawValue: String) {
         let rawValue: [String] = rawValue.components(separatedBy: ": ").map { $0.trimmed() }
         guard rawValue.count == 2, let name: Name = Name(rawValue: rawValue[0]) else {

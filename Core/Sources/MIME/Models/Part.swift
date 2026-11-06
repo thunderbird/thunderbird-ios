@@ -17,7 +17,7 @@ import Foundation
 ///   header can't be read, though RFC 2045 says the type then defaults to `text/plain; charset=us-ascii`. A header
 ///   whose value contains `: ` is skipped. `description` and ``rawValue`` crash if the data isn't ASCII.
 // TODO: Unfold only the header lines, keep the content bytes as they are, and default a missing Content-Type to
-// text/plain.
+// text/plain (#627, #628).
 // TODO: Return an error instead of force unwrapping non-ASCII data in `description`.
 public struct Part: CustomStringConvertible, RawRepresentable, Sendable {
 
