@@ -156,7 +156,7 @@ let thread    = try await client.thread(for: email)          // Thread/get</code
 
       <!-- MIME -->
       <div class="accordion-item" id="mime">
-        <button class="accordion-trigger"><span class="num">✉</span><span>MIME — recursive part decoding<span class="tt-sub">Core/Sources/MIME/Part.swift, Body.swift</span></span><span class="chev">▾</span></button>
+        <button class="accordion-trigger"><span class="num">✉</span><span>MIME — recursive part decoding<span class="tt-sub">Core/Sources/MIME/Models/Part.swift, Body.swift</span></span><span class="chev">▾</span></button>
         <div class="accordion-content">
           <p>A message is a <code>Part</code>: headers plus a body. When the <code>ContentType</code> is multipart, the <code>Body</code> splits on the boundary and recursively decodes each child into its own <code>Part</code> — so <code>multipart/alternative</code> inside <code>multipart/mixed</code> with attachments parses into a tree.</p>
           <ul>
