@@ -94,8 +94,8 @@ extension ServerProtocol {
     init?(_ serverType: EmailProvider.Server.ServerType) {
         switch serverType {
         case .imap: self = .imap
-            //TODO: Expand when JMAP support is added.
-//        case .jmap: self = .jmap
+        //TODO: Expand when JMAP support is added.
+        // case .jmap: self = .jmap
         case .smtp: self = .smtp
         case .pop3: return nil
         }

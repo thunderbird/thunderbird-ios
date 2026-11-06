@@ -56,7 +56,7 @@ public final class FolderManager {
     /// Organizes the list of mailboxes into a nested folder hierarchy.
     ///
     /// - Parameter mailboxes: The array of Mailboxes that needs to be parsed into a folder structure.
-    /// 
+    ///
     /// DIscussion: TEMPORARY IMPLEMENTATION - Due to display limitations folders should be limited to a depth of 3.
     /// Any folders with a depth exceeding 3 should appear at level 3.
     /// i.e. Folder > Subfolder > Child Subfolder AND Folder > Subfolder > Child Subfolder > Grandchild Subfolder appear at the same level
