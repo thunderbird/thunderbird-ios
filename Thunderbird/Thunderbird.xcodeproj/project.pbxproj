@@ -34,9 +34,9 @@
 				Assets.xcassets,
 				FeatureFlags/Distribution.swift,
 				FeatureFlags/FeatureFlags.swift,
-				Util/AvatarView.swift,
-				Util/SmartDateFormatter.swift,
-				Util/UtilFunctions.swift,
+				Util/Components/AvatarView.swift,
+				Util/Helpers/SmartDateFormatter.swift,
+				Util/Helpers/UtilFunctions.swift,
 			);
 			target = 1521D8232D9C4D6300C4DFDF /* ThunderbirdTests */;
 		};

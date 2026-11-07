@@ -4,11 +4,27 @@
 
 import SwiftUI
 
-///Email dates may be absolute or relative to current date based on app settings
-///Smart Dates are relative to the current date, localized
-///Today, Yesterday, Month Day, and Month Day Year
+/// Formats an email's date either in full or as a "smart" date that depends on how long ago it was.
+///
+/// Email dates may be absolute or relative to the current date, based on the app's settings. Smart dates are
+/// localized and read like this:
+///
+/// | Date | Smart date |
+/// |---|---|
+/// | Today | The time, such as "3:22 PM" |
+/// | Yesterday | A relative phrase, such as "1 day ago" |
+/// | Earlier this year | Month and day, such as "Nov 1" |
+/// | A previous year | Month, day and year, such as "Aug 20, 2002" |
+// TODO: "Yesterday" is a relative phrase, so a message from late yesterday can read "40 minutes ago" or "12 hours ago";
+// make every message from yesterday read the same way (#621).
 @MainActor
 public struct SmartDateFormatter {
+    /// Format a date for display.
+    ///
+    /// - Parameters:
+    ///   - date: The date to format.
+    ///   - isSmartDate: `true` for a smart date, `false` for the full numeric date, such as "11/4/2026".
+    /// - Returns: The formatted date, localized.
     func dateFormatter(date: Date, isSmartDate: Bool) -> String {
         if isSmartDate {
             return smartDate(date: date)
@@ -20,10 +36,10 @@ public struct SmartDateFormatter {
         return date.formatted(date: .numeric, time: .omitted)
     }
 
-    /// - Returns:
-    /// If date is before the current calendar year, return date in Month, day, year format, localized
-    /// If date is today or yesterday, return those strings, localized
-    /// If date is within the current calendar year but before yesterday, return date in Month, day format, localized
+    /// Describe a date relative to now, using the formats in the table above.
+    ///
+    /// - Returns: The time for today, a relative phrase for yesterday, month and day within the current calendar year,
+    ///   and month, day and year before it. All are localized.
     private func smartDate(date: Date) -> String {
         if Calendar.autoupdatingCurrent.isDateInToday(date) {
             return date.formatted(date: .omitted, time: .shortened)
