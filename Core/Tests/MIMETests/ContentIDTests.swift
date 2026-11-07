@@ -21,3 +21,9 @@ struct ContentIDTests {
         #expect(ContentID("").description.count > 20)
     }
 }
+
+extension ContentIDTests {
+    @Test func id() {
+        #expect(ContentID("<1762463150.A51D5B17@example.com>").id == "<1762463150.A51D5B17@example.com>")
+    }
+}

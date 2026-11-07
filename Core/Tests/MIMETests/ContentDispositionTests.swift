@@ -70,3 +70,14 @@ attachment; filename="mime-part.png"
 private let inlineJPEG: String = """
 inline; filename="mime-part.jpg"; modification-date="Mon, 31 Oct 1977 08:14:00 +0000 (GMT)"
 """
+
+extension ContentDispositionTests.FileTests {
+    @Test func rawValueWithReadDateAndSize() {
+        let readDate: Date = Date(timeIntervalSince1970: 247133640.0)
+        let file: ContentDisposition.File = ContentDisposition.File(filename: "a.txt", readDate: readDate, size: 1024)
+        #expect(file.rawValue == "filename=\"a.txt\"; read-date=\"Mon, 31 Oct 1977 08:14:00 +0000\"; size=\"1024\"")
+        #expect(file.description == file.rawValue)
+        #expect(ContentDisposition.File(rawValue: file.rawValue)?.readDate == readDate)
+        #expect(ContentDisposition.File(rawValue: file.rawValue)?.size == 1024)
+    }
+}

@@ -29,3 +29,10 @@ extension CharacterSetTests {
         #expect(CharacterSet.utf8.rawValue == "UTF-8")
     }
 }
+
+extension CharacterSetTests {
+    @Test func rawValueInit() {
+        #expect(CharacterSet(rawValue: "utf-8")?.rawValue == "UTF-8")
+        #expect(CharacterSet(rawValue: "") == nil)
+    }
+}

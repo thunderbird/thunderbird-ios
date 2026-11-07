@@ -188,3 +188,48 @@ Content-Type: application/zip\r
 UEsDBBQACAAIAHlNfFsAAAAAAAAAAAAAAAANACAAbWltZS1wYXJ0LnR4dHV4CwABBPUBAAAEFAAAAFVUDQAHJrUpaSa1KWkotSlpC8hJzMxTKEmtKFHw9fR1VShILCrh4sooKSkottLXLy8v1yvJKM1LSS1KyixK0ctLLdFPyc9LLEnVz81PysxJ1bdPyy/KtS1JywQAUEsHCDV1cHJLAAAASQAAAFBLAwQUAAgACAB5TXxbAAAAAAAAAAAAAAAAGAAgAF9fTUFDT1NYLy5fbWltZS1wYXJ0LnR4dHV4CwABBPUBAAAEFAAAAFVUDQAHJrUpaSa1KWlGtSlpY2AVY2dgYmDwTUxW8A9WiFCAApAYAycQGwHxSiAG8W8zEAUcQ0KCoEyQjgNALI2mhAkqLsDAIJWcn6uXWFCQk6qXk1hcUlqcmpKSWJKqHBAMVXsBiLkZGEQR6gqK8stS8xLzklMZ1LZqZoIUrUsP4QHRjEwMzrc0yyeuLjAHAFBLBwhAgtWufwAAANsAAABQSwECFAMUAAgACAB5TXxbNXVwcksAAABJAAAADQAYAAAAAAAAAAAApIEAAAAAbWltZS1wYXJ0LnR4dHV4CwABBPUBAAAEFAAAAFVUBQABJrUpaVBLAQIUAxQACAAIAHlNfFtAgtWufwAAANsAAAAYABgAAAAAAAAAAACkgaYAAABfX01BQ09TWC8uX21pbWUtcGFydC50eHR1eAsAAQT1AQAABBQAAABVVAUAASa1KWlQSwUGAAAAAAIAAgCxAAAAiwEAAAAA
 \r
 """
+
+extension PartTests {
+    @Test func dataInit() throws {
+        let part: Part = try Part(Part.text.rawValue)
+        #expect(part.contentType == .text("plain", .ascii))
+        #expect(part.contentTransferEncoding == .ascii)
+        #expect(part.contentDisposition == .inline)
+        #expect(throws: MIMEError.self) {
+            try Part("Content-Type: text/plain\n\nnöt ASCII".data(using: .utf8)!)
+        }
+    }
+
+    @Test func descriptionInitWithoutBlankLine() {
+        #expect(throws: MIMEError.dataNotFound) {
+            try Part("Content-Type: text/plain")
+        }
+    }
+
+    @Test func partsErrors() throws {
+        #expect(throws: MIMEError.contentTypeNotMultipart) {
+            try Part.text.parts
+        }
+        let noBoundaryLines: Part = Part(data: "no boundary lines here".data(using: .ascii)!, contentType: .multipart(.mixed, try Boundary("abc")))
+        #expect(throws: MIMEError.self) {
+            try noBoundaryLines.parts
+        }
+        #expect(throws: MIMEError.contentTypeNotPossible(.text("plain", .ascii))) {
+            try Part(parts: [Part.text], contentType: .text("plain", .ascii))
+        }
+        #expect(throws: MIMEError.dataNotFound) {
+            try Part(parts: [], contentType: .multipart(.mixed, try Boundary("abc")))
+        }
+    }
+
+    // MARK: RawRepresentable
+    @Test func rawValueInit() {
+        #expect(Part(rawValue: Part.text.rawValue)?.contentType == .text("plain", .ascii))
+        #expect(Part(rawValue: Data([0xFF])) == nil)
+    }
+
+    // MARK: CustomStringConvertible
+    @Test func description() {
+        #expect(Part.text.description.hasPrefix("Content-Disposition: inline\r\nContent-Transfer-Encoding: 7bit\r\nContent-Type: text/plain; charset=\"US-ASCII\"\r\n\r\n"))
+    }
+}
