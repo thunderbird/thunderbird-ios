@@ -10,18 +10,11 @@
 @_exported import SMTP
 import Foundation
 
+/// Represents a user email account, including configuration, identities, servers, and authorization information.
+///
+/// The `Account` struct encapsulates the configuration and state for an email account, supporting various authentication and email protocols.
 public struct Account: Codable, Equatable, Hashable, Identifiable, Sendable {
-    public enum EmailProtocol: String, CaseIterable, CustomStringConvertible, Identifiable, Sendable {
-        case imap = "IMAP"
-        case jmap = "JMAP"
-
-        // MARK: CustomStringConvertible
-        public var description: String { rawValue }
-
-        // MARK: Identifiable
-        public var id: String { rawValue }
-    }
-
+    public let id: UUID
     public var name: String
     public var deletePolicy: DeletePolicy
     public var identities: [EmailAddress]
@@ -29,11 +22,19 @@ public struct Account: Codable, Equatable, Hashable, Identifiable, Sendable {
     public var avatarColor: String
     public var autoconfigured: Source?
 
+    /// The incoming server used by the account, preferring JMAP and falling back to IMAP.
     public var incomingServer: Server? { server(.jmap) ?? server(.imap) ?? nil }
+    /// The outgoing server used by the account, preferring JMAP and falling back to SMTP.
     public var outgoingServer: Server? { server(.jmap) ?? server(.smtp) ?? nil }
+    /// The primary email address identity of the account.
     public var emailAddress: EmailAddress? { identities.first }
+    /// The date when the authentication credentials were last changed.
     public private(set) var authChanged: Date?
 
+    /// The OAuth2 configuration associated with the account's email address.
+    ///
+    /// - Throws: `AccountError.emailAddressNotFound` if the email address is not set.
+    /// - Returns: An `OAuth2.Configuration` object for the account's email address.
     public var authConfig: OAuth2.Configuration? {
         get async throws {
             guard let emailAddress else {
@@ -43,6 +44,9 @@ public struct Account: Codable, Equatable, Hashable, Identifiable, Sendable {
         }
     }
 
+    /// The authentication type used for all servers associated with the account.
+    ///
+    /// Setting this value updates the authentication type on all servers and updates the `authChanged` date.
     public var authenticationType: AuthenticationType {
         set {
             servers = servers.map { server in
@@ -56,6 +60,8 @@ public struct Account: Codable, Equatable, Hashable, Identifiable, Sendable {
     }
 
     /// Store account credentials locally in the [Apple keychain.](https://developer.apple.com/documentation/security/storing-keys-in-the-keychain)
+    ///
+    /// - Note: Setting this property stores or deletes the credentials in the system keychain.
     public var authorization: Authorization {
         set {
             guard let user: String = emailAddress?.value, !user.isEmpty else { return }
@@ -75,23 +81,35 @@ public struct Account: Codable, Equatable, Hashable, Identifiable, Sendable {
         }
     }
 
+    /// Deletes the stored authorization credentials for the account's email address from the keychain.
     public func deleteAuthorization() {
         guard let user: String = emailAddress?.value, !user.isEmpty else { return }
         URLCredentialStorage.shared.deleteAuthorization(for: user)
     }
 
+    /// The email protocol used by the account, preferring JMAP if any server supports it, otherwise IMAP.
     public var emailProtocol: EmailProtocol {
         servers.map { $0.serverProtocol }.contains(.jmap) ? .jmap : .imap
     }
 
+    /// Returns the first server matching the specified protocol.
+    ///
+    /// - Parameter serverProtocol: The protocol of the server to find.
+    /// - Returns: A `Server` instance matching the protocol or `nil` if none found.
     public func server(_ serverProtocol: ServerProtocol) -> Server? {
         servers.filter { $0.serverProtocol == serverProtocol }.first
     }
 
+    /// Initialize an `Account` using an email address string.
+    ///
+    /// - Parameter emailAddress: The email address string.
     public init(_ emailAddress: String) {
         self.init(EmailAddress(emailAddress))
     }
 
+    /// Initialize an `Account` using an `EmailAddress`.
+    ///
+    /// - Parameter emailAddress: The email address.
     public init(_ emailAddress: EmailAddress) {
         self.init(
             name: emailAddress.value,
@@ -102,12 +120,20 @@ public struct Account: Codable, Equatable, Hashable, Identifiable, Sendable {
     }
 
     /// Configure an `Account` using memberwise initializer.
+    ///
+    /// - Parameters:
+    ///   - id: The unique identifier for the account. Defaults to a new UUID.
+    ///   - name: The display name of the account.
+    ///   - deletePolicy: The deletion policy for the account. Defaults to `.never`.
+    ///   - identities: The list of email identities associated with the account.
+    ///   - servers: The list of email servers associated with the account.
+    ///   - avatar: The avatar color or identifier for the account.
     public init(
+        id: UUID = UUID(),
         name: String = "",
         deletePolicy: DeletePolicy = .never,
         identities: [EmailAddress] = [],
         servers: [Server] = [],
-        id: UUID = UUID(),
         avatar: String = "user-blue",
     ) {
         self.name = name
@@ -117,23 +143,47 @@ public struct Account: Codable, Equatable, Hashable, Identifiable, Sendable {
         self.id = id
         self.avatarColor = avatar
     }
-
-    // MARK: Identifiable
-    public let id: UUID
 }
 
+/// Adds the `EmailProtocol` enum, representing supported email protocols.
+extension Account {
+    /// Defines supported email protocols for an account.
+    public enum EmailProtocol: String, CaseIterable, CustomStringConvertible, Identifiable, Sendable {
+        case imap = "IMAP"
+        case jmap = "JMAP"
+
+        // MARK: CustomStringConvertible
+        public var description: String { rawValue }
+
+        // MARK: Identifiable
+        public var id: String { rawValue }
+    }
+}
+
+/// Adds autoconfiguration support to create accounts from email addresses.
 extension Account {
     /// Autoconfigure a new account from an email address `String`.
+    ///
+    /// - Parameter emailAddress: The email address string to autoconfigure.
+    /// - Throws: An error if autoconfiguration fails.
+    /// - Returns: A configured `Account` instance.
     public static func autoconfigured(_ emailAddress: String) async throws -> Self {
         try await autoconfigured(EmailAddress(emailAddress))
     }
 
     /// Autoconfigure a new account from an `EmailAddress`.
+    ///
+    /// - Parameter emailAddress: The email address to autoconfigure.
+    /// - Throws: An error if autoconfiguration fails.
+    /// - Returns: A configured `Account` instance.
     public static func autoconfigured(_ emailAddress: EmailAddress) async throws -> Self {
         try await Self(emailAddress).autoconfigured()
     }
 
     /// Autoconfigure a new account using its ``EmailAddress``.
+    ///
+    /// - Throws: An error if autoconfiguration fails or email address is not found.
+    /// - Returns: A configured `Account` instance.
     public func autoconfigured() async throws -> Self {
         do {
             guard let emailAddress else {
@@ -141,12 +191,12 @@ extension Account {
             }
             let autoconfig: (ClientConfig, Source) = try await URLSession.shared.autoconfig(emailAddress.value)
             var account: Self = Self(
+                id: id,
                 name: emailAddress.value,
                 identities: [
                     emailAddress
                 ],
-                servers: (autoconfig.0.emailProvider?.servers ?? []).compactMap { Server($0) },
-                id: id
+                servers: (autoconfig.0.emailProvider?.servers ?? []).compactMap { Server($0) }
             )
             account.autoconfigured = autoconfig.1  // Source
             return account
@@ -156,18 +206,30 @@ extension Account {
     }
 }
 
+/// Adds support for configuring accounts specifically for JMAP and Fastmail.
 extension Account {
     /// Configure a new account to use JMAP if email address uses Fastmail.
+    ///
+    /// - Parameter emailAddress: The email address string to configure.
+    /// - Throws: An error if configuration fails or email address is not supported.
+    /// - Returns: A configured `Account` instance for JMAP.
     public static func jmapConfigured(_ emailAddress: String) async throws -> Self {
         try await jmapConfigured(EmailAddress(emailAddress))
     }
 
     /// Configure a new account to use JMAP if `EmailAddress` uses Fastmail.
+    ///
+    /// - Parameter emailAddress: The email address to configure.
+    /// - Throws: An error if configuration fails or email address is not supported.
+    /// - Returns: A configured `Account` instance for JMAP.
     public static func jmapConfigured(_ emailAddress: EmailAddress) async throws -> Self {
         try await Self(emailAddress).jmapConfigured()
     }
 
     /// Recoonfigure an account to use JMAP if ``EmailAddress`` uses Fastmail.
+    ///
+    /// - Throws: An error if email address is not found or not supported.
+    /// - Returns: A reconfigured `Account` instance using JMAP.
     public func jmapConfigured() async throws -> Self {
         guard let emailAddress else {
             throw AccountError.emailAddressNotFound
@@ -176,6 +238,7 @@ extension Account {
             throw AccountError.emailAddressNotSupported  // Early JMAP support is exclusive to Fastmail
         }
         return Account(
+            id: id,
             name: name,
             identities: [
                 emailAddress
@@ -188,13 +251,17 @@ extension Account {
                     username: emailAddress.value,
                     hostname: "api.fastmail.com"
                 )
-            ],
-            id: id
+            ]
         )
     }
 }
 
+/// Adds properties for accessing IMAP and JMAP clients associated with the account.
 extension Account {
+    /// The IMAP client associated with the account.
+    ///
+    /// - Throws: An error if the server protocol mismatches or connection/login fails.
+    /// - Returns: An `IMAPClient` instance connected and logged in.
     var imapClient: IMAPClient {
         get async throws {
             if let client: IMAPClient = Self.clients[id] as? IMAPClient {
@@ -218,6 +285,10 @@ extension Account {
         }
     }
 
+    /// The JMAP client associated with the account.
+    ///
+    /// - Throws: An error if the server protocol mismatches or session is not found.
+    /// - Returns: A `JMAPClient` instance with an active session.
     var jmapClient: JMAPClient {
         get async throws {
             if let client: JMAPClient = Self.clients[id] as? JMAPClient, client.session != nil {
@@ -241,7 +312,13 @@ extension Account {
     nonisolated(unsafe) private static var clients: [UUID: Any] = [:]
 }
 
+/// Adds functions for accessing emails and email details from the account.
 extension Account {
+    /// Fetches emails in the specified mailbox.
+    ///
+    /// - Parameter mailbox: The mailbox to fetch emails from. Defaults to the INBOX.
+    /// - Throws: An error if fetching fails or protocol is not supported.
+    /// - Returns: An array of `Email` objects in the mailbox.
     public func emails(in mailbox: Mailbox = Mailbox("INBOX", role: .inbox)) async throws -> [Email] {
         switch emailProtocol {
         case .imap:
@@ -254,6 +331,11 @@ extension Account {
         }
     }
 
+    /// Fetches a single email by its identifier.
+    ///
+    /// - Parameter email: The email identifier to fetch.
+    /// - Throws: An error if fetching fails, UID is not available, or protocol is unsupported.
+    /// - Returns: The fetched `Email` object.
     public func email(_ email: Email) async throws -> Email {
         switch emailProtocol {
         case .imap:
@@ -269,7 +351,12 @@ extension Account {
     }
 }
 
+/// Private extension providing DNS-based checks for fastmail domains.
 private extension EmailAddress {
+    /// Checks asynchronously whether the email address is a Fastmail address by querying MX records.
+    ///
+    /// - Throws: An error if DNS query fails.
+    /// - Returns: `true` if the email address domain's MX records indicate Fastmail, otherwise `false`.
     var isFastmail: Bool {
         get async throws {
             let records: [MXRecord] = try await DNSResolver.queryMX(value)

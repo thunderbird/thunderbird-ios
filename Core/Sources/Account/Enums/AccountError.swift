@@ -2,17 +2,28 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
+/// Describes possible errors related to account setup, authentication, protocols, and operations.
 public enum AccountError: CustomStringConvertible, Error, Equatable {
+    /// An error occurred during authorization.
     case authorization(Error)
+    /// An error occurred during account autoconfiguration.
     case autoconfig(Error)
+    /// Email address was not found.
     case emailAddressNotFound
+    /// Email address is not supported.
     case emailAddressNotSupported
+    /// A file manager-related error.
     case fileManager(Error)
+    /// An IMAP protocol error.
     case imap(IMAPError)
+    /// A JMAP protocol error.
     case jmap(JMAPError)
+    /// A MIME-related error.
     case mime(MIMEError)
+    /// An SMTP protocol error.
     case smtp(SMTPError)
 
+    /// Initializes an AccountError from another error type, if possible.
     public init?(_ error: Error) {
         if let error: Self = error as? Self {
             self = error
@@ -32,7 +43,7 @@ public enum AccountError: CustomStringConvertible, Error, Equatable {
         }
     }
 
-    // MARK: CustomStringConvertible
+    /// Required for `CustomStringConvertible` conformance.
     public var description: String {
         switch self {
         case .authorization(let error): "Authorization: \(error)"
@@ -47,7 +58,7 @@ public enum AccountError: CustomStringConvertible, Error, Equatable {
         }
     }
 
-    // MARK: Equatable
+    /// Required for `Equatable` conformance.
     public static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.description == rhs.description
     }
