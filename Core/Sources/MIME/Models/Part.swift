@@ -11,6 +11,35 @@ import Foundation
 /// more subparts. `Part` encodes and decodes complete plain text or MIME message part using `RawRepresentable`
 /// conformance.
 ///
+/// ## Example
+///
+/// Read a message and walk its subparts:
+///
+/// ```swift
+/// let message = try Part(
+///     """
+///     Content-Type: multipart/alternative; boundary="b1"
+///
+///     --b1
+///     Content-Type: text/plain; charset=us-ascii
+///
+///     Hello
+///     --b1
+///     Content-Type: text/html; charset=us-ascii
+///
+///     <p>Hello</p>
+///     --b1--
+///     """
+/// )
+///
+/// for part in try message.parts {
+///     print(part.contentType)  // text/plain; charset=us-ascii, then text/html; charset=us-ascii
+///     print(String(data: part.data, encoding: .ascii) ?? "")  // Hello, then <p>Hello</p>
+/// }
+///
+/// let wire: Data = message.rawValue  // The message written back out, with CRLF line endings.
+/// ```
+///
 /// - Important: Reading a part from text (`Part(_:)`) changes the data: CRLF line endings become `\n`, and
 ///   header unfolding is applied to the whole text, including the content, so a content line that starts with a space
 ///   and `b`, a space and `<`, or a tab is joined to the line before it (a tab is removed). A part with no Content-Type
