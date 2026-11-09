@@ -7,24 +7,67 @@ import Foundation
 import MIME
 import NIOCore
 
+/// The commands the client sends, in the order a send uses them.
 enum Request {
+    /// `EHLO`, the greeting, with a host name.
+    ///
+    /// ``SendHandler`` passes the server's host name, but
+    /// [RFC 5321](https://www.rfc-editor.org/rfc/rfc5321#section-4.1.1.1) expects the client's own domain or address.
+    // TODO: Send the client's own host name, or an address literal, in `EHLO`.
     case hello(String)
+    /// `STARTTLS`, which asks to upgrade the connection to TLS.
     case startTLS
+    /// `AUTH LOGIN`, which starts signing in with a user name and password.
+    ///
+    /// - Important: It's the only sign-in method, so accounts that use OAuth2, which need `XOAUTH2` or `OAUTHBEARER`,
+    ///   can't send. The Account module also refuses OAuth2 for SMTP.
+    // TODO: Support `XOAUTH2` or `OAUTHBEARER`, and `AUTH PLAIN`, choosing from the methods the server lists after
+    // `EHLO`.
     case authLogin
+    /// The user name for `AUTH LOGIN`, written as base64.
     case authUser(String)
+    /// The password for `AUTH LOGIN`, written as base64.
     case authPassword(String)
+    /// `MAIL FROM` with the sender's address.
     case mailFrom(EmailAddress)
+    /// `RCPT TO` with one recipient's address.
     case recipient(EmailAddress)
+    /// `DATA`, which asks to start sending the email.
     case data
+    /// The email itself: its headers, its body, and the line with a single `.` that ends it.
     case transferData(Email)
+    /// `QUIT`, which ends the session.
     case quit
 }
 
+/// Writes each ``Request`` as the line of text SMTP sends, ending with CRLF.
 struct RequestEncoder: MessageToByteEncoder {
 
     // MARK: MessageToByteEncoder
     typealias OutboundIn = Request
 
+    /// Write one command.
+    ///
+    /// For ``Request/transferData(_:)`` the email is written as `From`, `To`, `Date`, `Message-ID` and `Subject`
+    /// headers, then the body's own headers and content, then the line with a single `.`.
+    ///
+    /// - Parameters:
+    ///   - data: The command to write.
+    ///   - out: The buffer to write it to.
+    /// - Important: Several things about the email text don't follow the standards yet:
+    ///   - `To` addresses are separated by spaces, but [RFC 5322](https://www.rfc-editor.org/rfc/rfc5322#section-3.4)
+    ///     needs commas.
+    ///   - Cc addresses receive the email, but no `Cc` header is written, so nobody can see who was copied.
+    ///   - Body lines that start with `.` aren't doubled
+    ///     ([RFC 5321 section 4.5.2](https://www.rfc-editor.org/rfc/rfc5321#section-4.5.2)). A line that is just `.`
+    ///     ends the email early, and the server removes the leading `.` from other lines.
+    ///   - Names and subjects that aren't ASCII are written as raw UTF-8, not as
+    ///     [RFC 2047](https://www.rfc-editor.org/rfc/rfc2047) encoded words.
+    ///   - A line break in the subject starts a new header.
+    ///   - There is no `MIME-Version` header for a single-part body.
+    ///   - The `Date` header follows the device's locale and calendar (#626).
+    // TODO: Separate `To` addresses with commas, write a `Cc` header, dot-stuff the body, encode non-ASCII names and
+    // the subject with `headerEncoded()`, remove line breaks from header values, and always write `MIME-Version`.
     func encode(data: OutboundIn, out: inout ByteBuffer) throws {
         switch data {
         case .hello(let hostname):

@@ -4,8 +4,13 @@
 
 import NIOCore
 
+/// An inbound handler that turns bytes into messages with a decoder, by forwarding each call to NIO's
+/// `ByteToMessageHandler`. ``SMTPClient`` uses it with `LineBasedFrameDecoder`, so each message is one line.
+///
+/// It exists so the pipeline can hold the handler as `Sendable`, which NIO's handler isn't.
 // Proxy `ByteToMessageHandler` as `@unchecked Sendable`
 final class MessageHandler<Decoder: ByteToMessageDecoder>: ChannelInboundHandler, @unchecked Sendable {
+    /// - Parameter decoder: The decoder that reads messages out of the incoming bytes.
     init(_ decoder: Decoder) {
         handler = ByteToMessageHandler(decoder)
     }
