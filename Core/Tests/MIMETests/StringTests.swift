@@ -36,6 +36,20 @@ struct StringTests {
         #expect("".htmlEntitiesDecoded() == "")
     }
 
+    // An `&` with no `;` after it used to loop forever (#625), so each input runs on another thread with a time limit
+    // instead of hanging the test run.
+    @Test(arguments: [
+        ("AT&T rocks", "AT&T rocks"),
+        ("Q&A", "Q&A"),
+        ("Tom & Jerry", "Tom & Jerry"),
+        ("&", "&"),
+        ("&amp; AT&T", "& AT&T"),
+        ("AT&T; ok", "AT&T; ok")
+    ])
+    func htmlEntitiesDecoded_finishes_whenAmpersandHasNoSemicolon(_ input: String, _ expected: String) async {
+        #expect(await decodedWithinTimeLimit(input) == expected)
+    }
+
     @Test func parameters() {
         #expect(
             "multipart/alternative; boundary=\"_----------=_17617196041979919223967\"".parameters == [
