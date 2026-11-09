@@ -4,40 +4,63 @@
 
 import Foundation
 
-/// Manages and contains information for folders for a given ``Account``.
+/// Manages and organizes folders for a given Account.
 @Observable
 public final class FolderManager {
+    /// The Account for which folders are managed.
     public let account: Account
+    /// Top-level folders for the account.
     public var folders: [Folder] = []
 
+    /// Initializes the FolderManager with an Account.
+    ///
+    /// - Parameter account: The `Account` to initialize the manger with.
     public init(account: Account) {
         self.account = account
     }
 
+    /// Finds a folder by its unique identifier.
+    ///
+    /// - Parameter id: The unique id of the Folder to be found.
+    /// - Returns: A `Folder` with a matching id, if one exists.
     public func folderForID(_ id: String) -> Folder? {
         folders.filter { $0.id == id }.first
     }
 
+    /// Finds a folder by its name.
+    ///
+    /// - Parameter name: The name of the Folder to be found.
+    /// - Returns: The first `Folder` with a matching name, if one exists.
     public func folderForName(_ name: String) -> Folder? {
         folders.filter { $0.name == name }.first
     }
 
+    /// Finds a folder by its path.
+    ///
+    /// - Parameter path: The path of the Folder to be found.
+    /// - Returns: The first `Folder` with a matching path, if one exists.
     public func folderForPath(_ path: String) -> Folder? {
         folders.filter { $0.path == path }.first
     }
 
-    /// Get the immediate parent path of a folder by dropping it's last component.
+    /// Returns the immediate parent path of a folder path, or nil if top-level.
+    ///
+    /// - Parameter path: The path of the Folder for which a parent is being determined.
+    /// - Returns: The path of the immediate parent of the provided folder, if it exists.
     func parentPath(of path: String) -> String? {
         guard let range = path.range(of: "/", options: .backwards) else { return nil }
         let parent = String(path[..<range.lowerBound])
         return parent.isEmpty ? nil : parent
     }
 
-    /// Organize folders into a nested structure based on their mailbox paths.
-    // TEMP: Due to display limitations folders should be limited to a depth of 3.
-    // Any folders with a depth exceeding 3 should appear at level 3.
-    // i.e. Folder > Subfolder > Child Subfolder AND Folder > Subfolder > Child Subfolder > Grandchild Subfolder appear at the same level
-    // In this instance "Grandchild Subfolder" should appear as "Child Subfolder/Grandchild Subfolder" in the UI.
+    /// Organizes the list of mailboxes into a nested folder hierarchy.
+    ///
+    /// - Parameter mailboxes: The array of Mailboxes that needs to be parsed into a folder structure.
+    ///
+    /// DIscussion: TEMPORARY IMPLEMENTATION - Due to display limitations folders should be limited to a depth of 3.
+    /// Any folders with a depth exceeding 3 should appear at level 3.
+    /// i.e. Folder > Subfolder > Child Subfolder AND Folder > Subfolder > Child Subfolder > Grandchild Subfolder appear at the same level
+    /// In this instance "Grandchild Subfolder" should appear as "Child Subfolder/Grandchild Subfolder" in the UI.
     public func refreshFolders(mailboxes: [Mailbox]) async {
         // Populate the full list of folders
         for mailbox in mailboxes {

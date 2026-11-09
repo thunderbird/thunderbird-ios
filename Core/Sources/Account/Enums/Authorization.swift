@@ -4,12 +4,16 @@
 
 import Foundation
 
-/// Authorization credential  for a given user name, either an OAuth token or basic password
+/// Represents an authorization credential for a user, either basic authentication or OAuth.
 public enum Authorization: CustomStringConvertible, Equatable {
+    /// Basic authorization with username and password.
     case basic(user: String, password: String)
+    /// OAuth authorization with access and refresh tokens.
     case oauth(user: String, token: Token, refresh: Token)
+    /// No authorization.
     case none
 
+    /// The associated username for this authorization.
     public var user: String {
         switch self {
         case .basic(let user, _), .oauth(let user, _, _): user
@@ -17,7 +21,7 @@ public enum Authorization: CustomStringConvertible, Equatable {
         }
     }
 
-    /// Formatted `URLRequest` Authorization header value
+    /// Formatted value for use in a URLRequest Authorization header.
     public var value: String {
         switch self {
         case .basic: "Basic \(password)"
@@ -26,7 +30,7 @@ public enum Authorization: CustomStringConvertible, Equatable {
         }
     }
 
-    /// Encoded `URLCredential` password value (for keychain storage)
+    /// Encoded credential string for secure storage.
     public var password: String {
         switch self {
         case .basic(let user, let password):
@@ -40,6 +44,7 @@ public enum Authorization: CustomStringConvertible, Equatable {
         }
     }
 
+    /// Whether this authorization is considered expired.
     public var isExpired: Bool {
         switch self {
         case .basic(_, _): false
@@ -48,6 +53,7 @@ public enum Authorization: CustomStringConvertible, Equatable {
         }
     }
 
+    /// The refresh token value, if present.
     public var refreshToken: String? {
         switch self {
         case .oauth(_, _, let refreshToken): refreshToken.value
@@ -55,7 +61,11 @@ public enum Authorization: CustomStringConvertible, Equatable {
         }
     }
 
-    /// Derive appropriate authorization case from naked `URLCredential` user/password strings.
+    /// Initializes an Authorization from a username and password string, decoding as needed.
+    ///
+    /// - Parameters:
+    ///   - user: The username used for authorization.
+    ///   - password: The password used for authorization.
     init(user: String, password: String?) {
         let password: String = password ?? ""
         if !user.isEmpty,
@@ -76,6 +86,6 @@ public enum Authorization: CustomStringConvertible, Equatable {
         }
     }
 
-    // MARK: CustomStringConvertible
+    /// Required for `CustomStringConvertible` conformance.
     public var description: String { value }
 }
