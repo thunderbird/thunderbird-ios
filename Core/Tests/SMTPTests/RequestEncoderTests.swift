@@ -2,6 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
+import Foundation
+import MIME
 import NIOCore
 @testable import SMTP
 import Testing
@@ -41,6 +43,19 @@ struct RequestEncoderTests {
         #expect(buffer.readString(length: buffer.readableBytes) == example)
         try RequestEncoder().encode(data: .quit, out: &buffer)
         #expect(buffer.readString(length: buffer.readableBytes) == "QUIT\r\n")
+    }
+
+    // Body lines that start with "." must be sent with an extra "." (RFC 5321 section 4.5.2, #639). Otherwise a line that
+    // is just "." ends the email early, and the server removes the leading "." from other lines.
+    @Test func encodeTransferData_dotStuffsBody_whenLinesStartWithDot() throws {
+        let data: Data = ".first\r\nmiddle\r\n.\r\n..two\r\nend.".data(using: .ascii)!
+        let body: Body = try Body(part: Part(data: data, contentType: .text(.plain, .ascii)))
+        let email: Email = Email(sender: "sender@example.com", recipients: ["recipient@example.com"], body: body)
+        var buffer: ByteBuffer = ByteBuffer()
+        try RequestEncoder().encode(data: .transferData(email), out: &buffer)
+        let encoded: String = buffer.readString(length: buffer.readableBytes) ?? ""
+        let content: String = encoded.components(separatedBy: "\r\n\r\n").dropFirst().joined(separator: "\r\n\r\n")
+        #expect(content == "..first\r\nmiddle\r\n..\r\n...two\r\nend.\r\n\r\n.\r\n")
     }
 }
 
