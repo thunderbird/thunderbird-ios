@@ -66,8 +66,9 @@ struct RequestEncoder: MessageToByteEncoder {
     ///   - A line break in the subject starts a new header.
     ///   - There is no `MIME-Version` header for a single-part body.
     ///   - The `Date` header follows the device's locale and calendar (#626).
-    // TODO: Separate `To` addresses with commas, write a `Cc` header, dot-stuff the body, encode non-ASCII names and
-    // the subject with `headerEncoded()`, remove line breaks from header values, and always write `MIME-Version`.
+    // TODO: Dot-stuff the body (#639), separate `To` addresses with commas (#641), write a `Cc` header (#642), encode
+    // non-ASCII names and the subject with `headerEncoded()` (#643), remove line breaks from header values (#644), and
+    // always write `MIME-Version`.
     func encode(data: OutboundIn, out: inout ByteBuffer) throws {
         switch data {
         case .hello(let hostname):

@@ -74,7 +74,7 @@ public struct SMTPClient {
     /// - Throws: An ``SMTPError`` from the first recipient that fails. Recipients before it already have the email.
     /// - Important: An email with no recipients returns without error and without sending anything.
     // TODO: Throw `SMTPError.emailRecipientNotFound` when there are no recipients, and send to all recipients in one
-    // session (one `RCPT TO` each) so a failure doesn't leave the email delivered to only some of them.
+    // session (one `RCPT TO` each) so a failure doesn't leave the email delivered to only some of them (#640, #645).
     public func send(_ email: Email) async throws {
         for recipient in email.allRecipients {
             try await send(email, to: recipient)
@@ -90,7 +90,7 @@ public struct SMTPClient {
     ///   ``SMTPError/response(_:)`` with their description.
     /// - Important: There's no timeout for the server's replies, so a server that stops responding leaves this
     ///   waiting forever.
-    // TODO: Add a timeout for the whole session, and close the connection when it expires.
+    // TODO: Add a timeout for the whole session, and close the connection when it expires (#646).
     func send(_ email: Email, to recipient: EmailAddress) async throws {
         do {
             let done: EventLoopPromise<Void> = group.next().makePromise()

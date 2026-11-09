@@ -23,8 +23,8 @@ import NIOSSL
 ///   - Any 2xx or 3xx reply moves on to the next step; the code isn't checked against the one the step expects.
 ///   - With ``ConnectionSecurity/none``, the user name and password are sent unencrypted.
 // TODO: Make implicit TLS work: don't require `NIOSSLClientHandler` when the connection's TLS comes from
-// Network.framework.
-// TODO: Fail `done` instead of calling `fatalError`, and check each reply code against the step.
+// Network.framework (#638).
+// TODO: Fail `done` instead of calling `fatalError` (#647), and check each reply code against the step.
 final class SendHandler: ChannelInboundHandler, @unchecked Sendable {
     let email: Email
     /// The one recipient this session sends to.
