@@ -47,7 +47,7 @@ struct RequestEncoderTests {
 // swift-format-ignore
 private let example: String = """
 From: Sender Name <sender@example.com>\r
-To: Recipient Name <recipient@example.com> no.name@exmaple.com\r
+To: Recipient Name <recipient@example.com>, no.name@exmaple.com\r
 Date: Thu, 06 Nov 2025 21:05:50 +0000\r
 Message-ID: <1762463150.A51D5B17@example.com>\r
 Subject: Example email subject\r
