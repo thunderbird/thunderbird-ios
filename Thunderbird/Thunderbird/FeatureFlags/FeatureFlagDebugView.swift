@@ -4,6 +4,11 @@
 
 import SwiftUI
 
+/// Settings screen that lists the feature flags with a toggle for each, and a switch for whether remote settings apply.
+///
+/// Reached from Settings > Feature Flags. The link isn't limited to debug builds, so this screen is also shown in
+/// release builds.
+// TODO: Decide whether this screen should ship in release builds, and hide the Settings link if it shouldn't.
 struct FeatureFlagDebugView: View {
     @Environment(FeatureFlags.self) private var flags: FeatureFlags
     @State private var allowRemoteFlags = false
@@ -23,6 +28,12 @@ struct FeatureFlagDebugView: View {
     }
 }
 
+/// Row with a toggle that turns one feature flag on or off.
+///
+/// The toggle starts from the state passed in when the row is created and doesn't follow later changes to the flag,
+/// such as remote settings arriving after the screen is shown.
+// TODO: Verify on a device, and bind the toggle to `FeatureFlags.flagForKey(key:)` if rows don't update when remote
+// settings arrive.
 struct SettingRowView: View {
     init(_ flagName: String, _ onState: Bool) {
 
