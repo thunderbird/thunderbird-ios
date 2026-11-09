@@ -12,6 +12,18 @@ struct SMTPClientTests {
     @Test(arguments: Server.allCases(disabled: false)) func send(server: Server) async throws {
         try await SMTPClient(server).send(.email(EmailAddress(server.username)))
     }
+
+    // An email with no To, Cc or Bcc recipients used to return as if it had been sent (#640). The server host doesn't
+    // exist, so the test can't pass by connecting; it passes only if the client refuses before connecting.
+    @Test func send_throwsRecipientNotFound_whenEmailHasNoRecipients() async {
+        let client: SMTPClient = SMTPClient(Server(hostname: "smtp.invalid", username: "user", password: "pass"), logger: nil)
+        await #expect(throws: SMTPError.emailRecipientNotFound) {
+            try await client.send(Email(sender: "sender@example.com"))
+        }
+        await #expect(throws: SMTPError.emailRecipientNotFound) {
+            try await client.send([Email(sender: "sender@example.com")])
+        }
+    }
 }
 
 private extension Email {
