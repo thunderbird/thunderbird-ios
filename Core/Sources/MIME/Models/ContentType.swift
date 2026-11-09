@@ -4,7 +4,10 @@
 
 import Foundation
 
-/// [Media content types](https://www.iana.org/assignments/media-types/media-types.xhtml) with base types enumerated
+/// A [media content type](https://www.iana.org/assignments/media-types/media-types.xhtml), such as `text/plain`, with
+/// the base types enumerated and the subtype held as a string.
+///
+/// Subtypes aren't checked against the registry, and are stored in lowercase when read from a header.
 public enum ContentType: CustomStringConvertible, Equatable, RawRepresentable, Sendable {
     case application(String)
     case audio(String)
@@ -14,10 +17,15 @@ public enum ContentType: CustomStringConvertible, Equatable, RawRepresentable, S
     case image(String)
     case message(String)
     case model(String)
+    /// Multipart content with its subtype and the ``Boundary`` that separates the parts.
+    ///
+    /// The boundary defaults to a new random one each time the case is created without it.
     case multipart(String, Boundary = UUID().dataBoundary())
+    /// Text with its subtype and, if the header gave a valid one, its character set.
     case text(String, CharacterSet? = nil)
     case video(String)
 
+    /// The part after the slash, such as `plain` in `text/plain`.
     public var subtype: String {
         switch self {
         case .application(let subtype),
@@ -35,6 +43,7 @@ public enum ContentType: CustomStringConvertible, Equatable, RawRepresentable, S
         }
     }
 
+    /// Whether the type is multipart.
     public var isMultipart: Bool {
         switch self {
         case .multipart: true
@@ -42,6 +51,7 @@ public enum ContentType: CustomStringConvertible, Equatable, RawRepresentable, S
         }
     }
 
+    /// The boundary of a multipart type, or `nil` for any other type.
     public var boundary: Boundary? {
         switch self {
         case .multipart(_, let boundary): boundary
@@ -49,6 +59,7 @@ public enum ContentType: CustomStringConvertible, Equatable, RawRepresentable, S
         }
     }
 
+    /// The character set of a text type, or `nil` for any other type or a text type with no valid charset.
     public var charset: CharacterSet? {
         switch self {
         case .text(_, let charset): charset
@@ -56,6 +67,12 @@ public enum ContentType: CustomStringConvertible, Equatable, RawRepresentable, S
         }
     }
 
+    /// Read a content type from header text.
+    ///
+    /// - Parameter description: The header value, such as `multipart/mixed; boundary="abc"` or
+    ///   `text/plain; charset=utf-8`. The type and subtype are matched without regard to case.
+    /// - Throws: `MIMEError.contentTypeNotFound` if the value isn't `type/subtype` with a known type. For multipart,
+    ///   the boundary errors from ``Boundary``, including `MIMEError.boundaryLength` if the header has no boundary.
     public init(_ description: String) throws {
         let rawValue: [String] =
             description
@@ -115,6 +132,7 @@ public enum ContentType: CustomStringConvertible, Equatable, RawRepresentable, S
     public var description: String { rawValue }
 
     // MARK: RawRepresentable
+    /// The header value: `type/subtype`, followed by `; ` and the quoted `boundary` or `charset` when there is one.
     public var rawValue: String {
         var rawValue: [String] = [
             "\(value)/\(subtype)"
@@ -133,6 +151,7 @@ public enum ContentType: CustomStringConvertible, Equatable, RawRepresentable, S
     }
 }
 
+/// Extends `String` with the names of the standard multipart and text subtypes, for building a ``ContentType``.
 extension String {
 
     // Standard multipart subtypes
