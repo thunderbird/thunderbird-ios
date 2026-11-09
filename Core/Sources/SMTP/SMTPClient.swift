@@ -17,6 +17,23 @@ import OSLog
 /// `SendHandler` runs those steps. The connections use a one-thread Network.framework event loop group that the
 /// client creates.
 ///
+/// ## Example
+///
+/// Send a plain text email through a STARTTLS server:
+///
+/// ```swift
+/// let client = SMTPClient(
+///     Server(.startTLS, hostname: "smtp.example.com", username: "me@example.com", password: "app-password")
+/// )
+/// let email = Email(
+///     sender: "me@example.com",
+///     recipients: ["you@example.com"],
+///     subject: "Hello",
+///     body: try Body(part: Part(data: "Hello".data(using: .ascii)!, contentType: .text(.plain, .ascii)))
+/// )
+/// try await client.send(email)  // One session per recipient; throws an SMTPError if one fails
+/// ```
+///
 /// - Important: Nothing in the app sends mail with this client yet. The account connection test creates a client but
 ///   doesn't connect or send, so it reports success without checking the server.
 // TODO: The event loop group is never shut down, so each client keeps its thread. Shut it down when the client is done.
