@@ -124,3 +124,24 @@ private let mocks: [Mock] = [
     ("E1FA0690", 148684),
     ("CFD4D3A3", 591664)
 ]
+
+extension BodyTests {
+    @Test func partInitRejectsOtherTypes() {
+        #expect(throws: MIMEError.contentTypeNotPossible(.image("png"))) {
+            try Body(part: Part(data: Data(), contentType: .image("png")))
+        }
+    }
+
+    @Test func dataInitRejectsNonASCII() {
+        #expect(throws: MIMEError.self) {
+            try Body("Content-Type: text/plain\n\nnöt ASCII".data(using: .utf8)!)
+        }
+    }
+
+    @Test func rawValueInit() throws {
+        let body: Body = try Body(part: Part(data: "Hello".data(using: .ascii)!, contentType: .text(.plain, .ascii)))
+        #expect(body.description == "Content-Type: text/plain; charset=\"US-ASCII\"\r\n\r\nHello\r\n")
+        #expect(Body(rawValue: body.rawValue)?.contentType == .text(.plain, .ascii))
+        #expect(Body(rawValue: Data([0xFF])) == nil)
+    }
+}

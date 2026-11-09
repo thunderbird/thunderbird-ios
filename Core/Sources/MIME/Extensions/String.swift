@@ -98,7 +98,7 @@ extension String {
 
             // Find next semicolon; copy characters between "&" and ";"
             guard let semiRange: Range<Index> = self[position...].range(of: ";") else {
-                continue
+                break  // No entity can follow; the rest of the string is copied below
             }
             let entity: Substring = self[position..<semiRange.upperBound]
             if let character: Character = decode(entity) {

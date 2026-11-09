@@ -25,3 +25,9 @@ struct HeaderTests {
         #expect(Header(rawValue: "MIME-Version: 1.0") == .mimeVersion)
     }
 }
+
+extension HeaderTests {
+    @Test func rawValueInitUnknownName() {
+        #expect(Header(rawValue: "X-Mailer: Thunderbird") == nil)
+    }
+}

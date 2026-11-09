@@ -33,3 +33,15 @@ extension StringTests {
         #expect(String.rfc822Format == "EEE, dd MMM yyyy HH:mm:ss Z")
     }
 }
+
+extension RFC822DateFormatterTests {
+    @Test func dateRFC822Format() throws {
+        let date: Date = Date(timeIntervalSince1970: 247133640.0)
+        #expect(date.rfc822Format() == "Mon, 31 Oct 1977 08:14:00 +0000")
+        #expect(date.rfc822Format(TimeZone(secondsFromGMT: -5 * 3600)!) == "Mon, 31 Oct 1977 03:14:00 -0500")
+        #expect(try Date(rfc822Format: date.rfc822Format()) == date)
+        #expect(throws: MIMEError.self) {
+            try Date(rfc822Format: "not a date")
+        }
+    }
+}

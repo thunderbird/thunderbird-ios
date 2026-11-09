@@ -29,3 +29,10 @@ struct BoundaryTests {
         }
     }
 }
+
+extension BoundaryTests {
+    @Test func rawValueInit() {
+        #expect(Boundary(rawValue: "abc")?.rawValue == "abc")
+        #expect(Boundary(rawValue: "") == nil)
+    }
+}

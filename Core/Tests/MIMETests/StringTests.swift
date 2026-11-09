@@ -36,6 +36,20 @@ struct StringTests {
         #expect("".htmlEntitiesDecoded() == "")
     }
 
+    // An `&` with no `;` after it used to loop forever (#625), so each input runs on another thread with a time limit
+    // instead of hanging the test run.
+    @Test(arguments: [
+        ("AT&T rocks", "AT&T rocks"),
+        ("Q&A", "Q&A"),
+        ("Tom & Jerry", "Tom & Jerry"),
+        ("&", "&"),
+        ("&amp; AT&T", "& AT&T"),
+        ("AT&T; ok", "AT&T; ok")
+    ])
+    func htmlEntitiesDecoded_finishes_whenAmpersandHasNoSemicolon(_ input: String, _ expected: String) async {
+        #expect(await decodedWithinTimeLimit(input) == expected)
+    }
+
     @Test func parameters() {
         #expect(
             "multipart/alternative; boundary=\"_----------=_17617196041979919223967\"".parameters == [
@@ -134,3 +148,44 @@ private let encodedQuotedPrintable: String = """
 =?utf-8?Q?=E2=9D=A4=EF=B8=8F=E2=9D=A4=EF=B8=8F=E2=9D=A4=EF=B8=8F=C3=A9=C3=86=
 =F0=9F=A4=96"\\=E2=9D=A4=EF=B8=8F=E2=9D=A4=EF=B8=8F?=
 """
+
+extension StringTests {
+    @Test func quotedPrintableInitErrors() throws {
+        #expect(try String(quotedPrintable: "caf=E9", encoding: .isoLatin1) == "café")
+        #expect(throws: MIMEError.dataNotQuotedPrintable) {
+            try String(quotedPrintable: "caf=ZZ")
+        }
+        #expect(throws: MIMEError.dataNotQuotedPrintable) {
+            try String(quotedPrintable: "=FF", encoding: .utf8)  // Not a UTF-8 byte sequence
+        }
+    }
+
+    @Test func base64Init() throws {
+        #expect(try String(base64: "Y2Fmw6k=".data(using: .ascii)!) == "café")
+        #expect(throws: MIMEError.self) {
+            try String(base64: Data([0xFF]))  // Not ASCII
+        }
+        #expect(throws: MIMEError.dataNotFound) {
+            try String(base64: "café")  // Neither base64 nor ASCII
+        }
+    }
+
+    @Test func headerDecodedCharacterSets() throws {
+        #expect(try "=?US-ASCII?Q?plain?=".headerDecoded() == "plain")
+        #expect(try "=?ISO-8859-1?Q?caf=E9?=".headerDecoded() == "café")
+        #expect(try "=?ISO-8859-2?Q?=B1?=".headerDecoded() == "ą")
+        #expect(throws: MIMEError.self) {
+            try "=?x-not-a-charset?Q?abc?=".headerDecoded()
+        }
+        #expect(throws: MIMEError.self) {
+            try "=?UTF-8?X?abc?=".headerDecoded()  // Encoding is neither B nor Q
+        }
+        #expect(throws: MIMEError.self) {
+            try "=?UTF-8?B?=".headerDecoded()  // No encoded text
+        }
+    }
+
+    @Test func htmlEntitiesDecodedUnknown() {
+        #expect("&#xZZ; &#99999999999; &foo;".htmlEntitiesDecoded() == "&#xZZ; &#99999999999; &foo;")
+    }
+}

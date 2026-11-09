@@ -5,13 +5,17 @@
 import EmailAddress
 import SwiftUI
 
+/// A small circle showing a person's initials, tinted with one color.
+///
+/// The text comes from the name: an email address gives its first letter, capitalized, and anything else gives the
+/// initials from ``createAvatarText(displayName:)``. An empty name shows an empty circle.
 struct AvatarView: View {
     private var avatarText: String = ""
     private var bubbleColor: Color = .clear
 
     /// - Parameters:
-    ///  - displayName: Either an email address string or a display name string to base the text of the Avatar on
-    ///  - bubbleColor: Color chosen from an approved set
+    ///   - displayName: An email address or a display name to base the avatar's text on.
+    ///   - bubbleColor: The color of the text and circle. It should be one of the design-approved user colors.
     init(displayName: String, bubbleColor: Color) {
         if (!displayName.isEmpty && !displayName.isEmailAddress) {
             avatarText = createAvatarText(displayName: displayName)
