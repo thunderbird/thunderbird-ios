@@ -30,6 +30,9 @@ public struct SMTPClient {
     }
 
     public func send(_ email: Email) async throws {
+        guard !email.allRecipients.isEmpty else {
+            throw SMTPError.emailRecipientNotFound  // Nothing would be sent
+        }
         for recipient in email.allRecipients {
             try await send(email, to: recipient)
         }
