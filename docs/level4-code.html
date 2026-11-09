@@ -92,7 +92,7 @@
 
       <!-- SMTP -->
       <div class="accordion-item" id="smtp">
-        <button class="accordion-trigger"><span class="num">📤</span><span>SMTP — the send state machine<span class="tt-sub">Core/Sources/SMTP/SendHandler.swift</span></span><span class="chev">▾</span></button>
+        <button class="accordion-trigger"><span class="num">📤</span><span>SMTP — the send state machine<span class="tt-sub">Core/Sources/SMTP/Handlers/SendHandler.swift</span></span><span class="chev">▾</span></button>
         <div class="accordion-content">
           <p>SMTP is a strict request/response conversation, so it's modeled as an explicit state machine inside a NIO <code>ChannelInboundHandler</code>. The handler tracks what it is waiting for with an <code>Expect</code> enum and advances on each server <code>.ok</code>:</p>
 <pre><code>private enum Expect {
