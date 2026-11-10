@@ -98,6 +98,7 @@ struct RequestEncoder: MessageToByteEncoder {
     }
 }
 
+/// Extends `Data` with functions for resolving specific sequences that terminate emails.
 private extension Data {
     /// The data with an extra `.` added to every line that starts with `.`, as
     /// [RFC 5321 section 4.5.2](https://www.rfc-editor.org/rfc/rfc5321#section-4.5.2) requires, so no line of the
