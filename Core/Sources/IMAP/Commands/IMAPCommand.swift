@@ -14,6 +14,7 @@ protocol IMAPCommand: CustomStringConvertible, Equatable where Result: Sendable 
     var name: String { get }
     var timeout: Int64 { get }  // Seconds
     func tagged(_ tag: String) -> TaggedCommand  // NIOIMAP command
+    func handler(tag: String, promise: EventLoopPromise<Result>) -> Handler  // Handler for one execution
 }
 
 extension IMAPCommand {
@@ -21,6 +22,12 @@ extension IMAPCommand {
     // MARK: IMAPCommand
     var timeout: Int64 { .timeout }
     var description: String { "\(name) command" }
+
+    // Most handlers need nothing from the command they serve. A command whose handler does (`AuthenticateCommand`
+    // tells its handler how to answer a server challenge) provides its own implementation.
+    func handler(tag: String, promise: EventLoopPromise<Result>) -> Handler {
+        Handler(tag: tag, promise: promise)
+    }
 }
 
 // Command-specific handler; process and deliver result via NIO promise
