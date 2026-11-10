@@ -7,6 +7,18 @@ import NIOCore
 import Testing
 
 struct RequestEncoderTests {
+    // RFC 5322 separates the addresses in an address list with commas (#641). They used to be separated with spaces.
+    @Test func encodeTransferData_separatesToAddressesWithCommas() throws {
+        #expect(try toHeader(.example) == "To: Recipient Name <recipient@example.com>, no.name@exmaple.com")
+        #expect(try toHeader(Email(sender: "sender@example.com", recipients: ["recipient@example.com"])) == "To: recipient@example.com")
+    }
+
+    private func toHeader(_ email: Email) throws -> String? {
+        var buffer: ByteBuffer = ByteBuffer()
+        try RequestEncoder().encode(data: .transferData(email), out: &buffer)
+        return buffer.readString(length: buffer.readableBytes)?.components(separatedBy: "\r\n").first { $0.hasPrefix("To: ") }
+    }
+
     @Test func encode() throws {
         var buffer: ByteBuffer = ByteBuffer()
         try RequestEncoder().encode(data: .hello("smtp.example.com"), out: &buffer)
@@ -35,7 +47,7 @@ struct RequestEncoderTests {
 // swift-format-ignore
 private let example: String = """
 From: Sender Name <sender@example.com>\r
-To: Recipient Name <recipient@example.com> no.name@exmaple.com\r
+To: Recipient Name <recipient@example.com>, no.name@exmaple.com\r
 Date: Thu, 06 Nov 2025 21:05:50 +0000\r
 Message-ID: <1762463150.A51D5B17@example.com>\r
 Subject: Example email subject\r
