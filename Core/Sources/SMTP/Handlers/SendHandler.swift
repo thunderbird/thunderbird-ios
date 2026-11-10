@@ -6,11 +6,40 @@ import EmailAddress
 import NIOCore
 import NIOSSL
 
+/// Runs one SMTP session for one email and one recipient, sending each command when the reply to the previous one
+/// arrives.
+///
+/// The steps are: wait for the greeting, `EHLO`, then `STARTTLS` and adding a TLS handler if the server uses STARTTLS,
+/// `AUTH LOGIN` with the user name and password, `MAIL FROM`, `RCPT TO`, `DATA`, the email, and `QUIT`. `done`
+/// succeeds after the reply to `QUIT`, or fails with the first error.
+///
+/// - Important: Known problems:
+///   - With ``ConnectionSecurity/tls`` (implicit TLS, usually port 465), the TLS comes from Network.framework, but
+///     signing in waits for an `NIOSSLClientHandler` in the pipeline, which isn't there. So the send fails with
+///     `ChannelPipelineError.notFound` right after `EHLO`, before signing in. (The Account module also refuses `.tls`
+///     for SMTP.)
+///   - Two `fatalError` calls crash the app on unexpected server behavior: a reply while the TLS handler is being
+///     added, and a positive reply after an error was already recorded.
+///   - Any 2xx or 3xx reply moves on to the next step; the code isn't checked against the one the step expects.
+///   - With ``ConnectionSecurity/none``, the user name and password are sent unencrypted.
+// TODO: Make implicit TLS work: don't require `NIOSSLClientHandler` when the connection's TLS comes from
+// Network.framework (#638).
+// TODO: Fail `done` instead of calling `fatalError` (#647), and check each reply code against the step.
 final class SendHandler: ChannelInboundHandler, @unchecked Sendable {
     let email: Email
+    /// The one recipient this session sends to.
     let recipient: EmailAddress
+    /// The server, its security setting and the credentials.
     let server: Server
 
+    /// Make a handler for one send.
+    ///
+    /// - Parameters:
+    ///   - email: The email to send.
+    ///   - recipient: The address for `RCPT TO`. If it's `nil`, the first To address is used.
+    ///   - server: The server and credentials.
+    ///   - done: Succeeds when the server accepts `QUIT`, or fails with the first error. If the recipient's address is
+    ///     empty, it fails at once with ``SMTPError/emailRecipientNotFound``.
     init(_ email: Email, recipient: EmailAddress?, server: Server, done: EventLoopPromise<Void>) {
         self.email = email
         self.recipient = recipient ?? email.recipients.first ?? ""
@@ -21,6 +50,7 @@ final class SendHandler: ChannelInboundHandler, @unchecked Sendable {
         }
     }
 
+    /// The reply the handler is waiting for, which decides the next command.
     private enum Expect {
         case initialMessageFromServer
         case okForHello
@@ -41,6 +71,7 @@ final class SendHandler: ChannelInboundHandler, @unchecked Sendable {
     private let done: EventLoopPromise<Void>
     private var context: ChannelHandlerContext?
 
+    /// The current step. Setting it to `.error` fails `done`.
     private var expect: Expect = .initialMessageFromServer {
         didSet {
             guard case .error(let error) = expect else { return }
@@ -48,10 +79,15 @@ final class SendHandler: ChannelInboundHandler, @unchecked Sendable {
         }
     }
 
+    /// Write a command, and fail `done` if the write fails.
     private func send(context: ChannelHandlerContext, command: Request) {
         context.writeAndFlush(wrapOutboundOut(command)).cascadeFailure(to: done)
     }
 
+    /// Start `AUTH LOGIN`, after checking for an `NIOSSLClientHandler` when the server uses STARTTLS or SSL/TLS.
+    ///
+    /// Uses and then clears the context saved in `context`. The check succeeds right away when it runs on the event
+    /// loop, which it always does here.
     private func sendAuthLogin() {
         @Sendable func send() {
             guard let context else { return }
@@ -157,16 +193,21 @@ final class SendHandler: ChannelInboundHandler, @unchecked Sendable {
         }
     }
 
+    /// Fail the send with ``SMTPError/remoteConnectionClosed`` when the connection closes.
     func channelInactive(context: ChannelHandlerContext) {
         expect = .error(SMTPError.remoteConnectionClosed)
     }
 
+    /// Fail the send with any error from the pipeline, and close the connection.
     func errorCaught(context: ChannelHandlerContext, error: any Error) {
         expect = .error(error)
         context.close(promise: nil)
     }
 }
 
+/// Extends `NIOSSLContext` with the client context used after `STARTTLS`.
 private extension NIOSSLContext {
+    /// A client TLS context with the default configuration, which verifies the server's certificate. It's the same as
+    /// the one in `SMTPClient.swift`.
     static var ssl: Self { try! Self(configuration: .makeClientConfiguration()) }
 }
