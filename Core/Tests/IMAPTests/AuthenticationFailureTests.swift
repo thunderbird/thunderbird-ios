@@ -61,6 +61,64 @@ struct AuthenticationFailureTests {
         #expect(AuthenticationFailure(challenge) == nil)
     }
 
+    // MARK: Ported from thunderbird-android
+    // The four payloads of `XOAuth2ChallengeParserTestData.java`. Android feeds them to `XOAuth2ChallengeParser`,
+    // which answers one question: is it worth retrying with a new token? (Yes for status 400, a missing status and
+    // unreadable JSON; no for anything else.) This client has no such retry, so the payloads are checked for what
+    // it does do with them, which is decode the status.
+
+    //Expect: Decode the status as `400`.
+    //Case: When the challenge is Android's `STATUS_400_RESPONSE`.
+    @Test func init_decodesStatus_whenChallengeHasStatus400() {
+        // Arrange
+        let input = XOAuth2ChallengeTestData.status400Response
+
+        // Act
+        let actual = AuthenticationFailure(input)?.status
+
+        // Assert
+        #expect(actual == "400")
+    }
+
+    //Expect: Decode the status as `401`.
+    //Case: When the challenge is Android's `STATUS_401_RESPONSE`.
+    @Test func init_decodesStatus_whenChallengeHasStatus401() {
+        // Arrange
+        let input = XOAuth2ChallengeTestData.status401Response
+
+        // Act
+        let actual = AuthenticationFailure(input)?.status
+
+        // Assert
+        #expect(actual == "401")
+    }
+
+    //Expect: Return `nil`.
+    //Case: When the challenge is Android's `MISSING_STATUS_RESPONSE`, valid JSON without a `status`.
+    @Test func init_returnsNil_whenChallengeHasNoStatus() {
+        // Arrange
+        let input = XOAuth2ChallengeTestData.missingStatusResponse
+
+        // Act
+        let actual = AuthenticationFailure(input)
+
+        // Assert
+        #expect(actual == nil)
+    }
+
+    //Expect: Return `nil`.
+    //Case: When the challenge is Android's `INVALID_RESPONSE`, JSON that is cut off before its closing brace.
+    @Test func init_returnsNil_whenChallengeIsInvalidJSON() {
+        // Arrange
+        let input = XOAuth2ChallengeTestData.invalidResponse
+
+        // Act
+        let actual = AuthenticationFailure(input)
+
+        // Assert
+        #expect(actual == nil)
+    }
+
     // MARK: CustomStringConvertible
     @Test func description() {
         #expect(AuthenticationFailure(#"{"status":"401","schemes":"bearer","scope":"https://mail.google.com/"}"#)?.description == "401, scope: https://mail.google.com/")

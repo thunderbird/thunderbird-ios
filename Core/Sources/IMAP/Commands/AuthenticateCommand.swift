@@ -73,6 +73,8 @@ struct AuthenticateCommand: IMAPCommand {
 /// S: A01 OK Success
 /// ```
 ///
+/// Some servers fold the capability list into the `OK` instead: `S: A01 OK [CAPABILITY IMAP4rev1 IDLE …] Success`.
+///
 /// A server that rejects an OAuth token sends the reason as a challenge, the client acknowledges it, and only
 /// then does the server end the command:
 ///
@@ -106,10 +108,11 @@ struct AuthenticateCommand: IMAPCommand {
 ///   state moves the connection into an error state that refuses every later command. Every challenge must be
 ///   answered exactly once, which is what `channelRead` does.
 class AuthenticateHandler: IMAPCommandHandler, @unchecked Sendable {
-    /// Capabilities collected from the untagged `CAPABILITY` response, if the server sent one.
+    /// Capabilities the server announced during the exchange, if it announced any.
     ///
     /// Servers usually announce a new capability list on a successful sign-in, since what an authenticated user
-    /// may do differs from what was on offer before.
+    /// may do differs from what was on offer before. The list arrives either as an untagged `CAPABILITY` response
+    /// before the tagged `OK` (Gmail does this) or as a `CAPABILITY` response code inside the `OK` itself.
     private(set) var capabilities: Result = []
 
     /// The reason the server gave for rejecting the credential; `nil` until a challenge carrying one arrives.
@@ -172,9 +175,16 @@ class AuthenticateHandler: IMAPCommandHandler, @unchecked Sendable {
         case .tagged(let taggedResponse):
             // The tagged response ends the command, one way or another
             switch taggedResponse.state {
-            case .ok:
-                // Signed in. A server that sent no CAPABILITY response yields an empty list, which
-                // `IMAPClient` treats as "nothing to merge".
+            case .ok(let text):
+                // Signed in. The server may have put its capability list in the OK itself and skipped the
+                // untagged response: "A server MAY include a CAPABILITY response code in the tagged OK response
+                // of a successful AUTHENTICATE command in order to send capabilities automatically."
+                // (RFC 3501, section 6.2.2). If it sent both, the OK is the later word and wins.
+                if case .capability(let capabilities)? = text.code {
+                    self.capabilities = capabilities.map { Capability($0) }
+                }
+                // A server that sent neither yields an empty list, which `IMAPClient` treats as "nothing to
+                // merge".
                 promise.succeed(capabilities)
             case .no(let text):
                 // NO: "authenticate failure: unsupported authentication mechanism, credentials rejected"

@@ -35,7 +35,8 @@ public enum Authentication: CustomStringConvertible, Equatable, Sendable {
             var data: Data = Data()
             switch self {
             case .oauthbearer(let user, let token):
-                data = Data("n,a=\(user),".utf8) + Data([1]) + Data("auth=Bearer \(token)".utf8) + Data([1]) + Data([1])
+                // The user goes in the GS2 header, where "," and "=" have meaning; see `saslName`
+                data = Data("n,a=\(user.saslName),".utf8) + Data([1]) + Data("auth=Bearer \(token)".utf8) + Data([1]) + Data([1])
             case .plain(let user, let password):
                 data = Data([0]) + Data(user.utf8) + Data([0]) + Data(password.utf8)
             case .xoauth2(let user, let token):
@@ -79,6 +80,47 @@ public enum Authentication: CustomStringConvertible, Equatable, Sendable {
     // MARK: CustomStringConvertible
     public var description: String {
         "\(mechanism) \"\(user)\""
+    }
+}
+
+/// Extends `String` with the encoding ``Authentication`` applies to a user name before sending it to a server.
+private extension String {
+    /// The string as a `saslname`: the form a user name must take inside the GS2 header of an `OAUTHBEARER` response.
+    ///
+    /// `OAUTHBEARER` starts its response with a GS2 header, `n,a=<user>,`
+    /// ([RFC 7628, section 3.1](https://www.rfc-editor.org/rfc/rfc7628#section-3.1)). The header is a comma-separated
+    /// list and `=` introduces an escape, so neither character can appear in the user name as itself.
+    /// [RFC 5801, section 4](https://www.rfc-editor.org/rfc/rfc5801#section-4) defines what can:
+    ///
+    /// ```
+    /// UTF8-1-safe    = %x01-2B / %x2D-3C / %x3E-7F
+    ///                  ;; As UTF8-1 in RFC 3629 except
+    ///                  ;; NUL, "=", and ",".
+    /// saslname       = 1*(UTF8-char-safe / "=2C" / "=3D")
+    /// gs2-authzid    = "a=" saslname
+    /// ```
+    ///
+    /// So `,` is sent as `=2C` and `=` as `=3D`, after their hexadecimal character codes.
+    /// [RFC 5802, section 5.1](https://www.rfc-editor.org/rfc/rfc5802#section-5.1), which uses the same rule, puts it
+    /// plainly: "The characters ',' or '=' in usernames are sent as '=2C' and '=3D' respectively."
+    ///
+    /// This is not a formality. `=` is legal in the local part of an email address (`user=tag@example.com`), and a
+    /// server that parses the header strictly rejects a user name that contains it unescaped, or reads a user name
+    /// with an unescaped `,` as ending at the comma.
+    ///
+    /// Each character is replaced once, in a single pass. Two passes would have to run in the right order:
+    /// replacing `,` first leaves an `=` behind for the second pass to escape again, turning `,` into `=3D2C`.
+    ///
+    /// - Note: Only `OAUTHBEARER` needs this. `XOAUTH2` and `PLAIN` separate their fields with control characters
+    ///   and define no escaping.
+    var saslName: String {
+        reduce(into: "") { saslName, character in
+            switch character {
+            case ",": saslName += "=2C"
+            case "=": saslName += "=3D"
+            default: saslName.append(character)
+            }
+        }
     }
 }
 

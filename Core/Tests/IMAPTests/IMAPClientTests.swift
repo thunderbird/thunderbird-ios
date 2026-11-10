@@ -8,6 +8,56 @@ import MIME
 import Testing
 
 struct IMAPClientTests {
+
+    // MARK: Ported from thunderbird-android
+    // `open() AUTH OAUTHBEARER with AUTH=OAUTHBEARER capability missing` in `RealImapConnectionTest.kt`. Android
+    // connects to a mock server whose capability list leaves the mechanism out. A client that has never connected
+    // is in the same position: it has no capability that says the server supports the mechanism, so it must refuse
+    // before putting a token on the wire. No connection is made by these tests.
+
+    //Expect: Throw `capabilityNotSupported` naming `AUTH=OAUTHBEARER`.
+    //Case: When signing in with OAUTHBEARER and the server hasn't advertised it.
+    //Android: `open() AUTH OAUTHBEARER with AUTH=OAUTHBEARER capability missing`
+    @Test func authenticate_throwsCapabilityNotSupported_whenServerHasNotAdvertisedOAuthBearer() async {
+        // Arrange
+        let client: IMAPClient = IMAPClient(Server(hostname: "imap.example.com"))
+        let input: Authentication = .oauthbearer("user", token: "token")
+        let expected: IMAPError = .capabilityNotSupported(.authenticate(.oauthBearer))
+
+        // Act
+        var actual: IMAPError?
+        do {
+            try await client.authenticate(input)
+        } catch {
+            actual = error as? IMAPError
+        }
+
+        // Assert
+        #expect(actual == expected)
+    }
+
+    //Expect: Throw `capabilityNotSupported` naming `AUTH=XOAUTH2`.
+    //Case: When signing in with XOAUTH2 and the server hasn't advertised it. Android has no XOAUTH2 twin of the
+    //  case above, because it only falls back to XOAUTH2 once it has seen the capability.
+    @Test func authenticate_throwsCapabilityNotSupported_whenServerHasNotAdvertisedXOAuth2() async {
+        // Arrange
+        let client: IMAPClient = IMAPClient(Server(hostname: "imap.example.com"))
+        let input: Authentication = .xoauth2("user", token: "token")
+        let expected: IMAPError = .capabilityNotSupported(.authenticate(.xoauth2))
+
+        // Act
+        var actual: IMAPError?
+        do {
+            try await client.authenticate(input)
+        } catch {
+            actual = error as? IMAPError
+        }
+
+        // Assert
+        #expect(actual == expected)
+    }
+
+    // MARK: Live servers
     @Test(arguments: Server.allCases(disabled: false)) func allCommands(_ server: Server) async throws {
         let client: IMAPClient = IMAPClient(server)
         try await client.connect()

@@ -56,6 +56,88 @@ struct AuthenticationTests {
         #expect(Authentication.plain("user@example.com", password: "pa55w0rd").challengeResponse.readableBytes == 0)
     }
 
+    // MARK: Ported from thunderbird-android
+    // The cases of `OAuthBearerTest.kt` (legacy/core/src/test/java/com/fsck/k9/sasl), with its inputs. Android checks
+    // each response twice, as text and as base64. The text is checked here, where the response is built; the base64
+    // is checked in `AuthenticateHandlerAndroidTests`, where it goes on the wire.
+
+    //Expect: Send the user name as it is.
+    //Case: When an OAUTHBEARER user name contains neither `,` nor `=`.
+    //Android: `username that does not need encoding`
+    @Test func initialResponse_sendsUserUnchanged_whenOAuthBearerUserNeedsNoEncoding() throws {
+        // Arrange
+        let input: Authentication = .oauthbearer("user@domain.example", token: "token")
+        let expected = "n,a=user@domain.example,\u{01}auth=Bearer token\u{01}\u{01}"
+
+        // Act
+        let actual = try input.initialResponse.string
+
+        // Assert
+        #expect(actual == expected)
+    }
+
+    //Expect: Send `=` as `=3D`.
+    //Case: When an OAUTHBEARER user name contains an equal sign, which is legal in an email address.
+    //Android: `username contains equal sign that needs to be encoded`
+    @Test func initialResponse_encodesEqualSign_whenOAuthBearerUserContainsEqualSign() throws {
+        // Arrange
+        let input: Authentication = .oauthbearer("user=name@domain.example", token: "token")
+        let expected = "n,a=user=3Dname@domain.example,\u{01}auth=Bearer token\u{01}\u{01}"
+
+        // Act
+        let actual = try input.initialResponse.string
+
+        // Assert
+        #expect(actual == expected)
+    }
+
+    //Expect: Send `,` as `=2C`.
+    //Case: When an OAUTHBEARER user name contains a comma, which would otherwise end the user name early.
+    //Android: `username contains comma that needs to be encoded`
+    @Test func initialResponse_encodesComma_whenOAuthBearerUserContainsComma() throws {
+        // Arrange
+        let input: Authentication = .oauthbearer("user,name", token: "token")
+        let expected = "n,a=user=2Cname,\u{01}auth=Bearer token\u{01}\u{01}"
+
+        // Act
+        let actual = try input.initialResponse.string
+
+        // Assert
+        #expect(actual == expected)
+    }
+
+    // MARK: Encoding, beyond the Android cases
+
+    //Expect: Encode each character once.
+    //Case: When an OAUTHBEARER user name contains both `,` and `=`.
+    //Example: Replacing `,` and then `=` in two passes would escape the `=` of `=2C` again and send `=3D2C`.
+    @Test func initialResponse_encodesEachCharacterOnce_whenOAuthBearerUserContainsCommaAndEqualSign() throws {
+        // Arrange
+        let input: Authentication = .oauthbearer("a,b=c", token: "token")
+        let expected = "n,a=a=2Cb=3Dc,\u{01}auth=Bearer token\u{01}\u{01}"
+
+        // Act
+        let actual = try input.initialResponse.string
+
+        // Assert
+        #expect(actual == expected)
+    }
+
+    //Expect: Send the user name as it is.
+    //Case: When an XOAUTH2 user name contains `,` and `=`. XOAUTH2 separates its fields with Control+A and defines no
+    //  encoding, so the OAUTHBEARER rule must not be applied to it.
+    @Test func initialResponse_sendsUserUnchanged_whenXOAuth2UserContainsCommaAndEqualSign() throws {
+        // Arrange
+        let input: Authentication = .xoauth2("a,b=c", token: "token")
+        let expected = "user=a,b=c\u{01}auth=Bearer token\u{01}\u{01}"
+
+        // Act
+        let actual = try input.initialResponse.string
+
+        // Assert
+        #expect(actual == expected)
+    }
+
     // MARK: CustomStringConvertible
     @Test func description() {
         #expect(Authentication.oauthbearer("user@example.com", token: "t0k3n").description == "OAUTHBEARER \"user@example.com\"")

@@ -225,6 +225,252 @@ struct AuthenticateHandlerTests {
     }
 }
 
+// The OAuth cases of `RealImapConnectionTest.kt` in thunderbird-android
+// (mail/protocols/imap/src/test/java/com/fsck/k9/mail/store/imap), with its user name, token and server lines.
+// `//Android:` names the test each case comes from.
+//
+// Android runs every case against a mock server over a socket and starts from the greeting. These start at the
+// `AUTHENTICATE` command, which is where this client's OAuth-specific behavior begins, and use tag `A01` where
+// Android's connection uses `2`.
+//
+// Android cases with nothing here to test against are listed at the end of the suite.
+struct AuthenticateHandlerAndroidTests {
+    // USERNAME and XOAUTH_TOKEN in the Android test
+    private static let user: String = "user"
+    private static let token: String = "token"
+
+    // XOAUTH_STRING and OAUTHBEARER_STRING in the Android test: the initial responses, base64-encoded
+    private static let xoauth2String: String = Data("user=user\u{01}auth=Bearer token\u{01}\u{01}".utf8).base64EncodedString()
+    private static let oauthBearerString: String = Data("n,a=user,\u{01}auth=Bearer token\u{01}\u{01}".utf8).base64EncodedString()
+
+    // MARK: Accepted token
+
+    //Expect: Send `AUTHENTICATE OAUTHBEARER` with the initial response on the same line.
+    //Case: When signing in with OAUTHBEARER.
+    //Android: `open() AUTH OAUTHBEARER`
+    @Test func authenticate_sendsInitialResponseWithCommand_whenMechanismIsOAuthBearer() throws {
+        // Arrange
+        let expected = "A01 AUTHENTICATE OAUTHBEARER \(Self.oauthBearerString)\r\n"
+
+        // Act
+        let exchange: Exchange = try Exchange(.oauthbearer(Self.user, token: Self.token))
+        let actual = try exchange.sent()
+
+        // Assert
+        #expect(actual == expected)
+    }
+
+    //Expect: Succeed.
+    //Case: When the server answers an OAUTHBEARER sign-in with a tagged OK.
+    //Android: `open() AUTH OAUTHBEARER`
+    @Test func authenticate_succeeds_whenServerAcceptsOAuthBearerToken() throws {
+        // Arrange
+        let exchange: Exchange = try Exchange(.oauthbearer(Self.user, token: Self.token))
+
+        // Act
+        try exchange.receive("A01 OK Success")
+        let actual = exchange.capabilities
+
+        // Assert
+        #expect(actual != nil)
+    }
+
+    //Expect: Send `AUTHENTICATE XOAUTH2` with the initial response on the same line.
+    //Case: When signing in with XOAUTH2.
+    //Android: `open() AUTH XOAUTH2 with SASL-IR`
+    @Test func authenticate_sendsInitialResponseWithCommand_whenMechanismIsXOAuth2() throws {
+        // Arrange
+        let expected = "A01 AUTHENTICATE XOAUTH2 \(Self.xoauth2String)\r\n"
+
+        // Act
+        let exchange: Exchange = try Exchange(.xoauth2(Self.user, token: Self.token))
+        let actual = try exchange.sent()
+
+        // Assert
+        #expect(actual == expected)
+    }
+
+    //Expect: Succeed.
+    //Case: When the server answers an XOAUTH2 sign-in with a tagged OK.
+    //Android: `open() AUTH XOAUTH2 with SASL-IR`
+    @Test func authenticate_succeeds_whenServerAcceptsXOAuth2Token() throws {
+        // Arrange
+        let exchange: Exchange = try Exchange(.xoauth2(Self.user, token: Self.token))
+
+        // Act
+        try exchange.receive("A01 OK Success")
+        let actual = exchange.capabilities
+
+        // Assert
+        #expect(actual != nil)
+    }
+
+    //Expect: Report the capabilities the server announced.
+    //Case: When the server sends an untagged CAPABILITY response before the tagged OK, as Gmail does.
+    //Android: `open() AUTH XOAUTH2 with untagged CAPABILITY response after authentication`
+    @Test func authenticate_collectsCapabilities_whenServerSendsUntaggedCapabilityResponse() throws {
+        // Arrange
+        let exchange: Exchange = try Exchange(.xoauth2(Self.user, token: Self.token))
+
+        // Act
+        try exchange.receive("* CAPABILITY IMAP4rev1 X-GM-EXT-1")
+        try exchange.receive("A01 OK Success")
+        let actual = exchange.capabilities?.contains(.gmailExtensions)
+
+        // Assert
+        #expect(actual == true)
+    }
+
+    //Expect: Report the capabilities the server announced.
+    //Case: When the server puts the capability list in a response code of the tagged OK and sends no untagged
+    //  CAPABILITY response.
+    //Android: `open() AUTH XOAUTH2 parses capabilities`
+    @Test func authenticate_collectsCapabilities_whenOKCarriesCapabilityResponseCode() throws {
+        // Arrange
+        let exchange: Exchange = try Exchange(.xoauth2(Self.user, token: Self.token))
+
+        // Act
+        try exchange.receive("A01 OK [CAPABILITY IMAP4REV1 IDLE XM-GM-EXT-1]")
+        let actual = exchange.capabilities?.map(\.rawValue).contains("XM-GM-EXT-1")
+
+        // Assert
+        #expect(actual == true)
+    }
+
+    // MARK: Rejected token
+
+    //Expect: Answer the challenge with an empty line.
+    //Case: When an XOAUTH2 server rejects the token and says why in a challenge. The first four challenges are
+    //  Android's test payloads; the last two are the unreadable challenges of its retry test.
+    //Android: `open() AUTH XOAUTH2 throws exception on 401 response`, `…invalidates and retries new token on 400
+    //  response`, `…on invalid JSON response`, `…on missing status JSON response`, `…with old token throws exception
+    //  if retry fails`. Every one of them has the client send an empty line after the challenge.
+    @Test(arguments: [
+        XOAuth2ChallengeTestData.encoded(XOAuth2ChallengeTestData.status401Response),
+        XOAuth2ChallengeTestData.encoded(XOAuth2ChallengeTestData.status400Response),
+        XOAuth2ChallengeTestData.encoded(XOAuth2ChallengeTestData.invalidResponse),
+        XOAuth2ChallengeTestData.encoded(XOAuth2ChallengeTestData.missingStatusResponse),
+        "r3j3krj3irj3oir3ojo",
+        "433ba3a3a"
+    ])
+    func authenticate_answersWithEmptyLine_whenXOAuth2ServerSendsErrorChallenge(_ challenge: String) throws {
+        // Arrange
+        let exchange: Exchange = try Exchange(.xoauth2(Self.user, token: Self.token))
+        try exchange.discardSent()
+
+        // Act
+        try exchange.receive("+ \(challenge)")
+        let actual = try exchange.sent()
+
+        // Assert
+        #expect(actual == "\r\n")
+    }
+
+    //Expect: Fail with the text of the server's NO response.
+    //Case: When an XOAUTH2 server rejects the token with status 401.
+    //Android: `open() AUTH XOAUTH2 throws exception on 401 response`, which expects `messageFromServer` to be
+    //  `SASL authentication failed`.
+    @Test func authenticate_failsWithServerText_whenXOAuth2TokenIsRejected() throws {
+        // Arrange
+        let exchange: Exchange = try Exchange(.xoauth2(Self.user, token: Self.token))
+
+        // Act
+        try exchange.receive("+ \(XOAuth2ChallengeTestData.encoded(XOAuth2ChallengeTestData.status401Response))")
+        try exchange.receive("A01 NO SASL authentication failed")
+        let actual = exchange.rejection?.text
+
+        // Assert
+        #expect(actual == "SASL authentication failed")
+    }
+
+    //Expect: Report the status the server gave.
+    //Case: When the challenge is Android's `STATUS_401_RESPONSE` or `STATUS_400_RESPONSE`.
+    //Android: `open() AUTH XOAUTH2 throws exception on 401 response` and `…invalidates and retries new token on 400
+    //  response`. Android acts on the status itself (400 means retry); this client hands it to the caller.
+    @Test(arguments: [
+        (XOAuth2ChallengeTestData.status401Response, "401"),
+        (XOAuth2ChallengeTestData.status400Response, "400")
+    ])
+    func authenticate_reportsStatus_whenXOAuth2ChallengeHasStatus(_ response: String, _ expected: String) throws {
+        // Arrange
+        let exchange: Exchange = try Exchange(.xoauth2(Self.user, token: Self.token))
+
+        // Act
+        try exchange.receive("+ \(XOAuth2ChallengeTestData.encoded(response))")
+        try exchange.receive("A01 NO SASL authentication failed")
+        let actual = exchange.rejection?.failure?.status
+
+        // Assert
+        #expect(actual == expected)
+    }
+
+    //Expect: Fail as a rejected credential, without a reason.
+    //Case: When the challenge can't be read as an error result: invalid JSON, JSON without a status, or text that
+    //  isn't base64 at all.
+    //Android: `…on invalid JSON response`, `…on missing status JSON response` and `…with old token throws exception
+    //  if retry fails`.
+    @Test(arguments: [
+        XOAuth2ChallengeTestData.encoded(XOAuth2ChallengeTestData.invalidResponse),
+        XOAuth2ChallengeTestData.encoded(XOAuth2ChallengeTestData.missingStatusResponse),
+        "r3j3krj3irj3oir3ojo",
+        "433ba3a3a"
+    ])
+    func authenticate_failsWithoutReason_whenXOAuth2ChallengeCannotBeDecoded(_ challenge: String) throws {
+        // Arrange
+        let exchange: Exchange = try Exchange(.xoauth2(Self.user, token: Self.token))
+        let expected: Rejection = Rejection(text: "SASL authentication failed", failure: nil)
+
+        // Act
+        try exchange.receive("+ \(challenge)")
+        try exchange.receive("A01 NO SASL authentication failed")
+        let actual = exchange.rejection
+
+        // Assert
+        #expect(actual == expected)
+    }
+
+    // MARK: Encoded user names
+    // The base64 half of Android's `OAuthBearerTest.kt`; the text half is in `AuthenticationTests`. The expected
+    // strings are Android's, so a match here means both clients put the same bytes on the wire.
+
+    //Expect: Send the same base64 as Android.
+    //Case: When an OAUTHBEARER user name needs no encoding, contains `=`, or contains `,`.
+    //Android: `username that does not need encoding`, `username contains equal sign that needs to be encoded` and
+    //  `username contains comma that needs to be encoded`
+    @Test(arguments: [
+        ("user@domain.example", "bixhPXVzZXJAZG9tYWluLmV4YW1wbGUsAWF1dGg9QmVhcmVyIHRva2VuAQE="),
+        ("user=name@domain.example", "bixhPXVzZXI9M0RuYW1lQGRvbWFpbi5leGFtcGxlLAFhdXRoPUJlYXJlciB0b2tlbgEB"),
+        ("user,name", "bixhPXVzZXI9MkNuYW1lLAFhdXRoPUJlYXJlciB0b2tlbgEB")
+    ])
+    func authenticate_sendsAndroidInitialResponse_whenMechanismIsOAuthBearer(_ user: String, _ expected: String) throws {
+        // Arrange
+        let input: Authentication = .oauthbearer(user, token: "token")
+
+        // Act
+        let exchange: Exchange = try Exchange(input)
+        let actual = try exchange.sent()
+
+        // Assert
+        #expect(actual == "A01 AUTHENTICATE OAUTHBEARER \(expected)\r\n")
+    }
+
+    // Android OAuth cases that are not here, because this client has nothing for them to test:
+    //
+    // - `open() AUTH OAUTHBEARER when AUTH=XOAUTH2 and AUTH=OAUTHBEARER capabilities are present`: Android picks
+    //   OAUTHBEARER when a server offers both. Here the caller picks the mechanism, and the account layer always
+    //   picks XOAUTH2.
+    // - `open() AUTH OAUTHBEARER with SASL-IR capability missing`: Android refuses to sign in without SASL-IR.
+    //   `IMAPClient.authenticate` doesn't check it for the OAuth mechanisms.
+    // - `…invalidates and retries new token on 400 response`, `…on invalid JSON response`, `…on missing status JSON
+    //   response` and `…with old token throws exception if retry fails`: Android asks its token provider for a new
+    //   token and tries once more. `IMAPClient` has no token provider; it reports the rejection and stops. The
+    //   server's half of those exchanges, up to the first NO, is covered above.
+    // - After a sign-in that announced no capabilities, Android sends CAPABILITY. `IMAPClient` doesn't.
+    //
+    // `open() AUTH OAUTHBEARER with AUTH=OAUTHBEARER capability missing` is in `IMAPClientTests`, since the check
+    // is made by `IMAPClient` before the command is sent.
+}
+
 // `Capability` is spelled `IMAP.Capability` in this file because NIOIMAP, imported here to build the pipeline, has a
 // type of the same name.
 
