@@ -76,6 +76,9 @@ public struct SMTPClient {
     // TODO: Throw `SMTPError.emailRecipientNotFound` when there are no recipients, and send to all recipients in one
     // session (one `RCPT TO` each) so a failure doesn't leave the email delivered to only some of them (#640, #645).
     public func send(_ email: Email) async throws {
+        guard !email.allRecipients.isEmpty else {
+            throw SMTPError.emailRecipientNotFound  // Nothing would be sent
+        }
         for recipient in email.allRecipients {
             try await send(email, to: recipient)
         }
