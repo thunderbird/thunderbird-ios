@@ -56,15 +56,29 @@ public class IMAPClient {
     }
 
     /// Authenticate with connected IMAP ``Server``. Provided ``Authentication`` overrides `Server` configuration authentication.
+    ///
+    /// - Throws: ``IMAPError/authenticationFailed(_:failure:)`` when the server rejects an `OAUTHBEARER` or `XOAUTH2`
+    ///   token, typically because it has expired. The rejection arrives as soon as the server sends it; `failure`
+    ///   carries the server's reason when it gave one.
+    /// - Throws: ``IMAPError/authenticationCredentialNotFound`` when no ``Authentication`` is provided or configured.
+    /// - Throws: ``IMAPError/capabilityNotSupported(_:)`` when the server doesn't advertise the OAuth mechanism.
+    /// - Throws: ``IMAPError/commandFailed(_:)`` for every other failure, including a timeout.
+    /// - Note: `PLAIN` credentials that `AUTHENTICATE` rejects are tried again with `LOGIN`, so a wrong password
+    ///   surfaces as the `LOGIN` command failing and not as `authenticationFailed`.
     public func authenticate(_ authentication: Authentication? = nil) async throws {
         guard let authentication: Authentication = authentication ?? server.authentication else {
             throw IMAPError.authenticationCredentialNotFound
         }
         logger?.info("Authenticating \(authentication)…")
         switch authentication {
+        case .oauthbearer:
+            try isSupported(.authenticate(.oauthBearer))
+            let capabilities: [Capability] = try await execute(command: AuthenticateCommand(authentication))
+            merge(capabilities: capabilities)
         case .xoauth2:
-            try isSupported(.authenticate(.xOAuth2))
-            throw IMAPError.commandNotSupported("AUTHENTICATE XOAUTH2")
+            try isSupported(.authenticate(.xoauth2))
+            let capabilities: [Capability] = try await execute(command: AuthenticateCommand(authentication))
+            merge(capabilities: capabilities)
         case .plain(let user, let password):
             do {
                 try isSupported(.saslIR)
@@ -244,7 +258,7 @@ public class IMAPClient {
         }
         let promise: EventLoopPromise<T.Result> = channel.eventLoop.makePromise(of: T.Result.self)
         let tag: String = UUID().uuidString(1)  // Hold onto specific auto-generated tag
-        let handler: T.Handler = T.Handler(tag: tag, promise: promise)
+        let handler: T.Handler = command.handler(tag: tag, promise: promise)
         let seconds: Int64 = max(command.timeout, 1)
         let task: Scheduled = group.next().scheduleTask(in: .seconds(seconds)) {
             let error: IMAPError = .timedOut(seconds: seconds)
@@ -268,7 +282,8 @@ public class IMAPClient {
         } catch {
             promise.fail(error)
             logger?.error("\(error)")
-            throw IMAPError.commandFailed(command.description)
+            // Reported as "command failed", except a rejected credential, which callers must be able to recognize
+            throw IMAPError(error, executing: command)
         }
     }
 

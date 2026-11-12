@@ -243,7 +243,7 @@ struct URLSessionTests {
         // Arrange
         let input = "user.name@gmail.com"
         let expected: [EmailProvider.Server.Authentication] = [
-            .oAuth2,
+            .oauth2,
             .passwordCleartext
         ]
 
@@ -438,7 +438,7 @@ struct URLSessionTests {
         // Arrange
         let input = "user@fastmail.com"
         let expected: [EmailProvider.Server.Authentication] = [
-            .oAuth2
+            .oauth2
         ]
 
         // Act
@@ -632,7 +632,7 @@ struct URLSessionTests {
         // Arrange
         let input = "user123@aol.com"
         let expected: [EmailProvider.Server.Authentication] = [
-            .oAuth2,
+            .oauth2,
             .passwordCleartext
         ]
 
