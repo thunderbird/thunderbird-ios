@@ -50,23 +50,23 @@ struct RequestEncoder: MessageToByteEncoder {
     ///
     /// For ``Request/transferData(_:)`` the email is written as `From`, `To`, `Date`, `Message-ID` and `Subject`
     /// headers, then the body's own headers and content, then the line with a single `.`. The `To` addresses are
-    /// separated with commas, as [RFC 5322](https://www.rfc-editor.org/rfc/rfc5322#section-3.4) requires.
+    /// separated with commas, as [RFC 5322](https://www.rfc-editor.org/rfc/rfc5322#section-3.4) requires. Body lines
+    /// that start with `.` are sent with an extra `.`
+    /// ([RFC 5321 section 4.5.2](https://www.rfc-editor.org/rfc/rfc5321#section-4.5.2)), so only that last line ends
+    /// the email.
     ///
     /// - Parameters:
     ///   - data: The command to write.
     ///   - out: The buffer to write it to.
     /// - Important: Several things about the email text don't follow the standards yet:
     ///   - Cc addresses receive the email, but no `Cc` header is written, so nobody can see who was copied.
-    ///   - Body lines that start with `.` aren't doubled
-    ///     ([RFC 5321 section 4.5.2](https://www.rfc-editor.org/rfc/rfc5321#section-4.5.2)). A line that is just `.`
-    ///     ends the email early, and the server removes the leading `.` from other lines.
     ///   - Names and subjects that aren't ASCII are written as raw UTF-8, not as
     ///     [RFC 2047](https://www.rfc-editor.org/rfc/rfc2047) encoded words.
     ///   - A line break in the subject starts a new header.
     ///   - There is no `MIME-Version` header for a single-part body.
     ///   - The `Date` header follows the device's locale and calendar (#626).
-    // TODO: Dot-stuff the body (#639), write a `Cc` header (#642), encode non-ASCII names and the subject with
-    // `headerEncoded()` (#643), remove line breaks from header values (#644), and always write `MIME-Version`.
+    // TODO: Write a `Cc` header (#642), encode non-ASCII names and the subject with `headerEncoded()` (#643), remove
+    // line breaks from header values (#644), and always write `MIME-Version`.
     func encode(data: OutboundIn, out: inout ByteBuffer) throws {
         switch data {
         case .hello(let hostname):
@@ -89,11 +89,31 @@ struct RequestEncoder: MessageToByteEncoder {
             out.writeString("Date: \(email.date.rfc822Format())\(crlf)")
             out.writeString("Message-ID: \(email.messageID)\(crlf)")
             out.writeString("Subject: \(email.subject)\(crlf)")
-            out.writeBytes(email.body.rawValue)
+            out.writeBytes(email.body.rawValue.dotStuffed())
             out.writeString("\(crlf).")
         case .quit:
             out.writeString("QUIT")
         }
         out.writeString(crlf)
+    }
+}
+
+/// Extends `Data` with functions for resolving specific sequences that terminate emails.
+private extension Data {
+    /// The data with an extra `.` added to every line that starts with `.`, as
+    /// [RFC 5321 section 4.5.2](https://www.rfc-editor.org/rfc/rfc5321#section-4.5.2) requires, so no line of the
+    /// email can be read as the `.` that ends it. The server removes the extra `.` again.
+    func dotStuffed() -> Self {
+        var stuffed: Self = Self()
+        stuffed.reserveCapacity(count)
+        var isLineStart: Bool = true
+        for byte in self {
+            if isLineStart, byte == UInt8(ascii: ".") {
+                stuffed.append(byte)
+            }
+            stuffed.append(byte)
+            isLineStart = byte == UInt8(ascii: "\n")
+        }
+        return stuffed
     }
 }
