@@ -65,14 +65,15 @@ struct OAuth2ConfigurationTests {
         }
     }
 
-    // MARK: Ported from thunderbird-android
-    // `CheckIsGoogleSignInTest.kt` (feature/account/oauth/src/test), with its host names. Android asks "does this
-    // host belong to Google?" to decide whether to offer Google sign-in; here the Google configuration answers the
-    // same question when an account's hosts are matched against it.
+    // MARK: Google hosts
+    // Cases shared with another Thunderbird client, using the same host names. Each has a `//Source:` line linking
+    // to the test it was taken from. The source client asks "does this host belong to Google?" to decide whether to
+    // offer Google sign-in; here the Google configuration answers the same question when an account's hosts are
+    // matched against it.
 
     //Expect: Match the host.
     //Case: When the host is a subdomain of `gmail.com`, `googlemail.com` or `google.com`.
-    //Android: `should return true when hostname ends with a google domain`
+    //Source: https://github.com/thunderbird/thunderbird-android/blob/ac1f0e85f63c1b600ac443d1fb2d939bffff7de5/feature/account/oauth/src/test/kotlin/app/k9mail/feature/account/oauth/domain/usecase/CheckIsGoogleSignInTest.kt#L13
     @Test(arguments: ["mail.gmail.com", "mail.googlemail.com", "mail.google.com"])
     func matches_returnsTrue_whenHostEndsWithGoogleDomain(_ input: String) {
         // Arrange
@@ -87,7 +88,7 @@ struct OAuth2ConfigurationTests {
 
     //Expect: Not match the host.
     //Case: When the host belongs to another domain.
-    //Android: `should return false when hostname does not end with a google domain`
+    //Source: https://github.com/thunderbird/thunderbird-android/blob/ac1f0e85f63c1b600ac443d1fb2d939bffff7de5/feature/account/oauth/src/test/kotlin/app/k9mail/feature/account/oauth/domain/usecase/CheckIsGoogleSignInTest.kt#L26
     @Test(arguments: ["mail.example.com", "mail.example.org", "mail.example.net"])
     func matches_returnsFalse_whenHostDoesNotEndWithGoogleDomain(_ input: String) {
         // Arrange

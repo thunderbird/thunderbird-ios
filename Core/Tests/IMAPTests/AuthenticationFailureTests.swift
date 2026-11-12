@@ -61,14 +61,15 @@ struct AuthenticationFailureTests {
         #expect(AuthenticationFailure(challenge) == nil)
     }
 
-    // MARK: Ported from thunderbird-android
-    // The four payloads of `XOAuth2ChallengeParserTestData.java`. Android feeds them to `XOAuth2ChallengeParser`,
-    // which answers one question: is it worth retrying with a new token? (Yes for status 400, a missing status and
-    // unreadable JSON; no for anything else.) This client has no such retry, so the payloads are checked for what
-    // it does do with them, which is decode the status.
+    // MARK: Shared challenge payloads
+    // Four payloads shared with another Thunderbird client. Each test has a `//Source:` line linking to the payload
+    // it uses. The source client feeds them to a parser that answers one question: is it worth retrying with a new
+    // token? (Yes for status 400, a missing status and unreadable JSON; no for anything else.) This client has no
+    // such retry, so the payloads are checked for what it does do with them, which is decode the status.
 
     //Expect: Decode the status as `400`.
-    //Case: When the challenge is Android's `STATUS_400_RESPONSE`.
+    //Case: When the challenge is the shared `STATUS_400_RESPONSE` payload.
+    //Source: https://github.com/thunderbird/thunderbird-android/blob/ac1f0e85f63c1b600ac443d1fb2d939bffff7de5/mail/testing/src/main/java/com/fsck/k9/mail/testing/XOAuth2ChallengeParserTestData.java#L7
     @Test func init_decodesStatus_whenChallengeHasStatus400() {
         // Arrange
         let input = XOAuth2ChallengeTestData.status400Response
@@ -81,7 +82,8 @@ struct AuthenticationFailureTests {
     }
 
     //Expect: Decode the status as `401`.
-    //Case: When the challenge is Android's `STATUS_401_RESPONSE`.
+    //Case: When the challenge is the shared `STATUS_401_RESPONSE` payload.
+    //Source: https://github.com/thunderbird/thunderbird-android/blob/ac1f0e85f63c1b600ac443d1fb2d939bffff7de5/mail/testing/src/main/java/com/fsck/k9/mail/testing/XOAuth2ChallengeParserTestData.java#L9
     @Test func init_decodesStatus_whenChallengeHasStatus401() {
         // Arrange
         let input = XOAuth2ChallengeTestData.status401Response
@@ -94,7 +96,8 @@ struct AuthenticationFailureTests {
     }
 
     //Expect: Return `nil`.
-    //Case: When the challenge is Android's `MISSING_STATUS_RESPONSE`, valid JSON without a `status`.
+    //Case: When the challenge is the shared `MISSING_STATUS_RESPONSE` payload, valid JSON without a `status`.
+    //Source: https://github.com/thunderbird/thunderbird-android/blob/ac1f0e85f63c1b600ac443d1fb2d939bffff7de5/mail/testing/src/main/java/com/fsck/k9/mail/testing/XOAuth2ChallengeParserTestData.java#L11
     @Test func init_returnsNil_whenChallengeHasNoStatus() {
         // Arrange
         let input = XOAuth2ChallengeTestData.missingStatusResponse
@@ -107,7 +110,9 @@ struct AuthenticationFailureTests {
     }
 
     //Expect: Return `nil`.
-    //Case: When the challenge is Android's `INVALID_RESPONSE`, JSON that is cut off before its closing brace.
+    //Case: When the challenge is the shared `INVALID_RESPONSE` payload, JSON that is cut off before its closing
+    //  brace.
+    //Source: https://github.com/thunderbird/thunderbird-android/blob/ac1f0e85f63c1b600ac443d1fb2d939bffff7de5/mail/testing/src/main/java/com/fsck/k9/mail/testing/XOAuth2ChallengeParserTestData.java#L13
     @Test func init_returnsNil_whenChallengeIsInvalidJSON() {
         // Arrange
         let input = XOAuth2ChallengeTestData.invalidResponse

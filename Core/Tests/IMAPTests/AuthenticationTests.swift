@@ -56,14 +56,15 @@ struct AuthenticationTests {
         #expect(Authentication.plain("user@example.com", password: "pa55w0rd").challengeResponse.readableBytes == 0)
     }
 
-    // MARK: Ported from thunderbird-android
-    // The cases of `OAuthBearerTest.kt` (legacy/core/src/test/java/com/fsck/k9/sasl), with its inputs. Android checks
-    // each response twice, as text and as base64. The text is checked here, where the response is built; the base64
-    // is checked in `AuthenticateHandlerAndroidTests`, where it goes on the wire.
+    // MARK: OAUTHBEARER user names, shared cases
+    // Cases shared with another Thunderbird client, using the same inputs. Each has a `//Source:` line linking to
+    // the test it was taken from. The source checks each response twice, as text and as base64. The text is checked
+    // here, where the response is built; the base64 is checked in `AuthenticateExchangeTests`, where it goes on the
+    // wire.
 
     //Expect: Send the user name as it is.
     //Case: When an OAUTHBEARER user name contains neither `,` nor `=`.
-    //Android: `username that does not need encoding`
+    //Source: https://github.com/thunderbird/thunderbird-android/blob/ac1f0e85f63c1b600ac443d1fb2d939bffff7de5/legacy/core/src/test/java/com/fsck/k9/sasl/OAuthBearerTest.kt#L10
     @Test func initialResponse_sendsUserUnchanged_whenOAuthBearerUserNeedsNoEncoding() throws {
         // Arrange
         let input: Authentication = .oauthbearer("user@domain.example", token: "token")
@@ -78,7 +79,7 @@ struct AuthenticationTests {
 
     //Expect: Send `=` as `=3D`.
     //Case: When an OAUTHBEARER user name contains an equal sign, which is legal in an email address.
-    //Android: `username contains equal sign that needs to be encoded`
+    //Source: https://github.com/thunderbird/thunderbird-android/blob/ac1f0e85f63c1b600ac443d1fb2d939bffff7de5/legacy/core/src/test/java/com/fsck/k9/sasl/OAuthBearerTest.kt#L22
     @Test func initialResponse_encodesEqualSign_whenOAuthBearerUserContainsEqualSign() throws {
         // Arrange
         let input: Authentication = .oauthbearer("user=name@domain.example", token: "token")
@@ -93,7 +94,7 @@ struct AuthenticationTests {
 
     //Expect: Send `,` as `=2C`.
     //Case: When an OAUTHBEARER user name contains a comma, which would otherwise end the user name early.
-    //Android: `username contains comma that needs to be encoded`
+    //Source: https://github.com/thunderbird/thunderbird-android/blob/ac1f0e85f63c1b600ac443d1fb2d939bffff7de5/legacy/core/src/test/java/com/fsck/k9/sasl/OAuthBearerTest.kt#L34
     @Test func initialResponse_encodesComma_whenOAuthBearerUserContainsComma() throws {
         // Arrange
         let input: Authentication = .oauthbearer("user,name", token: "token")
@@ -106,7 +107,7 @@ struct AuthenticationTests {
         #expect(actual == expected)
     }
 
-    // MARK: Encoding, beyond the Android cases
+    // MARK: Encoding, beyond the shared cases
 
     //Expect: Encode each character once.
     //Case: When an OAUTHBEARER user name contains both `,` and `=`.

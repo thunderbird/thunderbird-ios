@@ -9,15 +9,15 @@ import Testing
 
 struct IMAPClientTests {
 
-    // MARK: Ported from thunderbird-android
-    // `open() AUTH OAUTHBEARER with AUTH=OAUTHBEARER capability missing` in `RealImapConnectionTest.kt`. Android
-    // connects to a mock server whose capability list leaves the mechanism out. A client that has never connected
-    // is in the same position: it has no capability that says the server supports the mechanism, so it must refuse
-    // before putting a token on the wire. No connection is made by these tests.
+    // MARK: Mechanism not advertised
+    // The first case is shared with another Thunderbird client and has a `//Source:` line linking to the test it
+    // was taken from. The source test connects to a mock server whose capability list leaves the mechanism out. A
+    // client that has never connected is in the same position: it has no capability that says the server supports
+    // the mechanism, so it must refuse before putting a token on the wire. No connection is made by these tests.
 
     //Expect: Throw `capabilityNotSupported` naming `AUTH=OAUTHBEARER`.
     //Case: When signing in with OAUTHBEARER and the server hasn't advertised it.
-    //Android: `open() AUTH OAUTHBEARER with AUTH=OAUTHBEARER capability missing`
+    //Source: https://github.com/thunderbird/thunderbird-android/blob/ac1f0e85f63c1b600ac443d1fb2d939bffff7de5/mail/protocols/imap/src/test/java/com/fsck/k9/mail/store/imap/RealImapConnectionTest.kt#L394
     @Test func authenticate_throwsCapabilityNotSupported_whenServerHasNotAdvertisedOAuthBearer() async {
         // Arrange
         let client: IMAPClient = IMAPClient(Server(hostname: "imap.example.com"))
@@ -37,8 +37,8 @@ struct IMAPClientTests {
     }
 
     //Expect: Throw `capabilityNotSupported` naming `AUTH=XOAUTH2`.
-    //Case: When signing in with XOAUTH2 and the server hasn't advertised it. Android has no XOAUTH2 twin of the
-    //  case above, because it only falls back to XOAUTH2 once it has seen the capability.
+    //Case: When signing in with XOAUTH2 and the server hasn't advertised it. The source has no XOAUTH2 twin of the
+    //  case above, because that client only falls back to XOAUTH2 once it has seen the capability.
     @Test func authenticate_throwsCapabilityNotSupported_whenServerHasNotAdvertisedXOAuth2() async {
         // Arrange
         let client: IMAPClient = IMAPClient(Server(hostname: "imap.example.com"))
