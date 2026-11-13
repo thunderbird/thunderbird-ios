@@ -168,11 +168,9 @@ struct MultiAddressBar: View {
                     .autocorrectionDisabled()
                     .focusable()
                     .onSubmit {
-                        if entryString.isEmailAddress {
-                            withAnimation {
-                                entryText.append(entryString)
-                                entryString = ""
-                            }
+                        withAnimation {
+                            entryText.append(entryString)
+                            entryString = ""
                         }
                     }
             }
@@ -217,7 +215,8 @@ struct EmailPill: View {
             }
 
             Text(emailAddress)
-                .foregroundStyle(.blue)
+            // TODO: Switch to `.textIconBrand` and `.textIconSecondary` when bolt is integrated.
+                .foregroundStyle(emailAddress.isEmailAddress ? .blue : .red)
                 .onTapGesture {
                     withAnimation {
                         onTap(emailAddress)
