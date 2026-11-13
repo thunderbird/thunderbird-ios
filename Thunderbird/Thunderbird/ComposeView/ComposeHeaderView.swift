@@ -146,7 +146,7 @@ struct MultiAddressBar: View {
 
     private var headerText: LocalizedStringResource
     private var onPillTap: ((String) -> Void)?
-    
+
     @Binding private var entryText: [String]
     @State private var entryString: String = ""
     @FocusState private var isEntryFocused: Bool
@@ -163,7 +163,7 @@ struct MultiAddressBar: View {
                     .textFieldStyle(.automatic)
                     .focused($isEntryFocused)
                     #if os(iOS)
-                    .autocapitalization(.none)
+                .autocapitalization(.none)
                     #endif
                     .autocorrectionDisabled()
                     .focusable()
@@ -210,12 +210,12 @@ struct EmailPill: View {
         HStack {
             if !emailAddress.isEmailAddress {
                 Image(systemName: "exclamationmark.triangle")
-                // TODO: Use `.textIconCritical` when bolt is integrated.
+                    // TODO: Use `.textIconCritical` when bolt is integrated.
                     .foregroundStyle(.red)
             }
 
             Text(emailAddress)
-            // TODO: Switch to `.textIconBrand` and `.textIconSecondary` when bolt is integrated.
+                // TODO: Switch to `.textIconBrand` and `.textIconSecondary` when bolt is integrated.
                 .foregroundStyle(emailAddress.isEmailAddress ? .blue : .red)
                 .onTapGesture {
                     withAnimation {
@@ -227,18 +227,18 @@ struct EmailPill: View {
         .padding(4)
         .padding(.horizontal, 8)
         .background(
-                emailAddress.isEmailAddress
+            emailAddress.isEmailAddress
                 ? AnyView(
                     Capsule()
                         .stroke(lineWidth: 0.5)
                         .foregroundStyle(.gray)
-                  )
+                )
                 : AnyView(
                     Capsule()
-                    // TODO: Use `.textIconCritical` when bolt is integrated.
+                        // TODO: Use `.textIconCritical` when bolt is integrated.
                         .fill(.red.opacity(0.2))
-                  )
-            )
+                )
+        )
     }
 }
 
