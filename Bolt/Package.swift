@@ -11,11 +11,6 @@ let package: Package = Package(
     ],
     products: [
         .library(
-            name: "Bolt",
-            targets: [
-                "Bolt"
-            ]),
-        .library(
             name: "BoltUI",
             targets: [
                 "BoltUI"
@@ -25,11 +20,6 @@ let package: Package = Package(
         .package(url: "https://github.com/rrenna/bolt-design-system", branch: "swift-package")
     ],
     targets: [
-        .target(
-            name: "Bolt",
-            dependencies: [
-                "BoltUI"
-            ]),
         .target(
             name: "BoltUI",
             dependencies: [
