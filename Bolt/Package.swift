@@ -17,7 +17,7 @@ let package: Package = Package(
             ])
     ],
     dependencies: [
-        .package(url: "https://github.com/rrenna/bolt-design-system", branch: "swift-package")
+        .package(url: "https://github.com/thunderbird/bolt-design-system", branch: "main")
     ],
     targets: [
         .target(
