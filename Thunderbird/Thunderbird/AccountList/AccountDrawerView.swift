@@ -136,14 +136,19 @@ private struct FolderRow: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
             Spacer(minLength: 0.0)
-            if folder.unreadCount > 0 {
-                UnreadBadge(count: folder.unreadCount)
-            }
-            if folder.isExpandable {
-                Image(folder.isExpanded ? Icon.chevronUp : Icon.chevronDown)
-                    .font(.system(size: 20.0))
-                    .foregroundStyle(Color(.textIcon(.base)))
-                    .frame(width: 44.0, height: 44.0)
+            HStack(spacing: 0.0) {
+                if folder.unreadCount > 0 {
+                    UnreadBadge(count: folder.unreadCount)
+                }
+                // Every row keeps the chevron's 44pt slot, so badges line up whether or not the folder expands.
+                ZStack {
+                    if folder.isExpandable {
+                        Image(folder.isExpanded ? Icon.chevronUp : Icon.chevronDown)
+                            .font(.system(size: 20.0))
+                            .foregroundStyle(Color(.textIcon(.base)))
+                    }
+                }
+                .frame(width: 44.0, height: 44.0)
             }
         }
         .padding(.leading, CGFloat(folder.depth) * .padding())
@@ -175,7 +180,6 @@ private struct UnreadBadge: View {
             .padding(.horizontal, 6.0)
             .frame(minWidth: 20.0, minHeight: 17.0)
             .background(Color(.primary(.default)), in: Capsule())
-            .padding(.trailing, 4.0)
     }
 }
 
