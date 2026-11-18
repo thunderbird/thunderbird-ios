@@ -34,7 +34,7 @@ private struct ShadowModifier: ViewModifier {
         VStack(spacing: 24.0) {
             ForEach(Shadow.allCases) { shadow in
                 RoundedRectangle(cornerRadius: 12.0)
-                    .fill(Color(.surface("raised")))
+                    .fill(Color(.surface(.raised)))
                     .frame(height: 72.0)
                     .overlay(Text(shadow.description).padding())
                     .shadow(shadow)
@@ -43,11 +43,5 @@ private struct ShadowModifier: ViewModifier {
         .font(.caption)
         .padding(24.0)
     }
-    .background(Color(.surface("base")))
-}
-
-private extension SemanticColor {
-    static func surface(_ level: String) -> Self {
-        allCases.first { $0.id == "semantic.surface.\(level)" }!
-    }
+    .background(Color(.surface(.base)))
 }
