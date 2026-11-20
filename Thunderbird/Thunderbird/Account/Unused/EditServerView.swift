@@ -108,7 +108,7 @@ private extension AuthenticationType {
     /// The type's description, capitalized except for OAuth2.
     var text: String {
         switch self {
-        case .oAuth2: description
+        case .oauth2: description
         default: description.capitalized
         }
     }

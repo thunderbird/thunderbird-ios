@@ -105,7 +105,7 @@ public final class AccountManager {
     /// Any errors during renewal are recorded in the `error` property.
     public func checkAndRenewExpirations() async {
         for account in allAccounts {
-            guard account.authenticationType == .oAuth2, account.authorization.isExpired,
+            guard account.authenticationType == .oauth2, account.authorization.isExpired,
                 let refreshToken: String = account.authorization.refreshToken,
                 let user: String = account.incomingServer?.username
             else {
