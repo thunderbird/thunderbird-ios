@@ -18,14 +18,20 @@ private struct ShadowModifier: ViewModifier {
     @Environment(\.colorScheme) private var colorScheme: ColorScheme
 
     // MARK: ViewModifier
+    // Both layers are always applied, so the content keeps its identity (state, focus, animations) when the shadow turns on or off.
     func body(content: Content) -> some View {
-        if colorScheme == .dark || shadow.layers.isEmpty {
-            content
-        } else {
-            shadow.layers.reduce(AnyView(content)) { view, layer in
-                AnyView(view.shadow(color: .black.opacity(layer.opacity), radius: layer.radius, x: layer.x, y: layer.y))
-            }
-        }
+        content
+            .shadow(color: color(0), radius: layer(0)?.radius ?? 0.0, x: layer(0)?.x ?? 0.0, y: layer(0)?.y ?? 0.0)
+            .shadow(color: color(1), radius: layer(1)?.radius ?? 0.0, x: layer(1)?.x ?? 0.0, y: layer(1)?.y ?? 0.0)
+    }
+
+    /// The key (0) or ambient (1) layer; `nil` in dark mode or when the shadow doesn't have it.
+    private func layer(_ index: Int) -> Shadow.Layer? {
+        colorScheme != .dark && shadow.layers.indices.contains(index) ? shadow.layers[index] : nil
+    }
+
+    private func color(_ index: Int) -> Color {
+        layer(index).map { .black.opacity($0.opacity) } ?? .clear
     }
 }
 
