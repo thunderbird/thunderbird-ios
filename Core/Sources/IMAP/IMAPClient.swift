@@ -372,7 +372,12 @@ private extension ClientBootstrap {
                     // LoggingHandler(logger), // Enable byte-level logging
                     IMAPClientHandler(parserOptions: .max)
                 ]
-                if server.connectionSecurity != .none {  // Plain-text servers never answer a TLS handshake
+                // TLS is a handler like any other, and it has to come first so that it wraps everything the IMAP
+                // handler reads and writes. Only add it when the server expects TLS: with `.none` the server speaks
+                // plain text from the first byte, so a TLS handshake would get no answer and the connection would
+                // never reach CAPABILITY. `.startTLS` gets the handler too, because STARTTLS isn't implemented here
+                // yet and those servers are connected to with TLS from the start.
+                if server.connectionSecurity != .none {
                     handlers.insert(try TLSClientHandler(serverHostname: server.hostname), at: 0)
                 }
                 try channel.pipeline.syncOperations.addHandlers(handlers)
