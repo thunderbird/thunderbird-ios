@@ -367,14 +367,15 @@ private extension ClientBootstrap {
         group: EventLoopGroup
     ) -> Self {
         Self(group: group).channelInitializer { channel in
-            try! channel.pipeline.syncOperations.addHandlers(
-                [
-                    // LoggingHandler(logger), // Enable byte-level logging
-                    TLSClientHandler(serverHostname: server.hostname),
-                    IMAPClientHandler(parserOptions: .max)
-                ]
-            )
-            return channel.eventLoop.makeSucceededFuture(())
+            channel.eventLoop.makeCompletedFuture {
+                try channel.pipeline.syncOperations.addHandlers(
+                    [
+                        // LoggingHandler(logger), // Enable byte-level logging
+                        try TLSClientHandler(serverHostname: server.hostname),
+                        IMAPClientHandler(parserOptions: .max)
+                    ]
+                )
+            }
         }
     }
 }
@@ -383,8 +384,8 @@ private extension NIOSSLContext {
     static var ssl: Self { try! Self(configuration: .makeClientConfiguration()) }
 }
 
-private func TLSClientHandler(serverHostname: String? = nil) -> NIOSSLClientHandler {
-    try! NIOSSLClientHandler(context: .ssl, serverHostname: serverHostname)
+private func TLSClientHandler(serverHostname: String? = nil) throws -> NIOSSLClientHandler {
+    try NIOSSLClientHandler(context: .ssl, serverHostname: serverHostname)
 }
 
 private extension ResponseParser.Options {
