@@ -368,13 +368,14 @@ private extension ClientBootstrap {
     ) -> Self {
         Self(group: group).channelInitializer { channel in
             channel.eventLoop.makeCompletedFuture {
-                try channel.pipeline.syncOperations.addHandlers(
-                    [
-                        // LoggingHandler(logger), // Enable byte-level logging
-                        try TLSClientHandler(serverHostname: server.hostname),
-                        IMAPClientHandler(parserOptions: .max)
-                    ]
-                )
+                var handlers: [ChannelHandler] = [
+                    // LoggingHandler(logger), // Enable byte-level logging
+                    IMAPClientHandler(parserOptions: .max)
+                ]
+                if server.connectionSecurity != .none {  // Plain-text servers never answer a TLS handshake
+                    handlers.insert(try TLSClientHandler(serverHostname: server.hostname), at: 0)
+                }
+                try channel.pipeline.syncOperations.addHandlers(handlers)
             }
         }
     }
