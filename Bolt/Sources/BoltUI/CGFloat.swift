@@ -27,6 +27,9 @@ extension CGFloat {
         }
     }
 
+    /// Corner radius for Bolt surfaces such as cards, selected rows and pills.
+    public static let cornerRadius: Self = 24.0
+
     public static func padding(_ density: Density = .default) -> Self {
         density.rawValue * 16.0
     }

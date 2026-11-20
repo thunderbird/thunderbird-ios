@@ -68,7 +68,7 @@
           <div class="c4-box container">
             <div class="c4-type">Container · SPM package</div>
             <div class="c4-name">Bolt</div>
-            <div class="c4-desc">Design system — colors, type scale, rich-text Editor. SwiftUI only.</div>
+            <div class="c4-desc">Design system — colors, icons, shadows, type scale, form controls. SwiftUI only.</div>
           </div>
         </div>
         <div class="c4-arrow">▼</div>
@@ -130,16 +130,23 @@
       </div>
 
       <div class="accordion-item" id="bolt">
-        <button class="accordion-trigger"><span class="num">🎨</span><span>Bolt — the design system<span class="tt-sub">SPM package · 7 files · 411 LOC · zero deps</span></span><span class="chev">▾</span></button>
+        <button class="accordion-trigger"><span class="num">🎨</span><span>Bolt — the design system<span class="tt-sub">SPM package · 11 files · 774 LOC · 1 dependency</span></span><span class="chev">▾</span></button>
         <div class="accordion-content">
-          <p>A small SwiftUI-only package providing the visual language. Three products in a tidy chain: <code>Editor</code> (rich-text editing primitives) → <code>BoltUI</code> (re-exports Editor, adds the design tokens) → <code>Bolt</code> (umbrella).</p>
+          <p>A small SwiftUI-only package providing the visual language. It has one product, <code>BoltUI</code>, which depends on the <code>BoltDesignSystem</code> package from <a href="https://github.com/thunderbird/bolt-design-system">thunderbird/bolt-design-system</a> and re-exports it, so <code>import BoltUI</code> is all the app needs.</p>
+          <h4>What comes from BoltDesignSystem</h4>
+          <ul>
+            <li><code>SemanticColor</code> and <code>FoundationColor</code> — the palette, selected with enums such as <code>Color(.surface(.raised))</code> or <code>Color(.primary(.default))</code>; semantic colors have light &amp; dark variants.</li>
+            <li><code>Icon</code> — Bolt's icons as custom SF Symbols, used as <code>Image(_:)</code>.</li>
+            <li><code>Shadow</code> — elevation levels <code>level0</code>…<code>level5</code>.</li>
+          </ul>
           <h4>What's inside BoltUI</h4>
           <ul>
-            <li><code>Color.swift</code> — a semantic palette: <code>neutral</code>, intent colors (<code>primary</code>, <code>secondary</code>, <code>success</code>, <code>warning</code>, <code>critical</code>) each with soft/default/hover/pressed steps, <code>text</code> roles, and an <code>accent</code> set — all with light &amp; dark variants.</li>
             <li><code>Font.swift</code> — a <code>Font.Style</code> scale (<code>titleLarge</code>…<code>caption</code>) carrying size, line spacing, kerning, and weight, plus a <code>.textStyle(_:)</code> view modifier that honors Dynamic Type.</li>
-            <li><code>Editor</code> — placeholder module reserved for the rich-text compose editor.</li>
+            <li><code>CGFloat.swift</code> — density-based <code>padding</code> and <code>spacing</code> values and the shared <code>cornerRadius</code>.</li>
+            <li><code>Shadow.swift</code> — the <code>.shadow(_:)</code> view modifier, which applies a Bolt shadow in light mode only.</li>
+            <li>Form controls — <code>PasswordField</code>, <code>CloseButton</code>, and the <code>.fullToggleStyle()</code> and <code>.formInput(_:)</code> view modifiers.</li>
           </ul>
-          <p>No external dependencies and no Core dependency — Bolt is purely presentational.</p>
+          <p>Its only external dependency is <code>BoltDesignSystem</code>, and it has no Core dependency — Bolt is purely presentational.</p>
           <p><span class="badge primary">Detail</span> See <a href="level3-components.html#bolt">Level 3 · Bolt components</a>.</p>
         </div>
       </div>
@@ -152,7 +159,7 @@
       <div style="text-align:center;color:hsl(var(--muted-foreground));">↓ depends on ↓</div>
       <div class="grid grid-2" style="margin:.4rem 0;">
         <div class="layer service"><div class="l-title">Core · Account</div><div class="l-desc">composes IMAP + SMTP + JMAP + MIME + Autoconfiguration + EmailAddress</div></div>
-        <div class="layer data"><div class="l-title">Bolt · BoltUI</div><div class="l-desc">re-exports Editor; no Core dependency</div></div>
+        <div class="layer data"><div class="l-title">Bolt · BoltUI</div><div class="l-desc">re-exports BoltDesignSystem; no Core dependency</div></div>
       </div>
       <div style="text-align:center;color:hsl(var(--muted-foreground));">↓</div>
       <div class="layer model"><div class="l-title">Protocol &amp; format modules</div><div class="l-desc">IMAP · SMTP · JMAP → depend on MIME + EmailAddress · MIME &amp; EmailAddress are leaf modules</div></div>

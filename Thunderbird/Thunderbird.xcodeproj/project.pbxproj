@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		15501F1C2F9666AB0041B309 /* Bolt in Frameworks */ = {isa = PBXBuildFile; productRef = 15501F1B2F9666AB0041B309 /* Bolt */; };
+		15501F1C2F9666AB0041B309 /* BoltUI in Frameworks */ = {isa = PBXBuildFile; productRef = 15501F1B2F9666AB0041B309 /* BoltUI */; };
 		15501F1E2F9666AB0041B309 /* Core in Frameworks */ = {isa = PBXBuildFile; productRef = 15501F1D2F9666AB0041B309 /* Core */; };
 		FEFA29FB2FF6AAF700C8210B /* InfomaniakRichHTMLEditor in Frameworks */ = {isa = PBXBuildFile; productRef = FEFA29FA2FF6AAF700C8210B /* InfomaniakRichHTMLEditor */; };
 /* End PBXBuildFile section */
@@ -71,7 +71,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				15501F1C2F9666AB0041B309 /* Bolt in Frameworks */,
+				15501F1C2F9666AB0041B309 /* BoltUI in Frameworks */,
 				FEFA29FB2FF6AAF700C8210B /* InfomaniakRichHTMLEditor in Frameworks */,
 				15501F1E2F9666AB0041B309 /* Core in Frameworks */,
 			);
@@ -133,7 +133,7 @@
 			);
 			name = Thunderbird;
 			packageProductDependencies = (
-				15501F1B2F9666AB0041B309 /* Bolt */,
+				15501F1B2F9666AB0041B309 /* BoltUI */,
 				15501F1D2F9666AB0041B309 /* Core */,
 				FEFA29FA2FF6AAF700C8210B /* InfomaniakRichHTMLEditor */,
 			);
@@ -637,9 +637,9 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		15501F1B2F9666AB0041B309 /* Bolt */ = {
+		15501F1B2F9666AB0041B309 /* BoltUI */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = Bolt;
+			productName = BoltUI;
 		};
 		15501F1D2F9666AB0041B309 /* Core */ = {
 			isa = XCSwiftPackageProductDependency;

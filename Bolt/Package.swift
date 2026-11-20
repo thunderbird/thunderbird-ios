@@ -11,24 +11,20 @@ let package: Package = Package(
     ],
     products: [
         .library(
-            name: "Bolt",
-            targets: [
-                "Bolt"
-            ]),
-        .library(
             name: "BoltUI",
             targets: [
                 "BoltUI"
             ])
     ],
+    dependencies: [
+        .package(url: "https://github.com/thunderbird/bolt-design-system", branch: "main")
+    ],
     targets: [
         .target(
-            name: "Bolt",
+            name: "BoltUI",
             dependencies: [
-                "BoltUI"
+                .product(name: "BoltDesignSystem", package: "bolt-design-system")
             ]),
-        .target(
-            name: "BoltUI"),
         .testTarget(
             name: "BoltUITests",
             dependencies: [
