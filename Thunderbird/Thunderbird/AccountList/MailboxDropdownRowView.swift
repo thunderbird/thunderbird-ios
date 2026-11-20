@@ -12,8 +12,8 @@ private let iconShapes = FolderIconShapes()
 /// A row in the drawer for one folder, with its icon, name, and unread count.
 ///
 /// A folder with subfolders is a collapsible group that lists its subfolders as nested rows; one without is a plain
-/// row. The unread count shows only when the folder has unread messages and, for a group, only while it is collapsed.
-/// The count is the folder's `aggregatedUnreadCount()`, which includes its subfolders.
+/// row. The unread count is the folder's `aggregatedUnreadCount()`, which includes its subfolders. A group shows it only
+/// while collapsed and when that total is above zero; a plain row shows it when the folder has unread messages.
 ///
 /// - Important: Tapping a leaf row does nothing yet; loading the folder's email list is a `TODO`. The icon is chosen
 ///   from the folder's name by `FolderKind.init(folderName:)`. A folder with a `nil` `name` shows an empty name and the generic
@@ -39,7 +39,7 @@ struct MailboxDropdownRowView: View {
                     Text(folder.name ?? "")
                         .foregroundStyle(.black)
                     Spacer()
-                    if (!isExpanded && (folder.unreadEmails ?? 0) > 0) {
+                    if (!isExpanded && folder.aggregatedUnreadCount() > 0) {
                         UnreadCounter(unreadCount: folder.aggregatedUnreadCount(), hasNew: false)
                     }
                 }
