@@ -13,11 +13,12 @@ import SwiftUI
 /// `DrawerView`. `ContentView` presents this view once an account exists.
 ///
 /// - Important: Until the account returns emails, the list shows `TempEmail.sampleData` placeholders. That includes
-///   when loading fails, because the error is dropped, and when the account has no emails. Only the first account
-///   in the `AccountManager` is shown.
+///   when loading fails, which also presents the error in an alert, and when the account has no emails. Only the
+///   first account in the `AccountManager` is shown.
 struct EmailListView: View {
     @Environment(AccountManager.self) private var accountManager: AccountManager
     @State private var emails: [Email] = []
+    @State private var error: Error?
     @State private var isRefreshing: Bool = false
     @State private var path: NavigationPath = NavigationPath()
     @State private var selections: Set<UUID> = []
@@ -28,14 +29,19 @@ struct EmailListView: View {
 
     /// Load the first account's emails into the list.
     ///
-    /// Does nothing if there are no accounts. If loading throws, the error is dropped and the current list is kept.
+    /// Does nothing if there are no accounts. If loading throws, the error is kept for the alert and the current
+    /// list is kept.
     private func refresh() async {
         guard let account: Account = accountManager.allAccounts.first else { return }
         isRefreshing = true
-        if let emails: [Email] = try? await account.emails() {
-            self.emails = emails
+        defer { isRefreshing = false }
+        do {
+            emails = try await account.emails()
+        } catch is CancellationError {
+            // The view went away or the refresh was abandoned: nothing to report
+        } catch {
+            self.error = AccountError(error) ?? error
         }
-        isRefreshing = false
     }
 
     // MARK: View
@@ -112,6 +118,7 @@ struct EmailListView: View {
                 await refresh()
             }
         }
+        .error($error)
     }
 }
 
