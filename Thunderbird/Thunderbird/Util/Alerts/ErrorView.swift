@@ -5,7 +5,7 @@
 import Core
 import SwiftUI
 
-/// Extends `View` with the app's alert for errors reported on the account manager.
+/// Extends `View` with the app's alert for errors.
 extension View {
     /// Show an alert whenever the account manager's `error` is set.
     ///
@@ -17,35 +17,51 @@ extension View {
     func error() -> some View {
         modifier(ErrorView())
     }
+
+    /// Show an alert whenever `error` is set, for a view that keeps an error in its own state.
+    ///
+    /// The alert is titled "Error" and shows the error's description. Dismissing it sets `error` back to `nil`.
+    func error(_ error: Binding<Error?>) -> some View {
+        modifier(ErrorAlert(error: error))
+    }
 }
 
-/// Alert for the account manager's current error, applied with `View.error()`.
+/// Alert for the account manager's current error, applied with `View.error()`. Drawn by ``ErrorAlert``.
+struct ErrorView: ViewModifier {
+    @Environment(AccountManager.self) private var accountManager: AccountManager
+
+    private var error: Binding<Error?> {
+        Binding(
+            get: { accountManager.error },
+            set: { accountManager.error = $0 as? AccountError })
+    }
+
+    // MARK: ViewModifier
+    func body(content: Content) -> some View {
+        content.modifier(ErrorAlert(error: error))
+    }
+}
+
+/// Alert for an optional error, applied with `View.error(_:)`; the one place the app's error alert is drawn.
 ///
 /// The message is the error's description, which isn't localized, or "An unknown error occurred" if the error was
 /// cleared while the alert was still showing.
-struct ErrorView: ViewModifier {
-    @Environment(AccountManager.self) private var accountManager: AccountManager
-    @State private var isPresented: Bool = false
+struct ErrorAlert: ViewModifier {
+    @Binding var error: Error?
 
-    private var message: String {
-        guard let error: Error = accountManager.error else {
-            return "An unknown error occurred"
-        }
-        return "\(error)"
+    private var isPresented: Binding<Bool> {
+        Binding(
+            get: { error != nil },
+            set: { isPresented in
+                if !isPresented { error = nil }
+            })
     }
 
     // MARK: ViewModifier
     func body(content: Content) -> some View {
         content
-            .alert("Error", isPresented: $isPresented, actions: {}) {
-                Text(message)
-            }
-            .onChange(of: accountManager.error, initial: true) {
-                isPresented = accountManager.error != nil
-            }
-            .onChange(of: isPresented) {
-                guard accountManager.error != nil, !isPresented else { return }
-                accountManager.error = nil
+            .alert("Error", isPresented: isPresented, actions: {}) {
+                Text(error.map { "\($0)" } ?? "An unknown error occurred")
             }
     }
 }
