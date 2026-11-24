@@ -10,218 +10,374 @@ import NIOIMAP
 import Testing
 
 struct AuthenticateCommandTests {
-    @Test func name() {
-        #expect(AuthenticateCommand(.xoauth2("user@example.com", token: "t0k3n")).name == "authenticate \"user@example.com\"")
+    //Expect: Name the command after the user who is signing in.
+    //Case: When the command is created for a credential.
+    @Test func name_namesUser_whenCommandIsCreated() {
+        // Arrange
+        let input: AuthenticateCommand = AuthenticateCommand(.xoauth2("user@example.com", token: "t0k3n"))
+
+        // Act
+        let actual = input.name
+
+        // Assert
+        #expect(actual == "authenticate \"user@example.com\"")
     }
 
-    // The name ends up in logs and in `IMAPError.commandFailed`
-    @Test func nameOmitsCredential() {
-        #expect(!AuthenticateCommand(.oauthbearer("user@example.com", token: "t0k3n")).name.contains("t0k3n"))
-        #expect(!AuthenticateCommand(.plain("user@example.com", password: "pa55w0rd")).name.contains("pa55w0rd"))
-        #expect(!AuthenticateCommand(.xoauth2("user@example.com", token: "t0k3n")).name.contains("t0k3n"))
+    //Expect: Leave the token or password out of the name.
+    //Case: When the command carries a credential, for each mechanism. The name ends up in logs and in
+    //  `IMAPError.commandFailed`.
+    @Test(arguments: [
+        (Authentication.oauthbearer("user@example.com", token: "t0k3n"), "t0k3n"),
+        (Authentication.plain("user@example.com", password: "pa55w0rd"), "pa55w0rd"),
+        (Authentication.xoauth2("user@example.com", token: "t0k3n"), "t0k3n")
+    ])
+    func name_omitsCredential_whenCommandCarriesCredential(_ input: Authentication, _ secret: String) {
+        // Act
+        let actual = AuthenticateCommand(input).name.contains(secret)
+
+        // Assert
+        #expect(actual == false)
     }
 }
 
-// Each test below scripts the server's half of an `AUTHENTICATE` exchange and checks the client's half, byte for
-// byte. `C:` and `S:` in the comments mark what the client and the server send.
+// Each test below scripts the server's half of an `AUTHENTICATE` exchange and checks one thing about the client's
+// half. `C:` and `S:` in the comments mark what the client and the server send.
 //
 // Nothing here touches the network. `Exchange` (at the bottom of this file) runs the same two handlers that
 // `IMAPClient` puts on a real connection, so the bytes checked here are the bytes a server would see.
 struct AuthenticateHandlerTests {
+    // The failed exchange in Google's XOAUTH2 protocol document, with its example user, token and error challenge:
+    // https://developers.google.com/workspace/gmail/imap/xoauth2-protocol
+    //
+    //   C: A01 AUTHENTICATE XOAUTH2 dXNlcj1zb21ldXNlckBleGFtcGxlLmNvbQFhdXRoPUJlYXJlciB5YTI5…
+    //   S: + eyJzdGF0dXMiOiI0MDEiLCJzY2hlbWVzIjoiYmVhcmVyIG1hYyIsInNjb3BlIjoiaHR0cHM6Ly9tYWlsLmdvb2dsZS5jb20vIn0K
+    //   C:
+    //   S: A01 NO SASL authentication failed
+    //
+    // This is the scenario that used to hang: the server sends a challenge and waits, and nothing answered it.
+    private static let googleCredential: Authentication = .xoauth2("someuser@example.com", token: "ya29.vF9dft4qmTc2Nvb3RlckBhdHRhdmlzdGEuY29tCg")
+    private static let googleChallenge: String = "eyJzdGF0dXMiOiI0MDEiLCJzY2hlbWVzIjoiYmVhcmVyIG1hYyIsInNjb3BlIjoiaHR0cHM6Ly9tYWlsLmdvb2dsZS5jb20vIn0K"
+    private static let googleErrorResult: String = #"{"status":"401","schemes":"bearer mac","scope":"https://mail.google.com/"}"# + "\n"
+
+    // The failed exchange in RFC 7628, section 4.3, with its error challenge:
+    // https://www.rfc-editor.org/rfc/rfc7628#section-4.3
+    //
+    //   C: A01 AUTHENTICATE OAUTHBEARER bixhPXVzZXJAZXhhbXBsZS5jb20s…
+    //   S: + eyJzdGF0dXMiOiJpbnZhbGlkX3Rva2VuIiwic2NvcGUiOiJleGFtcGxlX3Njb3BlIi…
+    //   C: AQ==
+    //   S: A01 NO SASL authentication failed
+    private static let rfcCredential: Authentication = .oauthbearer("user@example.com", token: "t0k3n")
+    private static let rfcChallenge: String =
+        "eyJzdGF0dXMiOiJpbnZhbGlkX3Rva2VuIiwic2NvcGUiOiJleGFtcGxlX3Njb3BlIiwib3BlbmlkLWNvbmZpZ3VyYXRpb24iOiJodHRwczovL2V4YW1wbGUuY29tLy53ZWxsLWtub3duL29wZW5pZC1jb25maWd1cmF0aW9uIn0="
+    private static let rfcErrorResult: String = #"{"status":"invalid_token","scope":"example_scope","openid-configuration":"https://example.com/.well-known/openid-configuration"}"#
 
     // MARK: Rejected credential
 
-    // The exchange from Google's XOAUTH2 protocol document, using its example user, token and error challenge:
-    // https://developers.google.com/workspace/gmail/imap/xoauth2-protocol
-    //
-    // This is the scenario that used to hang: the server sends a challenge and waits, and nothing answered it.
-    @Test func xoauth2RejectedToken() throws {
-        let exchange: Exchange = try Exchange(.xoauth2("someuser@example.com", token: "ya29.vF9dft4qmTc2Nvb3RlckBhdHRhdmlzdGEuY29tCg"))
+    //Expect: Send the command line from Google's document, with the credential as the initial response (RFC 4959).
+    //Case: When signing in with XOAUTH2 as the document's example user. The expected base64 is the document's own,
+    //  so this pins our encoding to Google's.
+    @Test func authenticate_sendsDocumentedCommand_whenCredentialIsGoogleExample() throws {
+        // Arrange
+        let expected = "A01 AUTHENTICATE XOAUTH2 dXNlcj1zb21ldXNlckBleGFtcGxlLmNvbQFhdXRoPUJlYXJlciB5YTI5LnZGOWRmdDRxbVRjMk52YjNSbGNrQmhkSFJoZG1semRHRXVZMjl0Q2cBAQ==\r\n"
 
-        // C: The credential goes out with the command, as the initial response (RFC 4959). The base64 is the
-        //    document's own example, so this also pins our encoding to Google's.
-        #expect(
-            try exchange.sent()
-                == "A01 AUTHENTICATE XOAUTH2 dXNlcj1zb21ldXNlckBleGFtcGxlLmNvbQFhdXRoPUJlYXJlciB5YTI5LnZGOWRmdDRxbVRjMk52YjNSbGNrQmhkSFJoZG1semRHRXVZMjl0Q2cBAQ==\r\n")
+        // Act
+        let exchange: Exchange = try Exchange(Self.googleCredential)
+        let actual = try exchange.sent()
 
-        // S: The token is rejected. Decoded: {"status":"401","schemes":"bearer mac","scope":"https://mail.google.com/"}
-        try exchange.receive("+ eyJzdGF0dXMiOiI0MDEiLCJzY2hlbWVzIjoiYmVhcmVyIG1hYyIsInNjb3BlIjoiaHR0cHM6Ly9tYWlsLmdvb2dsZS5jb20vIn0K")
-
-        // C: "The client sends an empty response ("\r\n") to the challenge containing the error message."
-        #expect(try exchange.sent() == "\r\n")
-
-        // The challenge explains the failure but doesn't end the command; only the tagged response does
-        #expect(exchange.outcome == nil)
-
-        // S: Now that it has its answer, the server ends the command
-        try exchange.receive("A01 NO SASL authentication failed")
-
-        let rejection: Rejection = try #require(exchange.rejection)
-        #expect(rejection.text == "SASL authentication failed")
-        #expect(rejection.failure?.status == "401")
-        #expect(rejection.failure?.schemes == "bearer mac")
-        #expect(rejection.failure?.scope == "https://mail.google.com/")
-        #expect(rejection.failure?.openIDConfiguration == nil)
+        // Assert
+        #expect(actual == expected)
     }
 
-    // The failed exchange from RFC 7628, section 4.3, using its error challenge:
-    // https://www.rfc-editor.org/rfc/rfc7628#section-4.3
-    @Test func oauthbearerRejectedToken() throws {
-        let exchange: Exchange = try Exchange(.oauthbearer("user@example.com", token: "t0k3n"))
+    //Expect: Send the command with the credential as the initial response, without `host` and `port`.
+    //Case: When signing in with OAUTHBEARER. The RFC's example also sends the optional `host` and `port` pairs,
+    //  which this client leaves out, so the expected response is built here and not copied from the RFC.
+    @Test func authenticate_sendsInitialResponseWithoutHostAndPort_whenMechanismIsOAuthBearer() throws {
+        // Arrange
+        let initialResponse = Data("n,a=user@example.com,\u{01}auth=Bearer t0k3n\u{01}\u{01}".utf8).base64EncodedString()
+        let expected = "A01 AUTHENTICATE OAUTHBEARER \(initialResponse)\r\n"
 
-        // C: The RFC's example also sends the optional `host` and `port` pairs, which this client leaves out, so
-        //    the initial response is built here and not copied from the RFC
-        let initialResponse: String = Data("n,a=user@example.com,\u{01}auth=Bearer t0k3n\u{01}\u{01}".utf8).base64EncodedString()
-        #expect(try exchange.sent() == "A01 AUTHENTICATE OAUTHBEARER \(initialResponse)\r\n")
+        // Act
+        let exchange: Exchange = try Exchange(Self.rfcCredential)
+        let actual = try exchange.sent()
 
-        // S: Decoded: {"status":"invalid_token","scope":"example_scope",
-        //              "openid-configuration":"https://example.com/.well-known/openid-configuration"}
-        try exchange.receive(
-            "+ eyJzdGF0dXMiOiJpbnZhbGlkX3Rva2VuIiwic2NvcGUiOiJleGFtcGxlX3Njb3BlIiwib3BlbmlkLWNvbmZpZ3VyYXRpb24iOiJodHRwczovL2V4YW1wbGUuY29tLy53ZWxsLWtub3duL29wZW5pZC1jb25maWd1cmF0aW9uIn0=")
-
-        // C: "The client responds with the required dummy response; "AQ==" is the base64 encoding of the ASCII
-        //    value 0x01." Unlike XOAUTH2, an empty line is not a valid answer here.
-        #expect(try exchange.sent() == "AQ==\r\n")
-        #expect(exchange.outcome == nil)
-
-        // S:
-        try exchange.receive("A01 NO SASL authentication failed")
-
-        let rejection: Rejection = try #require(exchange.rejection)
-        #expect(rejection.text == "SASL authentication failed")
-        #expect(rejection.failure?.status == "invalid_token")
-        #expect(rejection.failure?.scope == "example_scope")
-        #expect(rejection.failure?.openIDConfiguration == "https://example.com/.well-known/openid-configuration")
-        #expect(rejection.failure?.schemes == nil)
+        // Assert
+        #expect(actual == expected)
     }
 
-    // A server may skip the challenge and go straight to NO. RFC 5530 gives it response codes to say why.
-    @Test func rejectedWithoutChallenge() throws {
+    //Expect: Answer the challenge with what the mechanism requires.
+    //Case: When the server rejects the token and says why in a challenge.
+    //  XOAUTH2: "The client sends an empty response ("\r\n") to the challenge containing the error message."
+    //  OAUTHBEARER: "The client responds with the required dummy response; "AQ==" is the base64 encoding of the
+    //  ASCII value 0x01." An empty line is not a valid answer there.
+    @Test(arguments: [
+        (googleCredential, googleChallenge, "\r\n"),
+        (rfcCredential, rfcChallenge, "AQ==\r\n")
+    ])
+    func authenticate_answersChallenge_whenServerSendsErrorChallenge(_ credential: Authentication, _ challenge: String, _ expected: String) throws {
+        // Arrange
+        let exchange: Exchange = try Exchange(credential)
+        try exchange.discardSent()
+
+        // Act
+        try exchange.receive("+ \(challenge)")
+        let actual = try exchange.sent()
+
+        // Assert
+        #expect(actual == expected)
+    }
+
+    //Expect: Keep the command running.
+    //Case: When the server has sent its error challenge but not yet the tagged response. The challenge explains
+    //  the failure; only the tagged response ends the command.
+    @Test(arguments: [
+        (googleCredential, googleChallenge),
+        (rfcCredential, rfcChallenge)
+    ])
+    func authenticate_doesNotEnd_whenServerHasOnlySentChallenge(_ credential: Authentication, _ challenge: String) throws {
+        // Arrange
+        let exchange: Exchange = try Exchange(credential)
+
+        // Act
+        try exchange.receive("+ \(challenge)")
+        let actual = exchange.outcome
+
+        // Assert
+        #expect(actual == nil)
+    }
+
+    //Expect: Fail with the server's text and the reason it gave in the challenge.
+    //Case: When the server ends the command with a tagged NO after its error challenge has been answered.
+    @Test(arguments: [
+        (googleCredential, googleChallenge, googleErrorResult),
+        (rfcCredential, rfcChallenge, rfcErrorResult)
+    ])
+    func authenticate_failsWithServerTextAndReason_whenTokenIsRejected(_ credential: Authentication, _ challenge: String, _ errorResult: String) throws {
+        // Arrange
+        let exchange: Exchange = try Exchange(credential)
+        let expected: Rejection = Rejection(text: "SASL authentication failed", failure: AuthenticationFailure(ByteBuffer(string: errorResult)))
+
+        // Act
+        try exchange.receive("+ \(challenge)")
+        try exchange.receive("A01 NO SASL authentication failed")
+        let actual = exchange.rejection
+
+        // Assert
+        #expect(actual == expected)
+    }
+
+    //Expect: Fail with the server's text and no reason.
+    //Case: When the server skips the challenge and goes straight to NO. RFC 5530 gives it response codes to say
+    //  why. PLAIN has no challenge step at all (RFC 4616), so a wrong password always ends this way.
+    @Test(arguments: [
+        (Authentication.xoauth2("user@example.com", token: "t0k3n"), "Invalid credentials (Failure)"),
+        (Authentication.plain("user@example.com", password: "pa55w0rd"), "Authentication failed")
+    ])
+    func authenticate_failsWithServerText_whenServerRejectsWithoutChallenge(_ credential: Authentication, _ text: String) throws {
+        // Arrange
+        let exchange: Exchange = try Exchange(credential)
+        let expected: Rejection = Rejection(text: text, failure: nil)
+
+        // Act
+        try exchange.receive("A01 NO [AUTHENTICATIONFAILED] \(text)")
+        let actual = exchange.rejection
+
+        // Assert
+        #expect(actual == expected)
+    }
+
+    //Expect: Send nothing further.
+    //Case: When the server rejects the credential without a challenge, so there is nothing to answer.
+    @Test func authenticate_sendsNothingFurther_whenServerRejectsWithoutChallenge() throws {
+        // Arrange
         let exchange: Exchange = try Exchange(.xoauth2("user@example.com", token: "t0k3n"))
         try exchange.discardSent()
 
+        // Act
         try exchange.receive("A01 NO [AUTHENTICATIONFAILED] Invalid credentials (Failure)")
+        let actual = try exchange.sent()
 
-        let rejection: Rejection = try #require(exchange.rejection)
-        #expect(rejection.text == "Invalid credentials (Failure)")
-        #expect(rejection.failure == nil)
-        #expect(try exchange.sent().isEmpty)  // No challenge, so nothing to answer
-    }
-
-    // PLAIN has no challenge step at all (RFC 4616); a wrong password is a bare NO
-    @Test func plainRejectedPassword() throws {
-        let exchange: Exchange = try Exchange(.plain("user@example.com", password: "pa55w0rd"))
-        try exchange.discardSent()
-
-        try exchange.receive("A01 NO [AUTHENTICATIONFAILED] Authentication failed")
-
-        let rejection: Rejection = try #require(exchange.rejection)
-        #expect(rejection.text == "Authentication failed")
-        #expect(rejection.failure == nil)
+        // Assert
+        #expect(actual == "")
     }
 
     // MARK: Challenges that aren't an OAuth error result
 
-    // Whatever the challenge says, the server is waiting, so it gets its answer. Only the detail is lost.
-    @Test func unrecognizedChallengeIsStillAnswered() throws {
-        let exchange: Exchange = try Exchange(.xoauth2("user@example.com", token: "t0k3n"))
+    //Expect: Answer the challenge all the same.
+    //Case: When the challenge isn't an error result: text that isn't JSON, or no data at all, which is how a server
+    //  prompts for a response it hasn't been given (RFC 4959, section 3). Whatever the challenge says, the server
+    //  is waiting. Note the space after the "+" of the empty challenge: it is part of the syntax.
+    @Test(arguments: [
+        (Authentication.xoauth2("user@example.com", token: "t0k3n"), "+ bm90IGpzb24=", "\r\n"),  // "not json"
+        (Authentication.oauthbearer("user@example.com", token: "t0k3n"), "+ ", "AQ==\r\n")
+    ])
+    func authenticate_answersChallenge_whenChallengeIsNotAnErrorResult(_ credential: Authentication, _ challenge: String, _ expected: String) throws {
+        // Arrange
+        let exchange: Exchange = try Exchange(credential)
         try exchange.discardSent()
 
-        try exchange.receive("+ bm90IGpzb24=")  // "not json"
-        #expect(try exchange.sent() == "\r\n")
+        // Act
+        try exchange.receive(challenge)
+        let actual = try exchange.sent()
 
-        try exchange.receive("A01 NO SASL authentication failed")
-
-        let rejection: Rejection = try #require(exchange.rejection)
-        #expect(rejection.text == "SASL authentication failed")
-        #expect(rejection.failure == nil)
+        // Assert
+        #expect(actual == expected)
     }
 
-    // A challenge with no data at all, which is how a server prompts for a response it hasn't been given
-    // (RFC 4959, section 3). Note the space after the "+": it is part of the syntax.
-    @Test func emptyChallengeIsStillAnswered() throws {
-        let exchange: Exchange = try Exchange(.oauthbearer("user@example.com", token: "t0k3n"))
-        try exchange.discardSent()
+    //Expect: Fail as a rejected credential, without a reason.
+    //Case: When the challenge before the tagged NO wasn't an error result. Only the detail is lost.
+    @Test(arguments: [
+        (Authentication.xoauth2("user@example.com", token: "t0k3n"), "+ bm90IGpzb24="),  // "not json"
+        (Authentication.oauthbearer("user@example.com", token: "t0k3n"), "+ ")
+    ])
+    func authenticate_failsWithoutReason_whenChallengeIsNotAnErrorResult(_ credential: Authentication, _ challenge: String) throws {
+        // Arrange
+        let exchange: Exchange = try Exchange(credential)
+        let expected: Rejection = Rejection(text: "SASL authentication failed", failure: nil)
 
-        try exchange.receive("+ ")
-        #expect(try exchange.sent() == "AQ==\r\n")
-
+        // Act
+        try exchange.receive(challenge)
         try exchange.receive("A01 NO SASL authentication failed")
-        #expect(exchange.rejection?.failure == nil)
+        let actual = exchange.rejection
+
+        // Assert
+        #expect(actual == expected)
     }
 
-    // Each challenge gets exactly one answer, and a later challenge that carries no reason doesn't erase the
-    // reason an earlier one gave
-    @Test func everyChallengeIsAnsweredOnce() throws {
-        let exchange: Exchange = try Exchange(.xoauth2("user@example.com", token: "t0k3n"))
+    //Expect: Answer each challenge once.
+    //Case: When the server sends two challenges before its tagged response.
+    @Test func authenticate_answersEachChallengeOnce_whenServerSendsTwoChallenges() throws {
+        // Arrange
+        let exchange: Exchange = try Exchange(Self.googleCredential)
         try exchange.discardSent()
 
-        try exchange.receive("+ eyJzdGF0dXMiOiI0MDEiLCJzY2hlbWVzIjoiYmVhcmVyIG1hYyIsInNjb3BlIjoiaHR0cHM6Ly9tYWlsLmdvb2dsZS5jb20vIn0K")
-        #expect(try exchange.sent() == "\r\n")
-
+        // Act
+        try exchange.receive("+ \(Self.googleChallenge)")
+        let first = try exchange.sent()
         try exchange.receive("+ ")
-        #expect(try exchange.sent() == "\r\n")
+        let second = try exchange.sent()
+        let actual = [first, second]
 
+        // Assert
+        #expect(actual == ["\r\n", "\r\n"])
+    }
+
+    //Expect: Report the reason the first challenge gave.
+    //Case: When a later challenge carries no reason. It must not erase the earlier one.
+    @Test func authenticate_keepsEarlierReason_whenLaterChallengeHasNone() throws {
+        // Arrange
+        let exchange: Exchange = try Exchange(Self.googleCredential)
+
+        // Act
+        try exchange.receive("+ \(Self.googleChallenge)")
+        try exchange.receive("+ ")
         try exchange.receive("A01 NO SASL authentication failed")
-        #expect(exchange.rejection?.failure?.status == "401")
+        let actual = exchange.rejection?.failure?.status
+
+        // Assert
+        #expect(actual == "401")
     }
 
     // MARK: Accepted credential
 
-    // The happy path must be untouched: no challenge, nothing extra written, capabilities collected
-    @Test func acceptedToken() throws {
+    //Expect: Keep the command running.
+    //Case: When the server has sent an untagged CAPABILITY response but not yet the tagged OK. Untagged data
+    //  doesn't end the command.
+    @Test func authenticate_doesNotEnd_whenServerHasOnlySentUntaggedResponse() throws {
+        // Arrange
+        let exchange: Exchange = try Exchange(.xoauth2("user@example.com", token: "t0k3n"))
+
+        // Act
+        try exchange.receive("* CAPABILITY IMAP4rev1 IDLE NAMESPACE")
+        let actual = exchange.outcome
+
+        // Assert
+        #expect(actual == nil)
+    }
+
+    //Expect: Report every capability the server announced.
+    //Case: When the server accepts the token and announces three capabilities before the tagged OK.
+    @Test func authenticate_collectsEveryCapability_whenServerAnnouncesCapabilities() throws {
+        // Arrange
+        let exchange: Exchange = try Exchange(.xoauth2("user@example.com", token: "t0k3n"))
+
+        // Act
+        try exchange.receive("* CAPABILITY IMAP4rev1 IDLE NAMESPACE")
+        try exchange.receive("A01 OK Success")
+        let actual = exchange.capabilities?.count
+
+        // Assert
+        #expect(actual == 3)
+    }
+
+    //Expect: Send nothing further.
+    //Case: When the server accepts the token. The happy path has no challenge, so nothing extra is written.
+    @Test func authenticate_sendsNothingFurther_whenServerAcceptsToken() throws {
+        // Arrange
         let exchange: Exchange = try Exchange(.xoauth2("user@example.com", token: "t0k3n"))
         try exchange.discardSent()
 
+        // Act
         try exchange.receive("* CAPABILITY IMAP4rev1 IDLE NAMESPACE")
-        #expect(exchange.outcome == nil)  // Untagged data doesn't end the command
-
         try exchange.receive("A01 OK Success")
+        let actual = try exchange.sent()
 
-        let capabilities: [IMAP.Capability] = try #require(exchange.capabilities)
-        #expect(capabilities.contains(.idle))
-        #expect(capabilities.count == 3)
-        #expect(try exchange.sent().isEmpty)
+        // Assert
+        #expect(actual == "")
     }
 
-    // Not every server announces capabilities on sign-in
-    @Test func acceptedTokenWithoutCapabilities() throws {
+    //Expect: Succeed with no capabilities.
+    //Case: When the server accepts the token without announcing capabilities. Not every server does.
+    @Test func authenticate_succeedsWithNoCapabilities_whenServerAnnouncesNone() throws {
+        // Arrange
         let exchange: Exchange = try Exchange(.oauthbearer("user@example.com", token: "t0k3n"))
 
+        // Act
         try exchange.receive("A01 OK Success")
+        let actual = exchange.capabilities
 
-        #expect(try #require(exchange.capabilities).isEmpty)
+        // Assert
+        #expect(actual == [])
     }
 
     // MARK: Protocol errors
 
-    // BAD means the command itself was at fault ("command unknown or arguments invalid, authentication exchange
-    // cancelled", RFC 3501, section 6.2.2). It says nothing about the credential, so it must not be reported as
-    // a rejection: that would send the account layer off to refresh a token that may be perfectly good.
-    @Test func badIsNotARejection() throws {
+    //Expect: Fail as a command failure, not as a rejected credential.
+    //Case: When the server answers BAD, which means the command itself was at fault ("command unknown or arguments
+    //  invalid, authentication exchange cancelled", RFC 3501, section 6.2.2). It says nothing about the credential,
+    //  and reporting a rejection would send the account layer off to refresh a token that may be perfectly good.
+    @Test func authenticate_failsAsCommandFailure_whenServerAnswersBAD() throws {
+        // Arrange
         let exchange: Exchange = try Exchange(.xoauth2("user@example.com", token: "t0k3n"))
+        let expected: IMAPError = .commandFailed("Invalid SASL argument")
 
+        // Act
         try exchange.receive("A01 BAD Invalid SASL argument")
+        let actual = exchange.error
 
-        #expect(exchange.rejection == nil)
-        #expect(exchange.error == .commandFailed("Invalid SASL argument"))
+        // Assert
+        #expect(actual == expected)
     }
 
     // MARK: Connection state
 
-    // An unanswered challenge leaves NIOIMAP's state machine unable to take another command: it traps on one
-    // written before the server's tagged response, and refuses every one written after it (`InvalidClientState`).
-    // So the answer isn't only about speed: it is what returns the connection to a state where the next command
-    // can be written at all.
-    @Test func connectionIsUsableAfterRejection() throws {
-        let exchange: Exchange = try Exchange(.xoauth2("user@example.com", token: "t0k3n"))
-        try exchange.receive("+ eyJzdGF0dXMiOiI0MDEiLCJzY2hlbWVzIjoiYmVhcmVyIG1hYyIsInNjb3BlIjoiaHR0cHM6Ly9tYWlsLmdvb2dsZS5jb20vIn0K")
+    //Expect: Write the next command.
+    //Case: When a rejected exchange has ended. An unanswered challenge leaves NIOIMAP's state machine unable to take
+    //  another command: it traps on one written before the server's tagged response, and refuses every one written
+    //  after it (`InvalidClientState`). So the answer isn't only about speed: it is what returns the connection to
+    //  a state where the next command can be written at all.
+    @Test func send_writesNextCommand_whenRejectedExchangeHasEnded() throws {
+        // Arrange
+        let exchange: Exchange = try Exchange(Self.googleCredential)
+        try exchange.receive("+ \(Self.googleChallenge)")
         try exchange.receive("A01 NO SASL authentication failed")
         try exchange.discardSent()
 
+        // Act
         try exchange.send(CapabilityCommand().tagged("A02"))
+        let actual = try exchange.sent()
 
-        #expect(try exchange.sent() == "A02 CAPABILITY\r\n")
+        // Assert
+        #expect(actual == "A02 CAPABILITY\r\n")
     }
 }
 

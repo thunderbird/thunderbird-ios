@@ -10,36 +10,65 @@ import Testing
 struct IMAPErrorTests {
 
     // `IMAPClient` reports a failed command as "command failed", whatever the cause, with one exception: a rejected
-    // credential keeps its identity and its detail, because the account layer has to act on it differently
-    @Test func executing() {
-        let command: CapabilityCommand = CapabilityCommand()
+    // credential keeps its identity and its detail, because the account layer has to act on it differently.
 
-        // Passed through untouched, server's reason included
-        let failure: AuthenticationFailure? = AuthenticationFailure(ByteBuffer(string: #"{"status":"401","schemes":"bearer","scope":"scope"}"#))
-        let rejected: IMAPError = IMAPError(IMAPError.authenticationFailed("SASL authentication failed", failure: failure), executing: command)
-        guard case .authenticationFailed(let description, let passedThrough) = rejected else {
-            Issue.record("Expected authenticationFailed, got \(rejected)")
-            return
+    //Expect: Pass the error through unchanged, the server's reason included.
+    //Case: When the command failed because the server rejected the credential.
+    @Test func init_passesErrorThrough_whenCommandFailedWithRejectedCredential() {
+        // Arrange
+        let failure = AuthenticationFailure(ByteBuffer(string: #"{"status":"401","schemes":"bearer","scope":"scope"}"#))
+        let input: IMAPError = .authenticationFailed("SASL authentication failed", failure: failure)
+
+        // Act
+        var actual: AuthenticationFailure?
+        if case .authenticationFailed("SASL authentication failed", let passedThrough) = IMAPError(input, executing: CapabilityCommand()) {
+            actual = passedThrough
         }
-        #expect(description == "SASL authentication failed")
-        #expect(passedThrough == failure)
-        #expect(passedThrough?.schemes == "bearer")
 
-        // Everything else is flattened to the command that failed
-        #expect(IMAPError(IMAPError.timedOut(seconds: 60), executing: command) == .commandFailed("capability command"))
-        #expect(IMAPError(IMAPError.commandFailed("Invalid SASL argument"), executing: command) == .commandFailed("capability command"))
-        #expect(IMAPError(IMAPError.notConnected, executing: command) == .commandFailed("capability command"))
-        #expect(IMAPError(URLError(.networkConnectionLost), executing: command) == .commandFailed("capability command"))
+        // Assert
+        #expect(actual == failure)
+    }
+
+    //Expect: Report that the command failed, naming the command.
+    //Case: When the command failed for any other reason: a timeout, a failure reported by the server, a lost
+    //  connection, or an error from outside the IMAP module.
+    @Test(arguments: [
+        IMAPError.timedOut(seconds: 60) as any Error,
+        IMAPError.commandFailed("Invalid SASL argument"),
+        IMAPError.notConnected,
+        URLError(.networkConnectionLost)
+    ])
+    func init_reportsCommandFailed_whenCommandFailedForAnotherReason(_ input: any Error) {
+        // Arrange
+        let expected: IMAPError = .commandFailed("capability command")
+
+        // Act
+        let actual = IMAPError(input, executing: CapabilityCommand())
+
+        // Assert
+        #expect(actual == expected)
+    }
+
+    //Expect: Describe the failure with the server's text, followed by its reason when it gave one.
+    //Case: When a rejected credential is described, with and without a reason.
+    @Test(arguments: [
+        (nil as String?, "Authentication failed: SASL authentication failed"),
+        (#"{"status":"invalid_token","scope":"example_scope"}"#, "Authentication failed: SASL authentication failed (invalid_token, scope: example_scope)")
+    ])
+    func description_showsServerTextAndReason_whenCredentialIsRejected(_ errorResult: String?, _ expected: String) {
+        // Arrange
+        let failure = errorResult.flatMap { AuthenticationFailure(ByteBuffer(string: $0)) }
+        let input: IMAPError = .authenticationFailed("SASL authentication failed", failure: failure)
+
+        // Act
+        let actual = input.description
+
+        // Assert
+        #expect(actual == expected)
     }
 
     // MARK: CustomStringConvertible
     @Test func description() {
-        #expect(IMAPError.authenticationFailed("SASL authentication failed").description == "Authentication failed: SASL authentication failed")
-        #expect(
-            IMAPError.authenticationFailed(
-                "SASL authentication failed",
-                failure: AuthenticationFailure(ByteBuffer(string: #"{"status":"invalid_token","scope":"example_scope"}"#))
-            ).description == "Authentication failed: SASL authentication failed (invalid_token, scope: example_scope)")
         #expect(IMAPError.capabilityNotSupported(.idle).description == "IDLE not supported")
         #expect(IMAPError.commandFailed("CAPABILITY failed.").description == "CAPABILITY failed.")
         #expect(IMAPError.commandFailed(CapabilityCommand()).description == "Capability command failed")

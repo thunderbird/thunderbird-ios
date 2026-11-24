@@ -8,52 +8,99 @@ import NIOIMAPCore
 import Testing
 
 struct AuthenticationTests {
-    @Test func mechanism() {
-        #expect(Authentication.oauthbearer("user@example.com", token: "t0k3n").mechanism == .oauthBearer)
-        #expect(Authentication.plain("user@example.com", password: "pa55w0rd").mechanism == .plain)
-        #expect(Authentication.xoauth2("user@example.com", token: "t0k3n").mechanism == .xoauth2)
-        #expect(String(Authentication.Mechanism.oauthBearer) == "OAUTHBEARER")
-        #expect(String(Authentication.Mechanism.xoauth2) == "XOAUTH2")
+    //Expect: Use the SASL mechanism that matches the kind of credential.
+    //Case: When a credential is created for each mechanism.
+    @Test(arguments: [
+        (Authentication.oauthbearer("user@example.com", token: "t0k3n"), Authentication.Mechanism.oauthBearer),
+        (Authentication.plain("user@example.com", password: "pa55w0rd"), Authentication.Mechanism.plain),
+        (Authentication.xoauth2("user@example.com", token: "t0k3n"), Authentication.Mechanism.xoauth2)
+    ])
+    func mechanism_matchesCredential_whenAuthenticationIsCreated(_ input: Authentication, _ expected: Authentication.Mechanism) {
+        // Act
+        let actual = input.mechanism
+
+        // Assert
+        #expect(actual == expected)
     }
 
-    @Test func user() {
-        #expect(Authentication.oauthbearer("user@example.com", token: "t0k3n").user == "user@example.com")
-        #expect(Authentication.plain("user@example.com", password: "pa55w0rd").user == "user@example.com")
-        #expect(Authentication.xoauth2("user@example.com", token: "t0k3n").user == "user@example.com")
+    //Expect: Use the mechanism's registered name, which is what follows `AUTHENTICATE` on the wire.
+    //Case: When the mechanism is one of the two this client adds for OAuth.
+    @Test(arguments: [
+        (Authentication.Mechanism.oauthBearer, "OAUTHBEARER"),
+        (Authentication.Mechanism.xoauth2, "XOAUTH2")
+    ])
+    func mechanism_hasRegisteredName_whenMechanismIsForOAuth(_ input: Authentication.Mechanism, _ expected: String) {
+        // Act
+        let actual = String(input)
+
+        // Assert
+        #expect(actual == expected)
     }
 
-    // RFC 7628: GS2 header, then ^A-delimited key/value pairs, terminated with ^A^A
-    @Test func oauthbearerInitialResponse() throws {
-        let authentication: Authentication = .oauthbearer("user@example.com", token: "t0k3n")
-        #expect(try authentication.initialResponse.string == "n,a=user@example.com,\u{01}auth=Bearer t0k3n\u{01}\u{01}")
+    //Expect: Return the user the credential was created with.
+    //Case: When a credential is created for each mechanism.
+    @Test(arguments: [
+        Authentication.oauthbearer("user@example.com", token: "t0k3n"),
+        Authentication.plain("user@example.com", password: "pa55w0rd"),
+        Authentication.xoauth2("user@example.com", token: "t0k3n")
+    ])
+    func user_returnsUser_whenAuthenticationIsCreated(_ input: Authentication) {
+        // Act
+        let actual = input.user
+
+        // Assert
+        #expect(actual == "user@example.com")
     }
 
-    // RFC 4616: Empty authorization identity, then NUL-delimited user and password
-    @Test func plainInitialResponse() throws {
-        let authentication: Authentication = .plain("user@example.com", password: "pa55w0rd")
-        #expect(try authentication.initialResponse.string == "\u{00}user@example.com\u{00}pa55w0rd")
+    //Expect: Build the initial response the mechanism defines. `\u{01}` is Control+A and `\u{00}` is NUL.
+    //Case: When a credential is created for each mechanism.
+    //  OAUTHBEARER (RFC 7628): a GS2 header, then Control+A-delimited key/value pairs, ended by two Control+A.
+    //  PLAIN (RFC 4616): an empty authorization identity, then the NUL-delimited user and password.
+    //  XOAUTH2: https://developers.google.com/workspace/gmail/imap/xoauth2-protocol
+    @Test(arguments: [
+        (Authentication.oauthbearer("user@example.com", token: "t0k3n"), "n,a=user@example.com,\u{01}auth=Bearer t0k3n\u{01}\u{01}"),
+        (Authentication.plain("user@example.com", password: "pa55w0rd"), "\u{00}user@example.com\u{00}pa55w0rd"),
+        (Authentication.xoauth2("user@example.com", token: "t0k3n"), "user=user@example.com\u{01}auth=Bearer t0k3n\u{01}\u{01}")
+    ])
+    func initialResponse_followsMechanismFormat_whenAuthenticationIsCreated(_ input: Authentication, _ expected: String) throws {
+        // Act
+        let actual = try input.initialResponse.string
+
+        // Assert
+        #expect(actual == expected)
     }
 
-    // https://developers.google.com/workspace/gmail/imap/xoauth2-protocol
-    @Test func xoauth2InitialResponse() throws {
-        let authentication: Authentication = .xoauth2("user@example.com", token: "t0k3n")
-        #expect(try authentication.initialResponse.string == "user=user@example.com\u{01}auth=Bearer t0k3n\u{01}\u{01}")
+    //Expect: Encode the user and password as UTF-8.
+    //Case: When they contain characters outside ASCII.
+    @Test func initialResponse_encodesUTF8_whenUserAndPasswordAreNotASCII() throws {
+        // Arrange
+        let input: Authentication = .plain("üser@example.com", password: "pässw0rd")
+        let expected = "\u{00}üser@example.com\u{00}pässw0rd"
+
+        // Act
+        let actual = try input.initialResponse.string
+
+        // Assert
+        #expect(actual == expected)
     }
 
-    @Test func initialResponseEncodesUTF8() throws {
-        let authentication: Authentication = .plain("üser@example.com", password: "pässw0rd")
-        #expect(try authentication.initialResponse.string == "\u{00}üser@example.com\u{00}pässw0rd")
-    }
+    //Expect: Answer a server challenge with the bytes the mechanism requires, before NIOIMAP base64-encodes them.
+    //  See `AuthenticateHandlerTests` for these on the wire.
+    //Case: When a credential is created for each mechanism.
+    //  OAUTHBEARER (RFC 7628, section 3.2.3): "a single %x01 (control A) character".
+    //  XOAUTH2 (Google's XOAUTH2 protocol): "an empty response".
+    //  PLAIN: RFC 4616 defines no challenge; an empty response carries no credential.
+    @Test(arguments: [
+        (Authentication.oauthbearer("user@example.com", token: "t0k3n"), [UInt8(0x01)]),
+        (Authentication.xoauth2("user@example.com", token: "t0k3n"), [UInt8]()),
+        (Authentication.plain("user@example.com", password: "pa55w0rd"), [UInt8]())
+    ])
+    func challengeResponse_isMechanismAnswer_whenAuthenticationIsCreated(_ input: Authentication, _ expected: [UInt8]) {
+        // Act
+        let actual = Array(input.challengeResponse.readableBytesView)
 
-    // What each mechanism sends to answer a server challenge, before NIOIMAP base64-encodes it. See
-    // `AuthenticateHandlerTests` for these on the wire.
-    @Test func challengeResponse() {
-        // RFC 7628, section 3.2.3: "a single %x01 (control A) character"
-        #expect(Array(Authentication.oauthbearer("user@example.com", token: "t0k3n").challengeResponse.readableBytesView) == [0x01])
-        // Google's XOAUTH2 protocol: "an empty response"
-        #expect(Authentication.xoauth2("user@example.com", token: "t0k3n").challengeResponse.readableBytes == 0)
-        // RFC 4616 defines no challenge for PLAIN; an empty response carries no credential
-        #expect(Authentication.plain("user@example.com", password: "pa55w0rd").challengeResponse.readableBytes == 0)
+        // Assert
+        #expect(actual == expected)
     }
 
     // MARK: OAUTHBEARER user names, shared cases
@@ -140,17 +187,35 @@ struct AuthenticationTests {
     }
 
     // MARK: CustomStringConvertible
-    @Test func description() {
-        #expect(Authentication.oauthbearer("user@example.com", token: "t0k3n").description == "OAUTHBEARER \"user@example.com\"")
-        #expect(Authentication.plain("user@example.com", password: "pa55w0rd").description == "PLAIN \"user@example.com\"")
-        #expect(Authentication.xoauth2("user@example.com", token: "").description == "XOAUTH2 \"user@example.com\"")
+
+    //Expect: Describe the mechanism and the user.
+    //Case: When a credential is described, for each mechanism.
+    @Test(arguments: [
+        (Authentication.oauthbearer("user@example.com", token: "t0k3n"), "OAUTHBEARER \"user@example.com\""),
+        (Authentication.plain("user@example.com", password: "pa55w0rd"), "PLAIN \"user@example.com\""),
+        (Authentication.xoauth2("user@example.com", token: ""), "XOAUTH2 \"user@example.com\"")
+    ])
+    func description_showsMechanismAndUser_whenAuthenticationIsDescribed(_ input: Authentication, _ expected: String) {
+        // Act
+        let actual = input.description
+
+        // Assert
+        #expect(actual == expected)
     }
 
-    // Credentials should never leak into logs via description
-    @Test func descriptionOmitsCredential() {
-        #expect(!Authentication.oauthbearer("user@example.com", token: "t0k3n").description.contains("t0k3n"))
-        #expect(!Authentication.plain("user@example.com", password: "pa55w0rd").description.contains("pa55w0rd"))
-        #expect(!Authentication.xoauth2("user@example.com", token: "t0k3n").description.contains("t0k3n"))
+    //Expect: Leave the token or password out of the description.
+    //Case: When a credential is described, for each mechanism. Descriptions end up in logs.
+    @Test(arguments: [
+        (Authentication.oauthbearer("user@example.com", token: "t0k3n"), "t0k3n"),
+        (Authentication.plain("user@example.com", password: "pa55w0rd"), "pa55w0rd"),
+        (Authentication.xoauth2("user@example.com", token: "t0k3n"), "t0k3n")
+    ])
+    func description_omitsCredential_whenAuthenticationIsDescribed(_ input: Authentication, _ secret: String) {
+        // Act
+        let actual = input.description.contains(secret)
+
+        // Assert
+        #expect(actual == false)
     }
 }
 
