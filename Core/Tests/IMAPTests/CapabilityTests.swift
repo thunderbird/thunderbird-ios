@@ -16,4 +16,18 @@ struct CapabilityTests {
         #expect(Capability.uidPlus.rawValue == "UIDPLUS")
         #expect(Capability.status(.size).rawValue == "STATUS=SIZE")
     }
+
+    //Expect: Use the name the server advertises the capability under.
+    //Case: When the capability is one that `LIST` return options depend on.
+    @Test(arguments: [
+        (Capability.listExtended, "LIST-EXTENDED"),
+        (Capability.listStatus, "LIST-STATUS")
+    ])
+    func rawValue_matchesAdvertisedName_whenCapabilityGatesListReturnOptions(input: Capability, expected: String) {
+        // Act
+        let actual = input.rawValue
+
+        // Assert
+        #expect(actual == expected)
+    }
 }

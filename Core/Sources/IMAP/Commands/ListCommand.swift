@@ -10,17 +10,7 @@ struct ListCommand: IMAPCommand {
     let options: [ReturnOption]
     let wildcard: Character
 
-    init(
-        options: [ReturnOption] = [
-            .subscribed,
-            .statusOption([
-                .messageCount,
-                .recentCount,
-                .unseenCount
-            ])
-        ],
-        wildcard: Character
-    ) {
+    init(options: [ReturnOption], wildcard: Character) {
         self.options = options
         self.wildcard = wildcard
     }
@@ -78,6 +68,28 @@ class ListHandler: IMAPCommandHandler, @unchecked Sendable {
             break
         }
         context.fireChannelRead(data)
+    }
+}
+
+extension [ReturnOption] {
+
+    /// Return subscription state and message counts with every listed mailbox.
+    static let standard: Self = [
+        .subscribed,
+        .statusOption(.standard)
+    ]
+
+    // Filter unsupported return options according to server capabilities
+    func filtered(_ capabilities: Set<Capability>) -> Self {
+        guard capabilities.contains(.listExtended) else {
+            return []  // Server only accepts `LIST` without a `RETURN` clause
+        }
+        return filter { option in
+            switch option {
+            case .statusOption: capabilities.contains(.listStatus)
+            default: true
+            }
+        }
     }
 }
 
