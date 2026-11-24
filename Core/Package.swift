@@ -122,6 +122,8 @@ let package: Package = Package(
         .testTarget(
             name: "IMAPTests",
             dependencies: [
+                .product(name: "NIOEmbedded", package: "swift-nio"),
+                .product(name: "NIOIMAP", package: "swift-nio-imap"),
                 "IMAP"
             ]),
         .target(

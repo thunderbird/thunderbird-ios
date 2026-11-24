@@ -32,7 +32,7 @@ struct AuthorizationView: View {
                 AuthenticationTypeView($account.authenticationType)
             }
             switch account.authenticationType {
-            case .oAuth2:
+            case .oauth2:
                 OAuthButton($account, error: $error)
             case .password:
                 PasswordField("account_server_settings_authentication_password_cleartext", text: $password)
@@ -78,7 +78,7 @@ struct AuthenticationTypeView: View {
 }
 
 #Preview("Authentication Type View") {
-    @Previewable @State var authenticationType: AuthenticationType = .oAuth2
+    @Previewable @State var authenticationType: AuthenticationType = .oauth2
 
     AuthenticationTypeView($authenticationType)
         .onChange(of: authenticationType, initial: true) {
@@ -96,7 +96,7 @@ private extension Account {
                 "example@thunderbird.net"
             ],
             servers: [
-                Server(.imap, authenticationType: .oAuth2)
+                Server(.imap, authenticationType: .oauth2)
             ]
         )
     }

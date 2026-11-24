@@ -203,7 +203,7 @@ extension SMTP.Server {
         guard server.connectionSecurity != .tls else {
             throw SMTPError.requiredTLSNotConfigured
         }
-        guard server.authenticationType != .oAuth2 else {
+        guard server.authenticationType != .oauth2 else {
             throw SMTPError.serverProtocolMismatch
         }
         self.init(hostname: server.hostname, username: server.username, password: authorization.rawValue)
