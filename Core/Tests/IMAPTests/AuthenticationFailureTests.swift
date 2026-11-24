@@ -10,45 +10,70 @@ import Testing
 // has base64-decoded the challenge before it gets here, so these tests start from the JSON text.
 struct AuthenticationFailureTests {
 
-    // The error result from Google's XOAUTH2 protocol document, including the trailing newline its example
-    // carries: https://developers.google.com/workspace/gmail/imap/xoauth2-protocol
-    @Test func xoauth2() throws {
-        let failure: AuthenticationFailure = try #require(AuthenticationFailure(#"{"status":"401","schemes":"bearer mac","scope":"https://mail.google.com/"}"# + "\n"))
-        #expect(failure.status == "401")
-        #expect(failure.schemes == "bearer mac")
-        #expect(failure.scope == "https://mail.google.com/")
-        #expect(failure.openIDConfiguration == nil)  // Not part of XOAUTH2
+    // MARK: Error results
+
+    //Expect: Decode the status, schemes and scope, and leave the OpenID configuration empty.
+    //Case: When the challenge is the error result from Google's XOAUTH2 protocol document, including the trailing
+    //  newline its example carries: https://developers.google.com/workspace/gmail/imap/xoauth2-protocol
+    @Test func init_decodesStatusSchemesAndScope_whenChallengeIsXOAuth2ErrorResult() {
+        // Arrange
+        let input = #"{"status":"401","schemes":"bearer mac","scope":"https://mail.google.com/"}"# + "\n"
+        let expected = Values(status: "401", scope: "https://mail.google.com/", schemes: "bearer mac", openIDConfiguration: nil)
+
+        // Act
+        let actual = AuthenticationFailure(input)?.values
+
+        // Assert
+        #expect(actual == expected)
     }
 
-    // The error result from RFC 7628, section 4.3: https://www.rfc-editor.org/rfc/rfc7628#section-4.3
-    @Test func oauthbearer() throws {
-        let failure: AuthenticationFailure = try #require(
-            AuthenticationFailure(#"{"status":"invalid_token","scope":"example_scope","openid-configuration":"https://example.com/.well-known/openid-configuration"}"#))
-        #expect(failure.status == "invalid_token")
-        #expect(failure.scope == "example_scope")
-        #expect(failure.openIDConfiguration == "https://example.com/.well-known/openid-configuration")
-        #expect(failure.schemes == nil)  // Not part of OAUTHBEARER
+    //Expect: Decode the status, scope and OpenID configuration, and leave the schemes empty.
+    //Case: When the challenge is the error result from RFC 7628, section 4.3:
+    //  https://www.rfc-editor.org/rfc/rfc7628#section-4.3
+    @Test func init_decodesStatusScopeAndOpenIDConfiguration_whenChallengeIsOAuthBearerErrorResult() {
+        // Arrange
+        let input = #"{"status":"invalid_token","scope":"example_scope","openid-configuration":"https://example.com/.well-known/openid-configuration"}"#
+        let expected = Values(status: "invalid_token", scope: "example_scope", schemes: nil, openIDConfiguration: "https://example.com/.well-known/openid-configuration")
+
+        // Act
+        let actual = AuthenticationFailure(input)?.values
+
+        // Assert
+        #expect(actual == expected)
     }
 
-    // `status` is the only required value (RFC 7628, section 3.2.2); a missing scope "implies that unscoped
-    // tokens are required"
-    @Test func statusOnly() throws {
-        let failure: AuthenticationFailure = try #require(AuthenticationFailure(#"{"status":"invalid_token"}"#))
-        #expect(failure.status == "invalid_token")
-        #expect(failure.scope == nil)
-        #expect(failure.schemes == nil)
-        #expect(failure.openIDConfiguration == nil)
+    //Expect: Decode the status and leave every other value empty.
+    //Case: When the challenge has only a `status`, the one required value (RFC 7628, section 3.2.2). A missing
+    //  scope "implies that unscoped tokens are required".
+    @Test func init_decodesStatusAlone_whenChallengeHasOnlyStatus() {
+        // Arrange
+        let input = #"{"status":"invalid_token"}"#
+        let expected = Values(status: "invalid_token", scope: nil, schemes: nil, openIDConfiguration: nil)
+
+        // Act
+        let actual = AuthenticationFailure(input)?.values
+
+        // Assert
+        #expect(actual == expected)
     }
 
-    // Servers may add values of their own; they must not make the known ones unreadable
-    @Test func unknownValuesAreIgnored() throws {
-        let failure: AuthenticationFailure = try #require(AuthenticationFailure(#"{"status":"400","schemes":"Bearer","scope":"scope","trace":{"id":7}}"#))
-        #expect(failure.status == "400")
-        #expect(failure.schemes == "Bearer")
-        #expect(failure.scope == "scope")
+    //Expect: Decode the known values.
+    //Case: When the challenge also has a value this client doesn't know. Servers may add values of their own.
+    @Test func init_decodesKnownValues_whenChallengeHasUnknownValue() {
+        // Arrange
+        let input = #"{"status":"400","schemes":"Bearer","scope":"scope","trace":{"id":7}}"#
+        let expected = Values(status: "400", scope: "scope", schemes: "Bearer", openIDConfiguration: nil)
+
+        // Act
+        let actual = AuthenticationFailure(input)?.values
+
+        // Assert
+        #expect(actual == expected)
     }
 
-    // A challenge is only an error result by convention. Anything else decodes to nothing and is not an error.
+    //Expect: Return `nil`.
+    //Case: When the challenge isn't an error result. A challenge is only one by convention, so anything else
+    //  decodes to nothing and is not an error.
     @Test(arguments: [
         "",  // Zero-length challenge
         "not json",
@@ -57,8 +82,12 @@ struct AuthenticationFailureTests {
         #"{"status":401}"#,  // Status must be a string
         #"{"status":"401""#  // Truncated
     ])
-    func unrecognizedChallenge(_ challenge: String) {
-        #expect(AuthenticationFailure(challenge) == nil)
+    func init_returnsNil_whenChallengeIsNotAnErrorResult(_ input: String) {
+        // Act
+        let actual = AuthenticationFailure(input)
+
+        // Assert
+        #expect(actual == nil)
     }
 
     // MARK: Shared challenge payloads
@@ -125,15 +154,37 @@ struct AuthenticationFailureTests {
     }
 
     // MARK: CustomStringConvertible
-    @Test func description() {
-        #expect(AuthenticationFailure(#"{"status":"401","schemes":"bearer","scope":"https://mail.google.com/"}"#)?.description == "401, scope: https://mail.google.com/")
-        #expect(AuthenticationFailure(#"{"status":"invalid_token"}"#)?.description == "invalid_token")
-        #expect(AuthenticationFailure(#"{"status":"invalid_token","scope":""}"#)?.description == "invalid_token")
+
+    //Expect: Describe the status, followed by the scope when there is one.
+    //Case: When the error result has a scope, has none, or has an empty one.
+    @Test(arguments: [
+        (#"{"status":"401","schemes":"bearer","scope":"https://mail.google.com/"}"#, "401, scope: https://mail.google.com/"),
+        (#"{"status":"invalid_token"}"#, "invalid_token"),
+        (#"{"status":"invalid_token","scope":""}"#, "invalid_token")
+    ])
+    func description_showsStatusAndScope_whenErrorResultIsDescribed(_ input: String, _ expected: String) {
+        // Act
+        let actual = AuthenticationFailure(input)?.description
+
+        // Assert
+        #expect(actual == expected)
     }
+}
+
+// The values of an error result, so that a test can compare all of them in one expectation
+private struct Values: Equatable {
+    let status: String
+    let scope: String?
+    let schemes: String?
+    let openIDConfiguration: String?
 }
 
 private extension AuthenticationFailure {
     init?(_ json: String) {
         self.init(ByteBuffer(string: json))
+    }
+
+    var values: Values {
+        Values(status: status, scope: scope, schemes: schemes, openIDConfiguration: openIDConfiguration)
     }
 }
