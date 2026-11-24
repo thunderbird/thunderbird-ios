@@ -27,6 +27,10 @@ public struct Mailbox: CustomStringConvertible, Hashable, Identifiable {
     public let role: Role?
     public let rights: Rights
     public var name: String
+    /// The character the server uses between the levels of a mailbox path, such as `/` or `.`; `nil` if it has none.
+    ///
+    /// Only an IMAP `LIST` entry reports one. A JMAP mailbox has a parent, not a path, so it has no separator.
+    public let pathSeparator: Character?
     public var isSubscribed: Bool
     public let unreadEmails: Int?
     public let totalEmails: Int?
@@ -41,6 +45,7 @@ public struct Mailbox: CustomStringConvertible, Hashable, Identifiable {
     ///
     /// - Parameters:
     ///   - name: The display name of the mailbox.
+    ///   - pathSeparator: The character between the levels of the mailbox's path, if the server reported one.
     ///   - role: The standardized role, when available.
     ///   - rights: The access rights for this mailbox. Defaults to an empty `Rights`.
     ///   - isSubscribed: Whether the mailbox is subscribed. Defaults to `true`.
@@ -52,6 +57,7 @@ public struct Mailbox: CustomStringConvertible, Hashable, Identifiable {
     ///   mailbox can be identified across UI updates within the app session.
     public init(
         _ name: String,
+        pathSeparator: Character? = nil,
         role: Role? = nil,
         rights: Rights = Rights(),
         isSubscribed: Bool = true,
@@ -60,6 +66,7 @@ public struct Mailbox: CustomStringConvertible, Hashable, Identifiable {
         id: String? = nil
     ) {
         self.name = name
+        self.pathSeparator = pathSeparator
         self.role = role
         self.rights = rights
         self.isSubscribed = isSubscribed
@@ -82,6 +89,7 @@ extension Mailbox {
     ///   generated and transferred during the same app session to provide stability.
     init(_ mailbox: (IMAP.Mailbox, IMAP.Mailbox.Status?), id: String? = nil) {
         self.name = mailbox.0.path.name.description
+        self.pathSeparator = mailbox.0.path.pathSeparator
         self.role = mailbox.0.path.suggestedRole  // Map JMAP mailbox roles to IMAP mailboxes
         self.rights = mailbox.0.path.suggestedRights  // Shim mailbox permissions until IMAP MYRIGHTS implemented
         self.isSubscribed = !mailbox.0.attributes.filter({ $0 == .subscribed }).isEmpty
@@ -95,6 +103,7 @@ extension Mailbox {
     /// - Parameter mailbox: The JMAP mailbox to map from.
     init(_ mailbox: JMAP.Mailbox) {
         self.name = mailbox.name
+        self.pathSeparator = nil  // JMAP mailboxes have a parent, not a path
         self.role = mailbox.role
         self.rights = mailbox.rights
         self.isSubscribed = mailbox.isSubscribed

@@ -11,6 +11,10 @@ public final class FolderManager {
     public let account: Account
     /// Top-level folders for the account.
     public var folders: [Folder] = []
+    /// The character between the levels of a mailbox path, used for every mailbox in the account.
+    ///
+    /// It starts as `/` and changes when a refresh brings a mailbox that reports another.
+    public private(set) var pathSeparator: Character = "/"
 
     /// Initializes the FolderManager with an Account.
     ///
@@ -43,57 +47,84 @@ public final class FolderManager {
         folders.filter { $0.path == path }.first
     }
 
-    /// Returns the immediate parent path of a folder path, or nil if top-level.
+    /// Replace the account's folders with a tree built from its mailboxes.
     ///
-    /// - Parameter path: The path of the Folder for which a parent is being determined.
-    /// - Returns: The path of the immediate parent of the provided folder, if it exists.
-    func parentPath(of path: String) -> String? {
-        guard let range = path.range(of: "/", options: .backwards) else { return nil }
-        let parent = String(path[..<range.lowerBound])
-        return parent.isEmpty ? nil : parent
+    /// The tree is rebuilt from the flat list every time, so refreshing with the same mailboxes gives the same
+    /// folders, each with the same `id`. See ``tree(from:separator:maxDepth:)`` for how mailboxes are nested.
+    ///
+    /// - Parameter mailboxes: Every mailbox in the account, in the order the server listed them.
+    /// - Important: One separator is used for the whole account: that of the first mailbox that has one. If no
+    ///   mailbox has one, the separator from the last refresh is kept.
+    public func refreshFolders(mailboxes: [Mailbox]) async {
+        if let pathSeparator: Character = mailboxes.lazy.compactMap(\.pathSeparator).first {
+            self.pathSeparator = pathSeparator
+        }
+        folders = Self.tree(from: mailboxes, separator: pathSeparator)
     }
 
-    /// Organizes the list of mailboxes into a nested folder hierarchy.
+    /// Arrange a flat list of mailboxes into a tree of folders, by splitting each mailbox's name into path levels.
     ///
-    /// - Parameter mailboxes: The array of Mailboxes that needs to be parsed into a folder structure.
+    /// The rules are those of thunderbird-android's `GetDisplayTreeFolder`, so both apps show the same tree:
     ///
-    /// DIscussion: TEMPORARY IMPLEMENTATION - Due to display limitations folders should be limited to a depth of 3.
-    /// Any folders with a depth exceeding 3 should appear at level 3.
-    /// i.e. Folder > Subfolder > Child Subfolder AND Folder > Subfolder > Child Subfolder > Grandchild Subfolder appear at the same level
-    /// In this instance "Grandchild Subfolder" should appear as "Child Subfolder/Grandchild Subfolder" in the UI.
-    public func refreshFolders(mailboxes: [Mailbox]) async {
-        // Populate the full list of folders
-        for mailbox in mailboxes {
-            folders.append(Folder(from: mailbox))
-        }
+    /// - Folders at each level keep the order in which the server first listed them.
+    /// - A parent that isn't itself in the list becomes a placeholder: a folder with no mailbox.
+    /// - A name with more than `maxDepth` levels keeps that many, and the rest become one folder named with the
+    ///   remaining path. With the default of 2, `A/B/C/D` is `A`, then `B`, then `C/D`.
+    /// - An empty level, as in `A//B`, is shown as `(Unnamed)`.
+    /// - If a name is listed twice, the first mailbox is kept.
+    ///
+    /// - Parameters:
+    ///   - mailboxes: The mailboxes to arrange, in the order the server listed them.
+    ///   - separator: The character between the levels of a mailbox name.
+    ///   - maxDepth: How many leading levels of a name each become a folder of their own.
+    /// - Returns: The top-level folders, each holding its subfolders.
+    static func tree(from mailboxes: [Mailbox], separator: Character = "/", maxDepth: Int = 2) -> [Folder] {
+        tree(
+            from: mailboxes.map { (levels($0.name, separator: separator, maxDepth: maxDepth), $0) },
+            separator: separator,
+            parentPath: ""
+        )
+    }
 
-        // Create a set to hold the subfolders that get appended to their parent.
-        var toRemove = Set<Folder>()
-
-        // Sort the folders so that subfolders are only listed after their parent.
-        let sortedByDepth = folders.sorted { lhs, rhs in
-            lhs.path?.split(separator: "/").count ?? 0 > rhs.path?.split(separator: "/").count ?? 0
-        }
-
-        for child in sortedByDepth {
-            guard let parentPath = parentPath(of: child.path!), let parent = folderForPath(parentPath), let index = folders.firstIndex(of: parent), parent != child else {
-                continue
+    // Folders for one level of the tree: one for each distinct first level among the paths, in first-seen order
+    private static func tree(from paths: [(levels: [String], mailbox: Mailbox)], separator: Character, parentPath: String) -> [Folder] {
+        var names: [String] = []
+        var groups: [String: [(levels: [String], mailbox: Mailbox)]] = [:]
+        for path in paths {
+            let name: String = path.levels[0]
+            if groups[name] == nil {
+                names.append(name)
             }
-
-            // TEMP: Limit subfolders to a depth of 3.
-            if child.path?.split(separator: "/").count ?? 0 > 3 {
-                continue
-            }
-
-            if let originalChild = folders.first(where: { $0.path == child.path }) {
-                folders[index].subfolders.append(originalChild)
-            } else {
-                print("Unable to establish child relationship.")
-            }
-
-            toRemove.insert(child)
+            groups[name, default: []].append(path)
         }
+        return names.map { name in
+            let group: [(levels: [String], mailbox: Mailbox)] = groups[name]!
+            let path: String = parentPath.isEmpty ? name : "\(parentPath)\(separator)\(name)"
+            let mailbox: Mailbox? = group.first { $0.levels.count == 1 }?.mailbox  // Otherwise a placeholder
+            return Folder(
+                name: name,
+                path: mailbox?.name ?? path,
+                unreadEmails: mailbox?.unreadEmails,
+                totalEmails: mailbox?.totalEmails,
+                id: mailbox?.id ?? "placeholder:\(path)",  // Same after every refresh
+                mailbox: mailbox,
+                subfolders: tree(
+                    from: group.filter { $0.levels.count > 1 }.map { (Array($0.levels.dropFirst()), $0.mailbox) },
+                    separator: separator,
+                    parentPath: path
+                )
+            )
+        }
+    }
 
-        folders.removeAll { toRemove.contains($0) }
+    // Split a mailbox name into the levels it is shown at; anything past `maxDepth` levels stays joined as the last
+    private static func levels(_ name: String, separator: Character, maxDepth: Int) -> [String] {
+        let levels: [String] = name.split(separator: separator, omittingEmptySubsequences: false).map {
+            $0.trimmingCharacters(in: .whitespaces).isEmpty ? "(Unnamed)" : String($0)
+        }
+        guard levels.count > maxDepth else {
+            return levels
+        }
+        return levels.prefix(maxDepth) + [levels.dropFirst(maxDepth).joined(separator: "\(separator)")]
     }
 }
