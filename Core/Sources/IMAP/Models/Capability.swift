@@ -45,6 +45,17 @@ public struct Capability: CustomStringConvertible, Equatable, Hashable, RawRepre
     /// `IDLE`: lets the server notify the client of mailbox changes while the connection waits.
     public static var idle: Self { Capability(.idle) }
 
+    /// `LIST-EXTENDED`: lets `LIST` take selection and return options, such as `RETURN (SUBSCRIBED)`.
+    ///
+    /// A client must not send a `LIST` option to a server that doesn't advertise it.
+    /// See [RFC 5258, section 3](https://www.rfc-editor.org/rfc/rfc5258.html#section-3).
+    public static var listExtended: Self { Capability(.listExtended) }
+
+    /// `LIST-STATUS`: lets `LIST` return each mailbox's status, such as its unread count, through `RETURN (STATUS (...))`.
+    ///
+    /// See [RFC 5819](https://www.rfc-editor.org/rfc/rfc5819.html).
+    public static var listStatus: Self { Capability(.listStatus) }
+
     /// `X-GM-EXT-1`: exposes Gmail labels, message IDs, thread IDs, and Gmail search extensions.
     public static var gmailExtensions: Self { Capability(.gmailExtensions) }
 

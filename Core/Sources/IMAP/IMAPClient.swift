@@ -135,10 +135,10 @@ public class IMAPClient {
         return try await execute(command: NoopCommand())
     }
 
-    /// List all mailboxes on logged-in IMAP ``Server``.
+    /// List all mailboxes on logged-in IMAP ``Server``; status is omitted unless server supports `LIST-STATUS`.
     public func list(wildcard: Character = .wildcard) async throws -> [(Mailbox, Mailbox.Status?)] {
         logger?.info("Listing mailboxes…")
-        return try await execute(command: ListCommand(wildcard: wildcard))
+        return try await execute(command: ListCommand(options: .standard.filtered(capabilities), wildcard: wildcard))
     }
 
     /// Select current working mailbox in read/write mode.
