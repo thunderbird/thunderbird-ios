@@ -4,11 +4,11 @@
 
 import Foundation
 
-/// A model representing a mail folder within a mailbox, including subfolders and message counts.
+/// A model representing one row in an account's folder tree: a mailbox, or a parent that only groups others.
 public struct Folder: CustomStringConvertible, Hashable, Identifiable {
-    /// The display name of the folder.
+    /// The display name of the folder: the last level of its path.
     public let name: String?
-    /// Full path including parent mailbox.
+    /// Full path including parent folders. For a mailbox this is the name the server knows it by.
     public let path: String?
     /// Number of unread emails in this folder.
     public let unreadEmails: Int?
@@ -16,10 +16,16 @@ public struct Folder: CustomStringConvertible, Hashable, Identifiable {
     public let totalEmails: Int?
     /// Unique identifier for the folder.
     public let id: String
-    /// The parent Mailbox this folder belongs to.
-    public let mailbox: Mailbox
+    /// The mailbox this folder shows; `nil` for a placeholder.
+    ///
+    /// A placeholder stands in for a parent the server didn't list, so that its subfolders have somewhere to go. It
+    /// has no mail of its own and can't be opened.
+    public let mailbox: Mailbox?
     /// Immediate child folders.
     public var subfolders: [Folder] = []
+
+    /// Whether the folder is a parent the server didn't list, with no mailbox behind it.
+    public var isPlaceholder: Bool { mailbox == nil }
 
     /// Creates a Folder from explicit properties.
     public init(
@@ -28,7 +34,7 @@ public struct Folder: CustomStringConvertible, Hashable, Identifiable {
         unreadEmails: Int?,
         totalEmails: Int?,
         id: String?,
-        mailbox: Mailbox,
+        mailbox: Mailbox?,
         subfolders: [Folder] = []
     ) {
         self.name = name
@@ -38,16 +44,6 @@ public struct Folder: CustomStringConvertible, Hashable, Identifiable {
         self.id = id ?? UUID().uuidString(1)
         self.mailbox = mailbox
         self.subfolders = subfolders
-    }
-
-    /// Creates a Folder from a Mailbox instance.
-    init(from mailbox: Mailbox) {
-        self.name = mailbox.name.components(separatedBy: "/").last
-        self.path = mailbox.name
-        self.unreadEmails = mailbox.unreadEmails
-        self.totalEmails = mailbox.totalEmails
-        self.id = UUID().uuidString
-        self.mailbox = mailbox
     }
 
     // MARK: CustomStringConvertible
